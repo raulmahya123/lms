@@ -23,11 +23,13 @@ use App\Http\Controllers\Admin\{
 | Public
 |--------------------------------------------------------------------------
 */
-Route::get('/', fn () => view('welcome'));
+Route::get('/', fn () => view('welcome'))->name('home');
 
 /*
 |--------------------------------------------------------------------------
 | Dashboard (user login)
+| - Kalau kamu tetap pakai halaman /dashboard untuk user, biarkan ini.
+| - Redirect setelah login diatur di AuthenticatedSessionController (admin → admin.dashboard, user → home)
 |--------------------------------------------------------------------------
 */
 Route::get('/dashboard', fn () => view('dashboard'))
@@ -54,16 +56,16 @@ Route::middleware(['auth', 'can:admin'])
     ->prefix('admin')
     ->as('admin.')
     ->group(function () {
+        // Admin Dashboard → gunakan layout admin
+        Route::get('/dashboard', fn () => view('layouts.admin'))->name('dashboard');
 
         // === Courses ===
         Route::resource('courses', CourseController::class);
-        // helper JSON: daftar modules milik course
         Route::get('courses/{course}/modules', [CourseController::class, 'modules'])
             ->name('courses.modules');
 
         // === Modules ===
         Route::resource('modules', ModuleController::class);
-        // helper JSON: daftar lessons milik module
         Route::get('modules/{module}/lessons', [ModuleController::class, 'lessons'])
             ->name('modules.lessons');
 
@@ -72,14 +74,11 @@ Route::middleware(['auth', 'can:admin'])
 
         // === Lesson Resources (file/link pendukung) ===
         Route::resource('resources', ResourceController::class)
-            ->only(['store', 'update', 'destroy']);
-
+    ->only(['index', 'create', 'store', 'update', 'destroy']);
         // === Quizzes / Questions / Options ===
         Route::resource('quizzes', QuizController::class);
-        Route::resource('questions', QuestionController::class)
-            ->only(['store', 'update', 'destroy']);
-        Route::resource('options', OptionController::class)
-            ->only(['store', 'update', 'destroy']);
+        Route::resource('questions', QuestionController::class); // full (index/create/store/show/edit/update/destroy)
+        Route::resource('options',   OptionController::class);   // full
 
         // === Plans (paket berlangganan) ===
         Route::resource('plans', PlanController::class);
@@ -89,16 +88,14 @@ Route::middleware(['auth', 'can:admin'])
             ->only(['store', 'destroy']);
 
         // === Memberships (keanggotaan user pada plan) ===
-        Route::resource('memberships', MembershipController::class)
-            ->only(['index', 'show', 'update', 'destroy']);
+        Route::resource('memberships', MembershipController::class); // full
 
         // === Payments ===
         Route::resource('payments', PaymentController::class)
             ->only(['index', 'show', 'update']);
 
         // === Enrollments (pendaftaran user ke course) ===
-        Route::resource('enrollments', EnrollmentController::class)
-            ->only(['index', 'show', 'update', 'destroy']);
+        Route::resource('enrollments', EnrollmentController::class); // full
 
         // === Coupons ===
         Route::resource('coupons', CouponController::class);
