@@ -1,57 +1,101 @@
 @extends('layouts.admin')
-@section('title','Create Lesson')
+@section('title','Create Lesson — BERKEMAH')
 
 @section('content')
-<form method="POST" action="{{ route('admin.lessons.store') }}" class="space-y-5 bg-white p-6 rounded shadow max-w-3xl">
-  @csrf
-  <div>
-    <label class="block text-sm font-medium mb-1">Module</label>
-    <select name="module_id" class="w-full border rounded px-3 py-2" required>
-      <option value="">— Select Module —</option>
-      @foreach($modules as $m)
-        <option value="{{ $m->id }}" @selected(old('module_id')==$m->id)>
-          {{ $m->course?->title }} — {{ $m->title }}
-        </option>
-      @endforeach
-    </select>
-    @error('module_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
+<div class="max-w-3xl mx-auto space-y-6">
 
-  <div>
-    <label class="block text-sm font-medium mb-1">Title</label>
-    <input type="text" name="title" class="w-full border rounded px-3 py-2" value="{{ old('title') }}" required>
-    @error('title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
-
-  <div>
-    <label class="block text-sm font-medium mb-1">Content (HTML / Markdown / text)</label>
-    <textarea name="content" rows="6" class="w-full border rounded px-3 py-2">{{ old('content') }}</textarea>
-    @error('content') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
-
-  <div>
-    <label class="block text-sm font-medium mb-1">Content URL (video/file)</label>
-    <input type="url" name="content_url" class="w-full border rounded px-3 py-2" value="{{ old('content_url') }}">
-    @error('content_url') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
-
-  <div class="grid grid-cols-2 gap-4">
+  {{-- HEADER --}}
+  <div class="flex items-center justify-between">
     <div>
-      <label class="block text-sm font-medium mb-1">Ordering</label>
-      <input type="number" name="ordering" class="w-full border rounded px-3 py-2" value="{{ old('ordering',1) }}" min="1">
-      @error('ordering') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+      <h1 class="text-2xl font-extrabold tracking-wide flex items-center gap-2">
+        {{-- Play/lesson icon --}}
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M4.5 5.75A2.75 2.75 0 0 1 7.25 3h9.5A2.75 2.75 0 0 1 19.5 5.75v12.5A2.75 2.75 0 0 1 16.75 21h-9.5A2.75 2.75 0 0 1 4.5 18.25V5.75Zm5 1.25a.75.75 0 0 0-.75.75v8.5a.75.75 0 0 0 1.14.64l6.5-4.25a.75.75 0 0 0 0-1.28l-6.5-4.25a.75.75 0 0 0-.39-.11Z"/>
+        </svg>
+        Create Lesson
+      </h1>
+      <p class="text-sm opacity-70">Tambahkan pelajaran baru ke salah satu modul.</p>
     </div>
-    <div class="flex items-end">
-      <label class="inline-flex items-center gap-2">
-        <input type="checkbox" name="is_free" value="1" @checked(old('is_free'))>
-        <span>Mark as Free</span>
-      </label>
-    </div>
+    <a href="{{ route('admin.lessons.index') }}"
+       class="px-3 py-2 rounded-xl border hover:bg-gray-50 transition">← Back</a>
   </div>
 
-  <div class="flex items-center gap-2">
-    <a href="{{ route('admin.lessons.index') }}" class="px-4 py-2 rounded border">Cancel</a>
-    <button class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+  {{-- FORM CARD --}}
+  <div class="rounded-2xl border bg-white p-6">
+    <form method="POST" action="{{ route('admin.lessons.store') }}" class="space-y-6">
+      @csrf
+
+      {{-- Module --}}
+      <div>
+        <label class="block text-sm font-medium mb-1">Module <span class="text-red-500">*</span></label>
+        <select name="module_id" class="w-full border rounded-xl px-3 py-2" required>
+          <option value="">— Select Module —</option>
+          @foreach($modules as $m)
+            <option value="{{ $m->id }}" @selected(old('module_id')==$m->id)>
+              {{ $m->course?->title }} — {{ $m->title }}
+            </option>
+          @endforeach
+        </select>
+        @error('module_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+      </div>
+
+      {{-- Title --}}
+      <div>
+        <label class="block text-sm font-medium mb-1">Title <span class="text-red-500">*</span></label>
+        <input type="text" name="title"
+               value="{{ old('title') }}"
+               placeholder="Contoh: Pengenalan Variabel"
+               class="w-full border rounded-xl px-3 py-2" required>
+        @error('title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+      </div>
+
+      {{-- Content --}}
+      <div>
+        <label class="block text-sm font-medium mb-1">Content (HTML / Markdown / text)</label>
+        <textarea name="content" rows="6"
+                  placeholder="Tulis materi di sini..."
+                  class="w-full border rounded-xl px-3 py-2">{{ old('content') }}</textarea>
+        @error('content') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+      </div>
+
+      {{-- Content URL --}}
+      <div>
+        <label class="block text-sm font-medium mb-1">Content URL (video/file)</label>
+        <input type="url" name="content_url"
+               value="{{ old('content_url') }}"
+               placeholder="https://..."
+               class="w-full border rounded-xl px-3 py-2">
+        @error('content_url') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+      </div>
+
+      {{-- Ordering + Free --}}
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="block text-sm font-medium mb-1">Ordering</label>
+          <input type="number" name="ordering" min="1"
+                 value="{{ old('ordering',1) }}"
+                 class="w-full border rounded-xl px-3 py-2">
+          <p class="text-xs opacity-70 mt-1">Urutan tampil (angka kecil muncul duluan).</p>
+          @error('ordering') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        </div>
+        <div class="flex items-end">
+          <label class="inline-flex items-center gap-2">
+            <input type="checkbox" name="is_free" value="1" @checked(old('is_free'))
+                   class="rounded">
+            <span>Mark as Free</span>
+          </label>
+        </div>
+      </div>
+
+      {{-- ACTIONS --}}
+      <div class="pt-2 flex items-center gap-2">
+        <button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow transition">
+          Save Lesson
+        </button>
+        <a href="{{ route('admin.lessons.index') }}"
+           class="px-4 py-2 rounded-xl border hover:bg-gray-50 transition">Cancel</a>
+      </div>
+    </form>
   </div>
-</form>
+</div>
 @endsection

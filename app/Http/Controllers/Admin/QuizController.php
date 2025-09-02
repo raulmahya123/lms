@@ -8,14 +8,19 @@ use Illuminate\Http\Request;
 
 class QuizController extends Controller
 {
-    public function index(Request $r)
-    {
-        $quizzes = Quiz::with('lesson:id,title')
-            ->when($r->filled('lesson_id'), fn($q)=>$q->where('lesson_id',$r->lesson_id))
-            ->latest('id')->paginate(20);
+    public function index(\Illuminate\Http\Request $r)
+{
+    $quizzes = \App\Models\Quiz::query()
+        ->with(['lesson:id,title']) // cukup untuk tampilan
+        ->when($r->filled('lesson_id'), fn($q)=>$q->where('lesson_id', $r->integer('lesson_id')))
+        ->when($r->filled('q'), fn($q)=>$q->where('title','like','%'.$r->q.'%'))
+        ->orderByDesc('id')
+        ->paginate(20)
+        ->withQueryString();
 
-        return view('admin.quizzes.index', compact('quizzes'));
-    }
+    return view('admin.quizzes.index', compact('quizzes'));
+}
+
 
     public function create()
     {

@@ -10,9 +10,19 @@ class LessonController extends Controller
 {
     public function index(Request $r)
     {
-        $lessons = Lesson::with(['module:id,title','module.course:id,title'])
-            ->when($r->filled('module_id'), fn($q)=>$q->where('module_id',$r->module_id))
-            ->orderBy('module_id')->orderBy('ordering')->paginate(20);
+        $lessons = \App\Models\Lesson::query()
+            // PENTING: kalau pakai select di Lesson, sertakan module_id!
+            // ->select(['id','module_id','title','ordering','is_free','updated_at']) // optional
+            ->with([
+                // Sertakan course_id di Module agar module->course bisa diload
+                'module' => fn($q) => $q->select(['id', 'course_id', 'title']),
+                'module.course' => fn($q) => $q->select(['id', 'title']),
+            ])
+            ->when($r->filled('module_id'), fn($q) => $q->where('module_id', $r->integer('module_id')))
+            ->when($r->filled('q'), fn($q) => $q->where('title', 'like', '%' . $r->q . '%'))
+            ->orderBy('module_id')->orderBy('ordering')
+            ->paginate(20)
+            ->withQueryString();
 
         return view('admin.lessons.index', compact('lessons'));
     }
@@ -37,14 +47,14 @@ class LessonController extends Controller
         $data['is_free']  = $r->boolean('is_free');
 
         $lesson = Lesson::create($data);
-        return redirect()->route('admin.lessons.edit', $lesson)->with('ok','Lesson dibuat');
+        return redirect()->route('admin.lessons.edit', $lesson)->with('ok', 'Lesson dibuat');
     }
 
     public function edit(Lesson $lesson)
     {
         $modules = Module::orderBy('course_id')->orderBy('ordering')->get();
-        $lesson->load('resources','quiz');
-        return view('admin.lessons.edit', compact('lesson','modules'));
+        $lesson->load('resources', 'quiz');
+        return view('admin.lessons.edit', compact('lesson', 'modules'));
     }
 
     public function update(Request $r, Lesson $lesson)
@@ -60,12 +70,12 @@ class LessonController extends Controller
         $data['is_free'] = $r->boolean('is_free');
 
         $lesson->update($data);
-        return back()->with('ok','Lesson diupdate');
+        return back()->with('ok', 'Lesson diupdate');
     }
 
     public function destroy(Lesson $lesson)
     {
         $lesson->delete();
-        return redirect()->route('admin.lessons.index')->with('ok','Lesson dihapus');
+        return redirect()->route('admin.lessons.index')->with('ok', 'Lesson dihapus');
     }
 }

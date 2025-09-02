@@ -1,37 +1,63 @@
 @extends('layouts.admin')
 
-@section('title','Create Module')
+@section('title','Create Module — BERKEMAH')
 
 @section('content')
-<form method="POST" action="{{ route('admin.modules.store') }}" class="space-y-5 bg-white p-6 rounded shadow max-w-2xl">
-  @csrf
-
-  <div>
-    <label class="block text-sm font-medium mb-1">Course</label>
-    <select name="course_id" class="w-full border rounded px-3 py-2" required>
-      <option value="">— Select Course —</option>
-      @foreach($courses as $c)
-        <option value="{{ $c->id }}" @selected(old('course_id')==$c->id)>{{ $c->title }}</option>
-      @endforeach
-    </select>
-    @error('course_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+<div class="max-w-3xl mx-auto space-y-6">
+  {{-- Header --}}
+  <div class="flex items-center justify-between">
+    <div>
+      <h1 class="text-2xl font-extrabold tracking-wide">Create Module</h1>
+      <p class="text-sm opacity-70">Tambahkan modul baru ke salah satu course.</p>
+    </div>
+    <a href="{{ route('admin.modules.index') }}" class="px-3 py-2 rounded-xl border hover:bg-gray-50">← Back</a>
   </div>
 
-  <div>
-    <label class="block text-sm font-medium mb-1">Title</label>
-    <input type="text" name="title" class="w-full border rounded px-3 py-2" value="{{ old('title') }}" required>
-    @error('title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
+  {{-- Card --}}
+  <div class="rounded-2xl border bg-white p-6">
+    <form method="POST" action="{{ route('admin.modules.store') }}" class="space-y-6">
+      @csrf
 
-  <div>
-    <label class="block text-sm font-medium mb-1">Ordering</label>
-    <input type="number" name="ordering" class="w-full border rounded px-3 py-2" value="{{ old('ordering',1) }}" min="1">
-    @error('ordering') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
+      {{-- Course --}}
+      <div>
+        <label class="block text-sm font-medium mb-1">Course <span class="text-red-500">*</span></label>
+        <select name="course_id" class="w-full border rounded-xl px-3 py-2" required>
+          <option value="">— pilih course —</option>
+          @foreach($courses as $c)
+            <option value="{{ $c->id }}" @selected(old('course_id')==$c->id)>{{ $c->title }}</option>
+          @endforeach
+        </select>
+        @error('course_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+      </div>
 
-  <div class="flex items-center gap-2">
-    <a href="{{ route('admin.modules.index') }}" class="px-4 py-2 rounded border">Cancel</a>
-    <button class="px-4 py-2 bg-blue-600 text-white rounded">Save</button>
+      {{-- Title --}}
+      <div>
+        <label class="block text-sm font-medium mb-1">Title <span class="text-red-500">*</span></label>
+        <input type="text" name="title" value="{{ old('title') }}"
+               placeholder="Contoh: Pengenalan JavaScript"
+               class="w-full border rounded-xl px-3 py-2" required>
+        @error('title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+      </div>
+
+      {{-- Ordering --}}
+      <div class="max-w-xs">
+        <label class="block text-sm font-medium mb-1">Ordering</label>
+        <input type="number" name="ordering" min="0"
+               value="{{ old('ordering',0) }}"
+               class="w-full border rounded-xl px-3 py-2">
+        <p class="text-xs opacity-70 mt-1">Angka urutan tampil (kecil → muncul duluan).</p>
+        @error('ordering') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+      </div>
+
+      {{-- ACTIONS --}}
+      <div class="pt-2 flex items-center gap-2">
+        <button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow transition">
+          Create Module
+        </button>
+        <a href="{{ route('admin.modules.index') }}"
+           class="px-4 py-2 rounded-xl border hover:bg-gray-50 transition">Cancel</a>
+      </div>
+    </form>
   </div>
-</form>
+</div>
 @endsection
