@@ -1,62 +1,64 @@
-@php
-  $userVal   = old('user_id', optional($membership)->user_id);
-  $planVal   = old('plan_id', optional($membership)->plan_id);
-  $statusVal = old('status', optional($membership)->status ?? 'active');
-  $actVal    = old('activated_at', optional(optional($membership)->activated_at)->format('Y-m-d\TH:i'));
-  $expVal    = old('expires_at', optional(optional($membership)->expires_at)->format('Y-m-d\TH:i'));
-@endphp
-
-<div class="grid md:grid-cols-2 gap-4">
-  {{-- USER --}}
+@csrf
+<div class="rounded-2xl border bg-white shadow p-6 space-y-5">
+  {{-- User --}}
   <div>
     <label class="block text-sm font-medium mb-1">User</label>
-    <select name="user_id" class="w-full border rounded-xl px-3 py-2" required>
-      <option value="" disabled {{ $userVal ? '' : 'selected' }}>— pilih user —</option>
-      @foreach ($users as $user)
-        <option value="{{ $user->id }}" {{ (string)$userVal === (string)$user->id ? 'selected' : '' }}>
-          {{ $user->name ?? $user->email }}
+    <select name="user_id" class="w-full border rounded-xl px-3 py-2 focus:ring-blue-600 focus:border-blue-600">
+      <option value="">— pilih user —</option>
+      @foreach($users as $u)
+        <option value="{{ $u->id }}" @selected(old('user_id', $membership->user_id ?? null)==$u->id)>
+          {{ $u->name }} ({{ $u->email }})
         </option>
       @endforeach
     </select>
-    @error('user_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
   </div>
 
-  {{-- PLAN --}}
+  {{-- Plan --}}
   <div>
     <label class="block text-sm font-medium mb-1">Plan</label>
-    <select name="plan_id" class="w-full border rounded-xl px-3 py-2" required>
-      <option value="" disabled {{ $planVal ? '' : 'selected' }}>— pilih plan —</option>
-      @foreach ($plans as $plan)
-        <option value="{{ $plan->id }}" {{ (string)$planVal === (string)$plan->id ? 'selected' : '' }}>
-          {{ $plan->name ?? 'Plan #'.$plan->id }}
+    <select name="plan_id" class="w-full border rounded-xl px-3 py-2 focus:ring-blue-600 focus:border-blue-600">
+      <option value="">— pilih plan —</option>
+      @foreach($plans as $pl)
+        <option value="{{ $pl->id }}" @selected(old('plan_id', $membership->plan_id ?? null)==$pl->id)>
+          {{ $pl->name }}
         </option>
       @endforeach
     </select>
-    @error('plan_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
   </div>
 
-  {{-- STATUS --}}
+  {{-- Status --}}
   <div>
     <label class="block text-sm font-medium mb-1">Status</label>
-    <select name="status" class="w-full border rounded-xl px-3 py-2">
-      @foreach (['active'=>'Active','inactive'=>'Inactive','expired'=>'Expired'] as $k => $v)
-        <option value="{{ $k }}" {{ $statusVal === $k ? 'selected' : '' }}>{{ $v }}</option>
+    <select name="status" class="w-full border rounded-xl px-3 py-2 focus:ring-blue-600 focus:border-blue-600">
+      @foreach(['active','expired','cancelled'] as $st)
+        <option value="{{ $st }}" @selected(old('status', $membership->status ?? null)==$st)>
+          {{ ucfirst($st) }}
+        </option>
       @endforeach
     </select>
-    @error('status') <p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
   </div>
 
-  {{-- ACTIVATED AT --}}
+  {{-- Expired At --}}
   <div>
-    <label class="block text-sm font-medium mb-1">Activated At</label>
-    <input type="datetime-local" name="activated_at" value="{{ $actVal }}" class="w-full border rounded-xl px-3 py-2">
-    @error('activated_at') <p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
+    <label class="block text-sm font-medium mb-1">Expired At</label>
+    <input type="date" name="expired_at" value="{{ old('expired_at', $membership->expired_at ?? '') }}"
+           class="w-full border rounded-xl px-3 py-2 focus:ring-blue-600 focus:border-blue-600">
   </div>
+</div>
 
-  {{-- EXPIRES AT --}}
-  <div>
-    <label class="block text-sm font-medium mb-1">Expires At</label>
-    <input type="datetime-local" name="expires_at" value="{{ $expVal }}" class="w-full border rounded-xl px-3 py-2">
-    @error('expires_at') <p class="text-xs text-red-600 mt-1">{{ $message }}</p>@enderror
-  </div>
+{{-- ACTIONS --}}
+<div class="flex items-center gap-3 mt-6">
+  <a href="{{ route('admin.memberships.index') }}"
+     class="inline-flex items-center gap-2 px-4 py-2 border rounded-xl hover:bg-gray-50">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+    </svg>
+    Cancel
+  </a>
+  <button class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+    </svg>
+    {{ $submit ?? 'Save' }}
+  </button>
 </div>

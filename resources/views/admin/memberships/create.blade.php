@@ -1,39 +1,18 @@
-@extends('layouts.app')
-
-@section('title','Tambah Membership')
+@extends('layouts.admin')
+@section('title','Create Membership')
 
 @section('content')
-<div class="max-w-5xl mx-auto p-6 space-y-6">
-  {{-- HEADER --}}
-  <div class="flex items-center justify-between">
-    <h1 class="text-xl font-semibold text-[#1D1C1A]">Tambah Membership</h1>
-    <button form="membershipForm" class="px-4 py-2 rounded-2xl bg-[#7A2C2F] text-white hover:opacity-90">
-      Simpan
-    </button>
-  </div>
-
-  {{-- ALERT ERROR --}}
-  @if ($errors->any())
-    <div class="bg-red-50 border border-red-200 text-red-700 rounded-xl p-4">
-      <div class="font-semibold mb-2">Periksa kembali isian kamu:</div>
-      <ul class="list-disc pl-5 space-y-1">
-        @foreach ($errors->all() as $error)
-          <li>{{ $error }}</li>
-        @endforeach
-      </ul>
-    </div>
-  @endif
-
-  {{-- FORM --}}
-  <form id="membershipForm" method="POST" action="{{ route('admin.memberships.store') }}" class="bg-white border rounded-2xl p-6 space-y-6">
-    @csrf
-    @include('admin.memberships._form', ['membership' => null])
-  </form>
-
-  <div>
-    <a href="{{ route('admin.memberships.index') }}" class="inline-flex items-center gap-2 text-[#1D1C1A]">
-      ← Kembali ke daftar
-    </a>
-  </div>
+<div class="mb-6 flex items-center gap-2">
+  <h1 class="text-2xl font-extrabold">Create Membership</h1>
 </div>
+
+@if($errors->any())
+  <div class="mb-4 border border-red-200 bg-red-50 text-red-800 rounded-2xl px-4 py-3">
+    {{ $errors->first() }}
+  </div>
+@endif
+
+<form method="POST" action="{{ route('admin.memberships.store') }}" class="space-y-6 max-w-3xl">
+  @include('admin.memberships._form',['submit'=>'Create'])
+</form>
 @endsection

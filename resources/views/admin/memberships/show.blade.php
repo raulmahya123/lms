@@ -2,53 +2,40 @@
 @section('title','Membership Detail')
 
 @section('content')
-<div class="bg-white p-6 rounded shadow max-w-3xl">
-  <div class="grid md:grid-cols-2 gap-4">
+<div class="mb-6 flex items-center gap-2">
+  <h1 class="text-2xl font-extrabold">Membership #{{ $membership->id }}</h1>
+</div>
+
+<div class="rounded-2xl border bg-white shadow p-6 space-y-4">
+  <div>
+    <span class="text-sm text-gray-500">User</span>
+    <div class="text-lg">{{ $membership->user?->name }}</div>
+  </div>
+
+  <div>
+    <span class="text-sm text-gray-500">Plan</span>
+    <div class="text-lg">{{ $membership->plan?->name }}</div>
+  </div>
+
+  <div>
+    <span class="text-sm text-gray-500">Status</span>
     <div>
-      <div class="text-xs text-gray-500">User</div>
-      <div class="font-medium">{{ $membership->user?->name }}</div>
-      <div class="text-sm text-gray-600">{{ $membership->user?->email }}</div>
-    </div>
-    <div>
-      <div class="text-xs text-gray-500">Plan</div>
-      <div class="font-medium">{{ $membership->plan?->name }}</div>
-    </div>
-    <div>
-      <div class="text-xs text-gray-500">Status</div>
-      <div class="font-medium">{{ ucfirst($membership->status) }}</div>
-    </div>
-    <div>
-      <div class="text-xs text-gray-500">Activated / Expires</div>
-      <div>{{ $membership->activated_at }} — {{ $membership->expires_at }}</div>
+      <span class="px-2 py-1 text-xs rounded-full 
+        @if($membership->status==='active') bg-green-50 text-green-700 border border-green-200
+        @elseif($membership->status==='expired') bg-red-50 text-red-700 border border-red-200
+        @else bg-amber-50 text-amber-700 border border-amber-200 @endif">
+        {{ ucfirst($membership->status) }}
+      </span>
     </div>
   </div>
 
-  <hr class="my-6">
+  <div>
+    <span class="text-sm text-gray-500">Expired At</span>
+    <div class="text-lg">{{ $membership->expired_at }}</div>
+  </div>
 
-  <form method="POST" action="{{ route('admin.memberships.update',$membership) }}" class="grid md:grid-cols-3 gap-4">
-    @csrf @method('PUT')
-    <div>
-      <label class="block text-sm">Status</label>
-      <select name="status" class="w-full border rounded px-3 py-2">
-        @foreach(['pending','active','inactive'] as $st)
-          <option value="{{ $st }}" @selected(old('status',$membership->status)===$st)>{{ ucfirst($st) }}</option>
-        @endforeach
-      </select>
-    </div>
-    <div>
-      <label class="block text-sm">Activated At</label>
-      <input type="datetime-local" name="activated_at" class="w-full border rounded px-3 py-2"
-             value="{{ old('activated_at', optional($membership->activated_at)->format('Y-m-d\TH:i')) }}">
-    </div>
-    <div>
-      <label class="block text-sm">Expires At</label>
-      <input type="datetime-local" name="expires_at" class="w-full border rounded px-3 py-2"
-             value="{{ old('expires_at', optional($membership->expires_at)->format('Y-m-d\TH:i')) }}">
-    </div>
-    <div class="md:col-span-3">
-      <button class="px-4 py-2 bg-blue-600 text-white rounded">Update</button>
-      <a href="{{ route('admin.memberships.index') }}" class="px-4 py-2 rounded border ml-2">Back</a>
-    </div>
-  </form>
+  <div class="text-xs text-gray-400">
+    Created {{ $membership->created_at }} · Updated {{ $membership->updated_at }}
+  </div>
 </div>
 @endsection

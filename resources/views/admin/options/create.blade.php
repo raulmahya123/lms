@@ -1,115 +1,138 @@
 @extends('layouts.admin')
-
-@section('title','Add Option — BERKEMAH')
+@section('title','Payments')
 
 @section('content')
-<div class="max-w-3xl mx-auto space-y-6">
 
-  {{-- HEADER --}}
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-extrabold tracking-wide flex items-center gap-2">
-        {{-- plus icon --}}
-        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 4.5a.75.75 0 0 1 .75.75V11h5.75a.75.75 0 0 1 0 1.5H12.75v5.75a.75.75 0 0 1-1.5 0V12.5H5.5a.75.75 0 0 1 0-1.5h5.75V5.25A.75.75 0 0 1 12 4.5Z"/>
+{{-- FILTER BAR --}}
+<form method="GET" class="mb-6">
+  <div class="bg-white border rounded-2xl p-4 flex flex-wrap items-center gap-3 shadow-sm">
+    {{-- Status Select --}}
+    <div class="relative">
+      <select name="status" class="pl-9 pr-4 py-2 border rounded-xl focus:ring-blue-600 focus:border-blue-600">
+        <option value="">— Status —</option>
+        @foreach(['pending','paid','failed'] as $st)
+          <option value="{{ $st }}" @selected(request('status')===$st)>{{ ucfirst($st) }}</option>
+        @endforeach
+      </select>
+      <div class="absolute left-3 top-2.5 text-gray-400">
+        {{-- Filter Icon --}}
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4h18M6 12h12M10 20h4"/>
         </svg>
-        Add Option
-      </h1>
-      <p class="text-sm opacity-70">Tambahkan opsi jawaban untuk question tertentu.</p>
+      </div>
     </div>
-    <a href="{{ route('admin.options.index') }}"
-       class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border hover:bg-gray-50 transition">
-      {{-- back icon --}}
-      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M10.28 6.22a.75.75 0 0 1 0 1.06L6.56 11h11.19a.75.75 0 0 1 0 1.5H6.56l3.72 3.72a.75.75 0 1 1-1.06 1.06l-5-5a.75.75 0 0 1 0-1.06l5-5a.75.75 0 0 1 1.06 0Z"/></svg>
-      Back
-    </a>
+
+    {{-- Buttons --}}
+    <button class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500">
+      {{-- Filter icon --}}
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16"/>
+      </svg>
+      <span>Filter</span>
+    </button>
+
+    @if(request('status'))
+      <a href="{{ route('admin.payments.index') }}"
+         class="flex items-center gap-1 px-3 py-2 border rounded-xl text-sm hover:bg-gray-50">
+        {{-- Reset icon --}}
+        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
+        </svg>
+        Reset
+      </a>
+    @endif
   </div>
+</form>
 
-  {{-- FORM CARD --}}
-  <div class="rounded-2xl border bg-white p-6">
-    <form action="{{ route('admin.options.store') }}" method="POST" class="space-y-6">
-      @csrf
-
-      {{-- Question --}}
-      <div>
-        <label class="block text-sm font-medium mb-1">Question <span class="text-red-500">*</span></label>
-        <div class="relative">
-          <select name="question_id" class="w-full border rounded-xl pl-10 pr-3 py-2" required>
-            <option value="">— Select Question —</option>
-            @foreach($questions as $q)
-              <option value="{{ $q->id }}" @selected(old('question_id')==$q->id)>
-                {{ \Illuminate\Support\Str::limit($q->prompt,60) }}
-              </option>
-            @endforeach
-          </select>
-          {{-- list icon --}}
-          <svg class="w-5 h-5 absolute left-3 top-2.5 opacity-60" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M6 7.5h12a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1 0-1.5Zm0 4.5h12a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1 0-1.5Zm0 4.5h8a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1 0-1.5Z"/>
-          </svg>
-        </div>
-        @error('question_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
-      </div>
-
-      {{-- Option Text --}}
-      <div>
-        <label class="block text-sm font-medium mb-1">Option Text <span class="text-red-500">*</span></label>
-        <div class="relative">
-          <textarea name="text" rows="4" class="w-full border rounded-xl pl-10 pr-3 py-2" required>{{ old('text') }}</textarea>
-          {{-- text icon --}}
-          <svg class="w-5 h-5 absolute left-3 top-2.5 opacity-60" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M4.5 6.75A.75.75 0 0 1 5.25 6h13.5a.75.75 0 0 1 0 1.5H5.25A.75.75 0 0 1 4.5 6.75ZM5.25 10.5a.75.75 0 0 0 0 1.5h9.5a.75.75 0 0 0 0-1.5h-9.5Zm0 4.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z"/>
-          </svg>
-        </div>
-        @error('text') <p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
-      </div>
-
-      {{-- Is Correct toggle --}}
-      <div>
-        <label class="block text-sm font-medium mb-2">Correct?</label>
-        <label class="inline-flex items-center gap-3 select-none">
-          <input type="checkbox" id="is_correct" name="is_correct" value="1"
-                 class="peer sr-only" {{ old('is_correct') ? 'checked' : '' }}>
-          <span class="w-11 h-6 rounded-full border relative
-                       transition peer-checked:bg-green-500 peer-checked:border-green-500
-                       peer-checked:shadow-inner bg-gray-200 border-gray-300">
-            <span class="absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white transition
-                         peer-checked:translate-x-5"></span>
-          </span>
-          <span class="text-sm">
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full
-                         bg-gray-200 text-gray-700 peer-checked:bg-green-100 peer-checked:text-green-800">
-              <svg class="w-4 h-4 hidden peer-checked:inline" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2.25a9.75 9.75 0 1 1 0 19.5 9.75 9.75 0 0 1 0-19.5Zm-1.03 12.03 4.47-4.47a.75.75 0 1 0-1.06-1.06l-3.94 3.94-1.41-1.41a.75.75 0 1 0-1.06 1.06l1.94 1.94a.75.75 0 0 0 1.06 0Z"/>
+{{-- TABLE --}}
+<div class="rounded-2xl border bg-white shadow overflow-hidden">
+  <table class="w-full text-sm">
+    <thead class="bg-gray-100 sticky top-0">
+      <tr>
+        <th class="p-3">#</th>
+        <th class="p-3 text-left">User</th>
+        <th class="p-3 text-left">Plan / Course</th>
+        <th class="p-3 text-left">Amount</th>
+        <th class="p-3 text-left">Status</th>
+        <th class="p-3 text-left">Provider</th>
+        <th class="p-3 text-left">Paid At</th>
+        <th class="p-3 text-center">Action</th>
+      </tr>
+    </thead>
+    <tbody>
+      @forelse($items as $p)
+        <tr class="border-t hover:bg-gray-50">
+          <td class="p-3">{{ $p->id }}</td>
+          <td class="p-3">
+            {{ $p->user?->name }}
+            <div class="text-xs text-gray-500">{{ $p->user?->email }}</div>
+          </td>
+          <td class="p-3">
+            @if($p->plan) <div>Plan: {{ $p->plan->name }}</div>@endif
+            @if($p->course) <div>Course: {{ $p->course->title }}</div>@endif
+          </td>
+          <td class="p-3">Rp {{ number_format($p->amount,0,',','.') }}</td>
+          <td class="p-3">
+            @if($p->status==='paid')
+              <span class="px-2 py-1 text-xs rounded-full bg-green-50 text-green-700 border border-green-200">Paid</span>
+            @elseif($p->status==='pending')
+              <span class="px-2 py-1 text-xs rounded-full bg-amber-50 text-amber-700 border border-amber-200">Pending</span>
+            @else
+              <span class="px-2 py-1 text-xs rounded-full bg-red-50 text-red-700 border border-red-200">Failed</span>
+            @endif
+          </td>
+          <td class="p-3">{{ $p->provider }}</td>
+          <td class="p-3">{{ $p->paid_at }}</td>
+          <td class="p-3 text-center">
+            <a href="{{ route('admin.payments.show',$p) }}"
+               class="inline-flex items-center gap-1 px-2 py-1 border rounded-lg text-blue-600 hover:bg-gray-50 text-xs">
+              {{-- Eye Icon --}}
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
               </svg>
-              <svg class="w-4 h-4 peer-checked:hidden" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6.225 4.811a.75.75 0 0 1 1.06 0L12 9.525l4.715-4.714a.75.75 0 1 1 1.06 1.06L13.06 10.59l4.715 4.715a.75.75 0 1 1-1.06 1.06L12 11.65l-4.715 4.715a.75.75 0 1 1-1.06-1.06l4.715-4.715-4.715-4.715a.75.75 0 0 1 0-1.06Z"/>
+              Detail
+            </a>
+          </td>
+        </tr>
+      @empty
+        <tr>
+          <td colspan="8" class="p-6 text-center">
+            <div class="flex flex-col items-center gap-2 text-gray-500">
+              {{-- Empty icon --}}
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M9 17v-2h6v2a2 2 0 01-2 2H5a2 2 0 01-2-2V7a2 2 0 012-2h6a2 2 0 012 2v2h-2"/>
               </svg>
-              <span class="hidden peer-checked:inline">True</span>
-              <span class="inline peer-checked:hidden">False</span>
-            </span>
-          </span>
-        </label>
-        @error('is_correct') <p class="text-sm text-red-600 mt-1">{{ $message }}</p>@enderror
-      </div>
-
-      {{-- ACTIONS --}}
-      <div class="pt-2 flex items-center justify-end gap-2">
-        <a href="{{ route('admin.options.index') }}"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border hover:bg-gray-50 transition">
-          {{-- cancel icon --}}
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M6.225 4.811a.75.75 0 0 1 1.06 0L12 9.525l4.715-4.714a.75.75 0 1 1 1.06 1.06L13.06 10.59l4.715 4.715a.75.75 0 1 1-1.06 1.06L12 11.65l-4.715 4.715a.75.75 0 1 1-1.06-1.06l4.715-4.715-4.715-4.715a.75.75 0 0 1 0-1.06Z"/></svg>
-          Cancel
-        </a>
-        <button type="submit"
-                class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow transition">
-          {{-- save icon --}}
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M5.25 3A2.25 2.25 0 0 0 3 5.25v13.5A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V8.56a.75.75 0 0 0-.22-.53l-4.81-4.8A.75.75 0 0 0 15.44 3H5.25Zm2.5 3h5.5a.75.75 0 0 1 .75.75V9a.75.75 0 0 1-.75.75h-5.5A.75.75 0 0 1 7.75 9V6.75Z"/>
-          </svg>
-          Save
-        </button>
-      </div>
-    </form>
-  </div>
+              <p>No payments found.</p>
+              <a href="{{ route('admin.payments.index') }}"
+                 class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500">
+                {{-- Plus Icon --}}
+                <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Create Payment
+              </a>
+            </div>
+          </td>
+        </tr>
+      @endforelse
+    </tbody>
+  </table>
 </div>
+
+{{-- PAGINATION --}}
+@if($items->hasPages())
+  <div class="mt-4 bg-white border rounded-2xl p-3 flex items-center justify-between text-sm">
+    <div class="text-gray-500">
+      Showing {{ $items->firstItem() }} to {{ $items->lastItem() }} of {{ $items->total() }} results
+    </div>
+    <div>
+      {{ $items->withQueryString()->links() }}
+    </div>
+  </div>
+@endif
+
 @endsection
