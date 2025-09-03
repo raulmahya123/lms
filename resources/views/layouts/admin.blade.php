@@ -51,7 +51,7 @@
     <nav class="px-3 space-y-1" aria-label="Primary">
       @php
         $nav = [
-          ['Dashboard','admin.dashboard'],
+          ['Dashboard','admin.dashboard.index'],
           ['Courses','admin.courses.index'],
           ['Modules','admin.modules.index'],
           ['Lessons','admin.lessons.index'],

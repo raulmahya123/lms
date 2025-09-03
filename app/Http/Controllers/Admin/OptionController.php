@@ -11,18 +11,33 @@ class OptionController extends Controller
     /**
      * List semua opsi (dengan relasi question).
      */
-    public function index()
+    public function index(\Illuminate\Http\Request $r)
     {
-        $options = Option::with('question')->latest()->paginate(20);
-        return view('admin.options.index', compact('options'));
+        $options = \App\Models\Option::query()
+            ->with(['question:id,quiz_id,prompt', 'question.quiz:id,title'])
+            ->when($r->filled('quiz_id'), fn($q) => $q->whereHas('question', fn($qq) => $qq->where('quiz_id', $r->quiz_id)))
+            ->when($r->filled('q'), fn($q) => $q->where('text', 'like', '%' . $r->q . '%'))
+            ->when($r->filled('is_correct'), function ($q) use ($r) {
+                if ($r->is_correct === '1') $q->where('is_correct', true);
+                if ($r->is_correct === '0') $q->where('is_correct', false);
+            })
+            ->latest('id')
+            ->paginate(12)
+            ->withQueryString();
+
+        // kalau mau kirim daftar quiz ke view (untuk select):
+        $quizzes = \App\Models\Quiz::orderBy('title')->get(['id', 'title']);
+
+        return view('admin.options.index', compact('options', 'quizzes'));
     }
+
 
     /**
      * Form tambah opsi baru.
      */
     public function create()
     {
-        $questions = Question::all(['id','prompt']);
+        $questions = Question::all(['id', 'prompt']);
         return view('admin.options.create', compact('questions'));
     }
 
@@ -40,7 +55,7 @@ class OptionController extends Controller
 
         Option::create($data);
 
-        return redirect()->route('admin.options.index')->with('ok','Opsi ditambahkan');
+        return redirect()->route('admin.options.index')->with('ok', 'Opsi ditambahkan');
     }
 
     /**
@@ -56,8 +71,8 @@ class OptionController extends Controller
      */
     public function edit(Option $option)
     {
-        $questions = Question::all(['id','prompt']);
-        return view('admin.options.edit', compact('option','questions'));
+        $questions = Question::all(['id', 'prompt']);
+        return view('admin.options.edit', compact('option', 'questions'));
     }
 
     /**
@@ -74,7 +89,7 @@ class OptionController extends Controller
 
         $option->update($data);
 
-        return redirect()->route('admin.options.index')->with('ok','Opsi diupdate');
+        return redirect()->route('admin.options.index')->with('ok', 'Opsi diupdate');
     }
 
     /**
@@ -83,6 +98,6 @@ class OptionController extends Controller
     public function destroy(Option $option)
     {
         $option->delete();
-        return redirect()->route('admin.options.index')->with('ok','Opsi dihapus');
+        return redirect()->route('admin.options.index')->with('ok', 'Opsi dihapus');
     }
 }

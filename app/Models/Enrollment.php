@@ -10,6 +10,9 @@ class Enrollment extends Model
     protected $fillable = ['user_id', 'course_id', 'status', 'activated_at'];
 
     protected $dates = ['activated_at'];
+     protected $casts = [
+        'activated_at' => 'datetime',
+    ];
 
     public function user(): BelongsTo
     {

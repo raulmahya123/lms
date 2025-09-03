@@ -11,11 +11,20 @@ class QuestionController extends Controller
     /**
      * List semua pertanyaan.
      */
-    public function index()
-    {
-        $questions = Question::with('quiz')->latest()->paginate(15);
-        return view('admin.questions.index', compact('questions'));
-    }
+    public function index(Request $r)
+{
+    $quizzes   = \App\Models\Quiz::orderBy('title')->get(['id','title']);
+    $questions = \App\Models\Question::query()
+        ->with('quiz:id,title')
+        ->when($r->filled('quiz_id'), fn($q) => $q->where('quiz_id', $r->quiz_id))
+        ->when($r->filled('q'), fn($q2) => $q2->where('prompt','like','%'.$r->q.'%'))
+        ->latest('id')
+        ->paginate(12)
+        ->withQueryString();
+
+    return view('admin.questions.index', compact('questions','quizzes'));
+}
+
 
     /**
      * Form buat pertanyaan baru.

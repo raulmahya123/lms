@@ -15,7 +15,8 @@ use App\Http\Controllers\Admin\{
     PlanCourseController,
     QuestionController,
     QuizController,
-    ResourceController
+    ResourceController,
+    DashboardController,
 };
 
 /*
@@ -23,7 +24,8 @@ use App\Http\Controllers\Admin\{
 | Public
 |--------------------------------------------------------------------------
 */
-Route::get('/', fn () => view('welcome'))->name('home');
+
+Route::get('/', fn() => view('welcome'))->name('home');
 
 /*
 |--------------------------------------------------------------------------
@@ -32,7 +34,7 @@ Route::get('/', fn () => view('welcome'))->name('home');
 | - Redirect setelah login diatur di AuthenticatedSessionController (admin → admin.dashboard, user → home)
 |--------------------------------------------------------------------------
 */
-Route::get('/dashboard', fn () => view('dashboard'))
+Route::get('/dashboard', fn() => view('dashboard'))
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
@@ -43,8 +45,8 @@ Route::get('/dashboard', fn () => view('dashboard'))
 */
 Route::middleware('auth')->group(function () {
     Route::get('/profile',  [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile',[ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile',[ProfileController::class, 'destroy'])->name('profile.destroy');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
 /*
@@ -57,7 +59,7 @@ Route::middleware(['auth', 'can:admin'])
     ->as('admin.')
     ->group(function () {
         // Admin Dashboard → gunakan layout admin
-        Route::get('/dashboard', fn () => view('layouts.admin'))->name('dashboard');
+        Route::get('/dashboard', fn() => view('layouts.admin'))->name('dashboard');
 
         // === Courses ===
         Route::resource('courses', CourseController::class);
@@ -74,11 +76,12 @@ Route::middleware(['auth', 'can:admin'])
 
         // === Lesson Resources (file/link pendukung) ===
         Route::resource('resources', ResourceController::class)
-    ->only(['index', 'create', 'store', 'update', 'destroy']);
+            ->only(['index', 'create', 'store', 'update', 'destroy', 'show', 'edit']);
         // === Quizzes / Questions / Options ===
         Route::resource('quizzes', QuizController::class);
         Route::resource('questions', QuestionController::class); // full (index/create/store/show/edit/update/destroy)
         Route::resource('options',   OptionController::class);   // full
+        Route::resource('dashboard',   DashboardController::class);   // full
 
         // === Plans (paket berlangganan) ===
         Route::resource('plans', PlanController::class);
@@ -106,4 +109,4 @@ Route::middleware(['auth', 'can:admin'])
 | Auth scaffolding (Breeze/Fortify/etc)
 |--------------------------------------------------------------------------
 */
-require __DIR__.'/auth.php';
+require __DIR__ . '/auth.php';

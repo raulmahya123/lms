@@ -16,23 +16,33 @@ class Lesson extends Model
         'is_free',
     ];
 
-    public function module(): BelongsTo
+    // ⬇️ Tambahan penting
+    protected $casts = [
+        'content_url' => 'array',   // auto decode/encode JSON <-> array
+        'is_free'     => 'boolean', // pastikan true/false
+        'ordering'    => 'integer',
+    ];
+
+    // (Opsional) default nilai
+    protected $attributes = [
+        'is_free'  => false,
+        'ordering' => 0,
+    ];
+
+    // (Opsional) scopes buat controller/index
+    public function scopeSearch($q, ?string $term)
     {
-        return $this->belongsTo(Module::class);
+        return $q->when($term, fn($qq) => $qq->where('title', 'like', "%{$term}%"));
     }
 
-    public function resources(): HasMany
+    public function scopeFilterModule($q, $moduleId)
     {
-        return $this->hasMany(Resource::class);
+        return $q->when($moduleId, fn($qq) => $qq->where('module_id', $moduleId));
     }
 
-    public function quiz(): HasOne
-    {
-        return $this->hasOne(Quiz::class);
-    }
-
-    public function progresses(): HasMany
-    {
-        return $this->hasMany(LessonProgress::class);
-    }
+    // Relations
+    public function module(): BelongsTo { return $this->belongsTo(Module::class); }
+    public function resources(): HasMany { return $this->hasMany(Resource::class); }
+    public function quiz(): HasOne { return $this->hasOne(Quiz::class); }
+    public function progresses(): HasMany { return $this->hasMany(LessonProgress::class); }
 }

@@ -15,8 +15,8 @@ return new class extends Migration
         $table->id();
         $table->foreignId('module_id')->constrained()->cascadeOnDelete();
         $table->string('title');
-        $table->text('content')->nullable();        // atau simpan URL konten/video
-        $table->string('content_url')->nullable();  // opsional
+        $table->json('content')->nullable();        // atau simpan URL konten/video
+        $table->json('content_url')->nullable();  // opsional
         $table->unsignedInteger('ordering')->default(1);
         $table->boolean('is_free')->default(false);
         $table->timestamps();

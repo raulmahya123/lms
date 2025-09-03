@@ -8,11 +8,20 @@ use Illuminate\Http\Request;
 
 class PlanController extends Controller
 {
-    public function index(Request $r)
-    {
-        $plans = Plan::withCount(['planCourses','memberships'])->paginate(12);
-        return view('admin.plans.index', compact('plans'));
-    }
+    public function index(\Illuminate\Http\Request $r)
+{
+    $plans = \App\Models\Plan::query()
+        ->withCount(['planCourses', 'memberships'])
+        ->when($r->filled('q'), fn($q) => $q->where('name','like','%'.$r->q.'%'))
+        ->when($r->filled('period'), fn($q) => $q->where('period', $r->period))
+        ->when($r->filled('min'), fn($q) => $q->where('price','>=',(float)$r->min))
+        ->when($r->filled('max'), fn($q) => $q->where('price','<=',(float)$r->max))
+        ->orderBy('id','desc')
+        ->paginate(12)
+        ->withQueryString();
+
+    return view('admin.plans.index', compact('plans'));
+}
 
     public function create()
     {

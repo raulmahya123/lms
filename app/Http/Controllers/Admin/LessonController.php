@@ -10,11 +10,8 @@ class LessonController extends Controller
 {
     public function index(Request $r)
     {
-        $lessons = \App\Models\Lesson::query()
-            // PENTING: kalau pakai select di Lesson, sertakan module_id!
-            // ->select(['id','module_id','title','ordering','is_free','updated_at']) // optional
+        $lessons = Lesson::query()
             ->with([
-                // Sertakan course_id di Module agar module->course bisa diload
                 'module' => fn($q) => $q->select(['id', 'course_id', 'title']),
                 'module.course' => fn($q) => $q->select(['id', 'title']),
             ])
@@ -29,24 +26,30 @@ class LessonController extends Controller
 
     public function create()
     {
-        $modules = Module::with('course:id,title')->orderBy('course_id')->orderBy('ordering')->get();
+        $modules = Module::with('course:id,title')
+            ->orderBy('course_id')->orderBy('ordering')->get();
+
         return view('admin.lessons.create', compact('modules'));
     }
 
     public function store(Request $r)
     {
         $data = $r->validate([
-            'module_id'   => 'required|exists:modules,id',
-            'title'       => 'required|string|max:255',
-            'content'     => 'nullable|string',
-            'content_url' => 'nullable|url',
-            'ordering'    => 'nullable|integer|min:1',
-            'is_free'     => 'boolean',
+            'module_id'              => 'required|exists:modules,id',
+            'title'                  => 'required|string|max:255',
+            'content'                => 'nullable|string',
+            'content_url'            => 'array',
+            'content_url.*.title'    => 'required_with:content_url|string|max:255',
+            'content_url.*.url'      => 'required_with:content_url|url',
+            'ordering'               => 'nullable|integer|min:1',
+            'is_free'                => 'boolean',
         ]);
+
         $data['ordering'] = $data['ordering'] ?? 1;
         $data['is_free']  = $r->boolean('is_free');
 
         $lesson = Lesson::create($data);
+
         return redirect()->route('admin.lessons.edit', $lesson)->with('ok', 'Lesson dibuat');
     }
 
@@ -54,22 +57,27 @@ class LessonController extends Controller
     {
         $modules = Module::orderBy('course_id')->orderBy('ordering')->get();
         $lesson->load('resources', 'quiz');
+
         return view('admin.lessons.edit', compact('lesson', 'modules'));
     }
 
     public function update(Request $r, Lesson $lesson)
     {
         $data = $r->validate([
-            'module_id'   => 'required|exists:modules,id',
-            'title'       => 'required|string|max:255',
-            'content'     => 'nullable|string',
-            'content_url' => 'nullable|url',
-            'ordering'    => 'nullable|integer|min:1',
-            'is_free'     => 'boolean',
+            'module_id'              => 'required|exists:modules,id',
+            'title'                  => 'required|string|max:255',
+            'content'                => 'nullable|string',
+            'content_url'            => 'array',
+            'content_url.*.title'    => 'required_with:content_url|string|max:255',
+            'content_url.*.url'      => 'required_with:content_url|url',
+            'ordering'               => 'nullable|integer|min:1',
+            'is_free'                => 'boolean',
         ]);
+
         $data['is_free'] = $r->boolean('is_free');
 
         $lesson->update($data);
+
         return back()->with('ok', 'Lesson diupdate');
     }
 
@@ -77,5 +85,28 @@ class LessonController extends Controller
     {
         $lesson->delete();
         return redirect()->route('admin.lessons.index')->with('ok', 'Lesson dihapus');
+    }
+    // app/Http/Controllers/Admin/LessonController.php
+
+    public function show(\App\Models\Lesson $lesson)
+    {
+        $lesson->load('module.course');
+
+        // pastikan content_url array
+        $videos = $lesson->content_url;
+        if (is_string($videos)) {
+            $decoded = json_decode($videos, true);
+            $videos = is_array($decoded) ? $decoded : [];
+        }
+
+        // index video aktif dari query ?v=
+        $active = request()->integer('v', 0);
+        if ($active < 0 || $active >= count($videos)) $active = 0;
+
+        return view('admin.lessons.show', [
+            'lesson' => $lesson,
+            'videos' => $videos,
+            'active' => $active,
+        ]);
     }
 }

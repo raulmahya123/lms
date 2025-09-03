@@ -9,14 +9,26 @@ use Illuminate\Validation\Rule;
 
 class EnrollmentController extends Controller
 {
-    public function index(Request $r)
-    {
-        $items = Enrollment::with(['user:id,name,email','course:id,title'])
-            ->when($r->filled('status'), fn($q)=>$q->where('status',$r->status))
-            ->latest('id')->paginate(20);
+    public function index(\Illuminate\Http\Request $r)
+{
+    $items = \App\Models\Enrollment::query()
+        ->with(['user:id,name,email', 'course:id,title'])
+        ->when($r->filled('q'), function($q) use ($r) {
+            $q->whereHas('user', function($u) use ($r) {
+                $u->where('name','like','%'.$r->q.'%')
+                  ->orWhere('email','like','%'.$r->q.'%');
+            })->orWhereHas('course', function($c) use ($r) {
+                $c->where('title','like','%'.$r->q.'%');
+            });
+        })
+        ->when($r->filled('status'), fn($q) => $q->where('status', $r->status))
+        ->latest('id')
+        ->paginate(12)
+        ->withQueryString();
 
-        return view('admin.enrollments.index', compact('items'));
-    }
+    return view('admin.enrollments.index', compact('items'));
+}
+
 
     public function show(Enrollment $enrollment)
     {

@@ -55,14 +55,33 @@
         @error('content') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
       </div>
 
-      {{-- Content URL --}}
-      <div>
-        <label class="block text-sm font-medium mb-1">Content URL (video/file)</label>
-        <input type="url" name="content_url"
-               value="{{ old('content_url',$lesson->content_url) }}"
-               placeholder="https://..."
-               class="w-full border rounded-xl px-3 py-2">
+      {{-- Content URLs (Array) --}}
+      <div x-data="{ urls: @js(old('content_url', $lesson->content_url ?? [])) }">
+        <label class="block text-sm font-medium mb-1">Content URLs (video/file)</label>
+
+        <template x-for="(item, index) in urls" :key="index">
+          <div class="flex gap-2 mb-2">
+            <input type="text" :name="`content_url[${index}][title]`"
+                   x-model="item.title"
+                   placeholder="Judul konten"
+                   class="w-1/3 border rounded-xl px-3 py-2">
+            <input type="url" :name="`content_url[${index}][url]`"
+                   x-model="item.url"
+                   placeholder="https://..."
+                   class="w-2/3 border rounded-xl px-3 py-2">
+            <button type="button" @click="urls.splice(index,1)"
+                    class="px-2 text-red-600">✕</button>
+          </div>
+        </template>
+
+        <button type="button" @click="urls.push({title:'',url:''})"
+                class="mt-2 px-3 py-1 rounded bg-blue-500 text-white hover:bg-blue-600">
+          + Tambah URL
+        </button>
+
         @error('content_url') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        @error('content_url.*.title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        @error('content_url.*.url') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
       </div>
 
       {{-- Ordering + Free --}}

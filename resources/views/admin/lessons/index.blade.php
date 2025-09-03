@@ -99,20 +99,6 @@
       <div class="text-sm">
         <span class="font-semibold">{{ $lessons->total() }}</span>
         <span class="opacity-70">lessons found</span>
-        @if(request('module_id'))
-          <span class="ml-2 inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-blue-50 text-blue-700 border border-blue-100">
-            {{-- badge icon --}}
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.25l8.25 4.5v10.5L12 21.75 3.75 17.25V6.75L12 2.25Z"/></svg>
-            Module filter active
-          </span>
-        @endif
-        @if(request('q'))
-          <span class="ml-2 inline-flex items-center gap-1 text-xs px-2 py-1 rounded-lg bg-amber-50 text-amber-700 border border-amber-100">
-            {{-- search badge icon --}}
-            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M10 3.75a6.25 6.25 0 1 1 3.94 11.09l3.1 3.1a.75.75 0 1 1-1.06 1.06l-3.1-3.1A6.25 6.25 0 0 1 10 3.75Z"/></svg>
-            “{{ request('q') }}”
-          </span>
-        @endif
       </div>
       <div class="text-xs opacity-70">Page {{ $lessons->currentPage() }} / {{ $lessons->lastPage() }}</div>
     </div>
@@ -125,6 +111,7 @@
             <th class="p-3 text-left">Course</th>
             <th class="p-3 text-left">Module</th>
             <th class="p-3 text-left">Title</th>
+            <th class="p-3 text-left">Content URLs</th>
             <th class="p-3 text-left w-28">Ordering</th>
             <th class="p-3 text-left w-24">Free?</th>
             <th class="p-3 text-center w-44">Actions</th>
@@ -134,55 +121,58 @@
           @forelse($lessons as $l)
             <tr class="border-t">
               <td class="p-3 font-semibold text-gray-700">#{{ $l->id }}</td>
+              <td class="p-3">{{ $l->module?->course?->title ?? '-' }}</td>
+              <td class="p-3">{{ $l->module?->title ?? '-' }}</td>
+              <td class="p-3 font-medium">{{ $l->title }}</td>
               <td class="p-3">
-                <div class="truncate max-w-[280px]" title="{{ $l->module?->course?->title }}">
-                  {{ $l->module?->course?->title ?? '-' }}
-                </div>
+                @php
+                  $videos = $l->content_url;
+                  if (is_string($videos)) {
+                      $decoded = json_decode($videos, true);
+                      $videos = is_array($decoded) ? $decoded : [];
+                  }
+                @endphp
+                @if(!empty($videos))
+                  <div class="flex flex-wrap gap-1.5 max-w-[420px]">
+                    @foreach($videos as $i => $video)
+                      <a href="{{ route('admin.lessons.show', [$l, 'v' => $i]) }}"
+                         class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border hover:bg-gray-50 text-xs"
+                         title="Play: {{ $video['title'] ?? 'Untitled' }}">
+                        <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M8.5 7.5v9l8-4.5-8-4.5Z"/></svg>
+                        <span class="truncate max-w-[160px]">{{ $video['title'] ?? 'Untitled' }}</span>
+                      </a>
+                    @endforeach
+                  </div>
+                @else
+                  <span class="text-xs opacity-60">-</span>
+                @endif
               </td>
-              <td class="p-3">
-                <div class="truncate max-w-[280px]" title="{{ $l->module?->title }}">
-                  {{ $l->module?->title ?? '-' }}
-                </div>
-              </td>
-              <td class="p-3">
-                <div class="truncate max-w-[420px] font-medium" title="{{ $l->title }}">{{ $l->title }}</div>
-              </td>
-              <td class="p-3">
-                <div class="inline-flex items-center gap-2 rounded-xl border px-2 py-1 bg-white">
-                  {{-- bars icon --}}
-                  <svg class="w-4 h-4 opacity-60" viewBox="0 0 24 24" fill="currentColor"><path d="M6 12.75a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H6.75a.75.75 0 0 1-.75-.75ZM6 7.5a.75.75 0 0 1 .75-.75h10.5a.75.75 0 0 1 0 1.5H6.75A.75.75 0 0 1 6 7.5Zm0 10.5a.75.75 0 0 1 .75-.75h7.5a.75.75 0 0 1 0 1.5h-7.5a.75.75 0 0 1-.75-.75Z"/></svg>
-                  <span class="tabular-nums">{{ $l->ordering }}</span>
-                </div>
-              </td>
+              <td class="p-3">{{ $l->ordering }}</td>
               <td class="p-3">
                 @if($l->is_free)
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                    {{-- check icon --}}
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.25a9.75 9.75 0 1 1 0 19.5 9.75 9.75 0 0 1 0-19.5Zm-1.03 12.03 4.47-4.47a.75.75 0 0 0-1.06-1.06l-3.94 3.94-1.41-1.41a.75.75 0 0 0-1.06 1.06l1.94 1.94a.75.75 0 0 0 1.06 0Z"/></svg>
-                    Yes
-                  </span>
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">Yes</span>
                 @else
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
-                    {{-- lock icon --}}
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 9V7a4.5 4.5 0 0 1 9 0v2h.75A1.75 1.75 0 0 1 19 10.75v6.5A1.75 1.75 0 0 1 17.25 19H6.75A1.75 1.75 0 0 1 5 17.25v-6.5A1.75 1.75 0 0 1 6.75 9H7.5Zm1.5 0h6V7a3 3 0 0 0-6 0v2Z"/></svg>
-                    No
-                  </span>
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">No</span>
                 @endif
               </td>
               <td class="p-3 text-center">
                 <div class="flex items-center justify-center gap-2">
+                  <a href="{{ route('admin.lessons.show',$l) }}"
+                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition"
+                     title="View / Play">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/>
+                    </svg>
+                    View
+                  </a>
                   <a href="{{ route('admin.lessons.edit',$l) }}"
                      class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition" title="Edit">
-                    {{-- pencil icon --}}
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16.862 3.487a2.25 2.25 0 0 1 3.182 3.182l-9.57 9.569a4.5 4.5 0 0 1-1.78 1.11l-3.27 1.09a.75.75 0 0 1-.947-.948l1.09-3.269a4.5 4.5 0 0 1 1.11-1.78l9.57-9.57Z"/></svg>
                     Edit
                   </a>
                   <form method="POST" action="{{ route('admin.lessons.destroy',$l) }}"
                         onsubmit="return confirm('Delete this lesson?')">
                     @csrf @method('DELETE')
                     <button class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 transition" title="Delete">
-                      {{-- trash icon --}}
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9.75 3a1 1 0 0 0-.94.66L8.5 4.5H6a.75.75 0 0 0 0 1.5h12a.75.75 0 0 0 0-1.5h-2.5l-.31-.84a1 1 0 0 0-.94-.66h-4.5ZM6.75 8a.75.75 0 0 1 .75.75v8a1.75 1.75 0 0 0 1.75 1.75h4.5A1.75 1.75 0 0 0 15.5 16.75v-8a.75.75 0 0 1 1.5 0v8a3.25 3.25 0 0 1-3.25 3.25h-4.5A3.25 3.25 0 0 1 6 16.75v-8A.75.75 0 0 1 6.75 8Z"/></svg>
                       Delete
                     </button>
                   </form>
@@ -191,21 +181,8 @@
             </tr>
           @empty
             <tr>
-              <td colspan="7" class="p-10">
-                <div class="flex flex-col items-center justify-center text-center gap-3">
-                  <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
-                    {{-- empty icon --}}
-                    <svg class="w-8 h-8 opacity-50" viewBox="0 0 24 24" fill="currentColor"><path d="M4 6.75A2.75 2.75 0 0 1 6.75 4h10.5A2.75 2.75 0 0 1 20 6.75v10.5A2.75 2.75 0 0 1 17.25 20H6.75A2.75 2.75 0 0 1 4 17.25V6.75Zm3.25 1a.75.75 0 0 0 0 1.5h9.5a.75.75 0 0 0 0-1.5h-9.5Z"/></svg>
-                  </div>
-                  <div class="text-lg font-semibold">Belum ada lesson</div>
-                  <p class="text-sm opacity-70 max-w-md">Tambahkan lesson pertama untuk modul kamu. Mulai dari judul, urutan, dan status free.</p>
-                  <a href="{{ route('admin.lessons.create') }}"
-                     class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow transition">
-                    {{-- plus icon --}}
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5a.75.75 0 0 1 .75.75V11h5.75a.75.75 0 0 1 0 1.5H12.75v5.75a.75.75 0 0 1-1.5 0V12.5H5.5a.75.75 0 0 1 0-1.5h5.75V5.25A.75.75 0 0 1 12 4.5Z"/></svg>
-                    Create Lesson
-                  </a>
-                </div>
+              <td colspan="8" class="p-10 text-center text-sm opacity-70">
+                Belum ada lesson.
               </td>
             </tr>
           @endforelse

@@ -1,48 +1,191 @@
 @extends('layouts.admin')
-@section('title','Enrollments')
+
+@section('title','Enrollments — BERKEMAH')
 
 @section('content')
-<form method="GET" class="mb-4 flex items-center gap-2">
-  <select name="status" class="border rounded px-3 py-2">
-    <option value="">— Status —</option>
-    @foreach(['pending','active','inactive'] as $st)
-      <option value="{{ $st }}" @selected(request('status')===$st)>{{ ucfirst($st) }}</option>
-    @endforeach
-  </select>
-  <button class="px-3 py-2 bg-gray-800 text-white rounded">Filter</button>
-  @if(request('status')) <a href="{{ route('admin.enrollments.index') }}" class="underline text-sm">Reset</a> @endif
-</form>
+<div x-data="{ q: @js(request('q') ?? ''), showFilters: {{ request()->hasAny(['q','status']) ? 'true' : 'false' }} }" class="space-y-6">
 
-<div class="bg-white rounded shadow overflow-hidden">
-  <table class="w-full text-sm">
-    <thead class="bg-gray-100">
-      <tr>
-        <th class="p-2">#</th>
-        <th class="p-2 text-left">User</th>
-        <th class="p-2 text-left">Course</th>
-        <th class="p-2 text-left">Status</th>
-        <th class="p-2 text-left">Activated</th>
-        <th class="p-2 text-center">Action</th>
-      </tr>
-    </thead>
-    <tbody>
-      @forelse($items as $e)
-        <tr class="border-t">
-          <td class="p-2">{{ $e->id }}</td>
-          <td class="p-2">{{ $e->user?->name }} <span class="text-xs text-gray-500">{{ $e->user?->email }}</span></td>
-          <td class="p-2">{{ $e->course?->title }}</td>
-          <td class="p-2">{{ ucfirst($e->status) }}</td>
-          <td class="p-2">{{ $e->activated_at }}</td>
-          <td class="p-2 text-center">
-            <a href="{{ route('admin.enrollments.show',$e) }}" class="text-blue-600 underline">Detail</a>
-          </td>
-        </tr>
-      @empty
-        <tr><td class="p-4 text-center text-gray-500" colspan="6">No enrollments.</td></tr>
-      @endforelse
-    </tbody>
-  </table>
+  {{-- HEADER / ACTIONS --}}
+  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+    <div>
+      <h1 class="text-2xl font-extrabold tracking-wide flex items-center gap-2">
+        {{-- list icon --}}
+        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M3 7h18M3 12h18M3 17h18"/>
+        </svg>
+        Enrollments
+      </h1>
+      <p class="text-sm opacity-70">Kelola pendaftaran user ke course: status, masa aktif, dan detail.</p>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <a href="{{ route('admin.courses.index') }}"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white shadow hover:bg-blue-700 transition">
+        {{-- plus icon --}}
+        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5a.75.75 0 0 1 .75.75V11h5.75a.75.75 0 0 1 0 1.5H12.75v5.75a.75.75 0 0 1-1.5 0V12.5H5.5a.75.75 0 0 1 0-1.5h5.75V5.25A.75.75 0 0 1 12 4.5Z"/></svg>
+        Create Course
+      </a>
+      <button type="button" @click="showFilters=!showFilters"
+              class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 transition">
+        {{-- filter icon --}}
+        <svg class="w-5 h-5 opacity-70" viewBox="0 0 24 24" fill="currentColor"><path d="M3.75 6A.75.75 0 0 1 4.5 5.25h15a.75.75 0 0 1 .6 1.2l-5.4 7.2v4.35a.75.75 0 0 1-1.065.683l-3-1.35A.75.75 0 0 1 10.5 16.5v-2.85l-5.4-7.2A.75.75 0 0 1 3.75 6Z"/></svg>
+        Filters
+      </button>
+    </div>
+  </div>
+
+  {{-- FILTER FORM --}}
+  <form method="GET"
+        x-show="showFilters"
+        x-transition
+        class="rounded-2xl border bg-white p-4 grid md:grid-cols-3 gap-4">
+    {{-- Search --}}
+    <div class="md:col-span-2">
+      <label class="block text-sm font-medium mb-1">Search</label>
+      <div class="relative">
+        <input name="q" x-model="q" value="{{ request('q') }}"
+               placeholder="Cari user/course…"
+               class="w-full border rounded-xl pl-10 pr-3 py-2">
+        <svg class="w-5 h-5 absolute left-3 top-2.5 opacity-60" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M10 3.75a6.25 6.25 0 1 1 3.94 11.09l3.1 3.1a.75.75 0 1 1-1.06 1.06l-3.1-3.1A6.25 6.25 0 0 1 10 3.75Zm0 1.5a4.75 4.75 0 1 0 0 9.5 4.75 4.75 0 0 0 0-9.5Z"/>
+        </svg>
+      </div>
+    </div>
+
+    {{-- Status --}}
+    <div>
+      <label class="block text-sm font-medium mb-1">Status</label>
+      <div class="relative">
+        @php $st = request('status'); @endphp
+        <select name="status" class="w-full border rounded-xl pl-10 pr-8 py-2">
+          <option value="" @selected(!$st)>All</option>
+          <option value="pending"  @selected($st==='pending')>Pending</option>
+          <option value="active"   @selected($st==='active')>Active</option>
+          <option value="inactive" @selected($st==='inactive')>Inactive</option>
+        </select>
+        <svg class="w-5 h-5 absolute left-3 top-2.5 opacity-60" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M6 7.5h12a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1 0-1.5Zm0 4.5h12a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1 0-1.5Zm0 4.5h8a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1 0-1.5Z"/>
+        </svg>
+        <svg class="w-4 h-4 absolute right-2.5 top-3 opacity-60" viewBox="0 0 20 20" fill="currentColor">
+          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd"/>
+        </svg>
+      </div>
+    </div>
+
+    {{-- Actions --}}
+    <div class="md:col-span-3 flex items-center gap-2">
+      <button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition">
+        Apply
+      </button>
+      @if(request()->hasAny(['q','status']))
+        <a href="{{ route('admin.enrollments.index') }}"
+           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border hover:bg-gray-50 transition">
+          Reset
+        </a>
+      @endif
+    </div>
+  </form>
+
+  {{-- FLASH (opsional) --}}
+  @if(session('ok'))
+    <div class="p-3 bg-green-50 border border-green-200 text-green-800 rounded-xl text-sm">
+      {{ session('ok') }}
+    </div>
+  @endif
+
+  {{-- TABLE CARD --}}
+  <div class="rounded-2xl border bg-white overflow-hidden">
+    {{-- header strip --}}
+    <div class="px-4 py-3 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
+      <div class="text-sm">
+        <span class="font-semibold">{{ $items->total() }}</span>
+        <span class="opacity-70">enrollments found</span>
+      </div>
+      <div class="text-xs opacity-70">Page {{ $items->currentPage() }} / {{ $items->lastPage() }}</div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="min-w-full text-sm">
+        <thead class="bg-gray-100 text-gray-700 sticky top-0">
+          <tr>
+            <th class="p-3 text-left w-16">ID</th>
+            <th class="p-3 text-left">User</th>
+            <th class="p-3 text-left">Course</th>
+            <th class="p-3 text-left w-28">Status</th>
+            <th class="p-3 text-left w-40">Activated</th>
+            <th class="p-3 text-center w-40">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="[&>tr:hover]:bg-gray-50">
+          @forelse($items as $e)
+            @php
+              $activated = $e->activated_at
+                ? \Illuminate\Support\Carbon::parse($e->activated_at)->timezone(config('app.timezone','UTC'))->format('Y-m-d H:i')
+                : '—';
+              $badge = match($e->status) {
+                'active'   => ['bg-green-100','text-green-800','Active'],
+                'pending'  => ['bg-yellow-100','text-yellow-800','Pending'],
+                default    => ['bg-gray-100','text-gray-800', ucfirst($e->status ?? 'inactive')],
+              };
+            @endphp
+            <tr class="border-t">
+              <td class="p-3 font-semibold text-gray-700">#{{ $e->id }}</td>
+              <td class="p-3">
+                <div class="font-medium">{{ $e->user?->name ?? '—' }}</div>
+                <div class="text-xs text-gray-500">{{ $e->user?->email ?? '' }}</div>
+              </td>
+              <td class="p-3">{{ $e->course?->title ?? '—' }}</td>
+              <td class="p-3">
+                <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium {{ $badge[0] }} {{ $badge[1] }}">
+                  {{ $badge[2] }}
+                </span>
+              </td>
+              <td class="p-3">{{ $activated }}</td>
+              <td class="p-3 text-center">
+                <div class="flex items-center justify-center gap-2">
+                  @if(Route::has('admin.enrollments.show'))
+                    <a href="{{ route('admin.enrollments.show',$e) }}"
+                       class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition" title="Detail">
+                      {{-- eye icon --}}
+                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/></svg>
+                      View
+                    </a>
+                  @endif
+                  @if(Route::has('admin.enrollments.edit'))
+                    <a href="{{ route('admin.enrollments.edit',$e) }}"
+                       class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition" title="Edit">
+                      Edit
+                    </a>
+                  @endif
+                </div>
+              </td>
+            </tr>
+          @empty
+            <tr>
+              <td colspan="6" class="p-10 text-center text-sm opacity-70">
+                Belum ada enrollment.
+              </td>
+            </tr>
+          @endforelse
+        </tbody>
+      </table>
+    </div>
+
+    {{-- pagination strip --}}
+    <div class="px-4 py-3 border-t bg-gray-50 flex flex-col md:flex-row items-center justify-between gap-3 text-sm">
+      <div class="opacity-70">
+        Showing
+        <span class="font-semibold">{{ $items->firstItem() ?? 0 }}</span>
+        to
+        <span class="font-semibold">{{ $items->lastItem() ?? 0 }}</span>
+        of
+        <span class="font-semibold">{{ $items->total() }}</span>
+        results
+      </div>
+      <div>
+        {{ $items->withQueryString()->links() }}
+      </div>
+    </div>
+  </div>
 </div>
-
-<div class="mt-4">{{ $items->withQueryString()->links() }}</div>
 @endsection
