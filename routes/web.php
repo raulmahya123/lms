@@ -42,6 +42,7 @@ use App\Http\Controllers\Admin\{
     QuizController           as AdminQuizController,
     ResourceController       as AdminResourceController,
     DashboardController      as AdminDashboardController,
+    PsyTestController        as AdminPsyTestController,
 };
 
 // =====================
@@ -155,7 +156,7 @@ Route::middleware(['auth', 'can:admin'])
         Route::resource('questions', AdminQuestionController::class);
         Route::resource('options',   AdminOptionController::class);
 
-       // === Plans & Plan-Course ===
+        // === Plans & Plan-Course ===
         Route::resource('plans', AdminPlanController::class);
         Route::resource('plan-courses', AdminPlanCourseController::class)->only(['store', 'destroy']);
 
@@ -181,6 +182,20 @@ Route::middleware(['auth', 'can:admin'])
         Route::resource('certificate-issues', \App\Http\Controllers\Admin\CertificateIssueController::class)->only(['index', 'show', 'destroy']);
 
         // === Psych Tests ===
-        Route::resource('psy-tests', \App\Http\Controllers\Admin\PsyTestController::class);
-        Route::resource('psy-tests.questions', \App\Http\Controllers\Admin\PsyQuestionController::class)->shallow(); // <— opsional tapi enak
+Route::resource('psy-tests', \App\Http\Controllers\Admin\PsyTestController::class);
+
+// Nested untuk operasi selain index/create/store (tetap shallow)
+Route::resource('psy-tests.questions', \App\Http\Controllers\Admin\PsyQuestionController::class)
+    ->shallow()
+    ->except(['index','create','store']);
+
+// GLOBAL: index + create + store (tanpa parameter psy_test)
+Route::get('psy-questions', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalIndex'])
+    ->name('psy-questions.index');
+
+Route::get('psy-questions/create', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalCreate'])
+    ->name('psy-questions.create');
+
+Route::post('psy-questions', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalStore'])
+    ->name('psy-questions.store');
     });

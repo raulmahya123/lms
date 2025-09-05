@@ -51,26 +51,25 @@
     <nav class="px-3 space-y-1" aria-label="Primary">
       @php
         $nav = [
-          ['Dashboard','admin.dashboard_admin.index'],
-          ['Courses','admin.courses.index'],
-          ['Modules','admin.modules.index'],
-          ['Lessons','admin.lessons.index'],
-          ['Quizzes','admin.quizzes.index'],
-          ['Questions','admin.questions.index'],
-          ['Options','admin.options.index'],
-          ['Memberships','admin.memberships.index'],
-          ['Enrollments','admin.enrollments.index'],
-          ['Payments','admin.payments.index'],
-          ['Plans','admin.plans.index'],
-          ['Coupons','admin.coupons.index'],
-          ['Resources','admin.resources.index'],
-          ['Certificate Templates','admin.certificate-templates.index'],
-          ['Certificate Issues','admin.certificate-issues.index'],
-          ['Psych Tests','admin.psy-tests.index'],
-          ['Qa_Threads','admin.qa-threads.index'],
-          ['Lihat Situs','home' /* link ke home, bukan admin.home */],
-        ];
-
+          ['Dashboard','admin.dashboard'],
+    ['Courses','admin.courses.index'],
+    ['Modules','admin.modules.index'],
+    ['Lessons','admin.lessons.index'],
+    ['Quizzes','admin.quizzes.index'],
+    ['Questions','admin.questions.index'],
+    ['Options','admin.options.index'],
+    ['Memberships','admin.memberships.index'],
+    ['Enrollments','admin.enrollments.index'],
+    ['Payments','admin.payments.index'],
+    ['Plans','admin.plans.index'],
+    ['Coupons','admin.coupons.index'],
+    ['Resources','admin.resources.index'],
+    ['Certificate Templates','admin.certificate-templates.index'],
+    ['Certificate Issues','admin.certificate-issues.index'],
+    ['Psych Tests','admin.psy-tests.index'],
+    ['Psych Questions','admin.psy-questions.index'],
+    ['Qa_Threads','admin.qa-threads.index'],
+    ['Lihat Situs','home'],        ];
         $icon = function($label) {
           $base = 'class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
           return match($label) {
@@ -91,6 +90,7 @@
             'Certificate Templates' => "<svg $base><path d='M4 4h16v12H5.17L4 17.17V4z'/><path d='M8 8h8v2H8V8Zm0 3h5v2H8v-2Z'/></svg>",
             'Certificate Issues'    => "<svg $base><path d='M4 4h16v12H5.17L4 17.17V4Z'/><path d='M8 8h8v2H8V8Zm0 3h5v2H8v-2Z'/></svg>",
             'Psych Tests'           => "<svg $base><path d='M12 20'/><path d='M16.24 18.24A9 9 0 1 0 5.76 5.76a9 9 0 0 0 10.48 12.48z'/><line x1='12' y1='2' x2='12' y2='22'/><line x1='2' y1='12' x2='22' y2='12'/></svg>",
+            'Pysch Questions'        => "<svg $base><path d='M6 2h12v20l-6-3-6 3V2Z'/></svg>",
             'Qa_Threads'  => "<svg $base><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/><line x1='11' y1='10' x2='11' y2='10'/><line x1='15' y1='10' x2='15' y2='10'/><line x1='19' y1='10' x2='19' y2='10'/></svg>",
             default       => "<svg $base><circle cx='12' cy='12' r='9'/></svg>",
           };

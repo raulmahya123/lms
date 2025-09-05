@@ -2,8 +2,11 @@
 @section('title','Psych Tests — BERKEMAH')
 
 @section('content')
-@php($tracks = ['backend','frontend','fullstack','qa','devops','pm','custom'])
-@php($types  = ['likert','mcq','iq','disc','big5','custom'])
+@php
+  $track = request('track');
+  $type  = request('type');
+@endphp
+
 <div x-data="{ q:@js(request('q')??''), showFilters: {{ request()->hasAny(['q','track','type'])?'true':'false' }} }" class="space-y-6">
 
   <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
@@ -30,7 +33,6 @@
     </div>
     <div>
       <label class="block text-sm font-medium mb-1">Track</label>
-      @php $track = request('track'); @endphp
       <select name="track" class="w-full border rounded-xl py-2">
         <option value="" @selected(!$track)>All</option>
         @foreach($tracks as $t)
@@ -40,7 +42,6 @@
     </div>
     <div>
       <label class="block text-sm font-medium mb-1">Type</label>
-      @php $type = request('type'); @endphp
       <select name="type" class="w-full border rounded-xl py-2">
         <option value="" @selected(!$type)>All</option>
         @foreach($types as $t)
@@ -111,7 +112,11 @@
     </div>
 
     <div class="px-4 py-3 border-t bg-gray-50 flex flex-col md:flex-row items-center justify-between gap-3">
-      <div class="text-sm opacity-70">Showing <span class="font-semibold">{{ $tests->firstItem() ?? 0 }}</span> to <span class="font-semibold">{{ $tests->lastItem() ?? 0 }}</span> of <span class="font-semibold">{{ $tests->total() }}</span> results</div>
+      <div class="text-sm opacity-70">
+        Showing <span class="font-semibold">{{ $tests->firstItem() ?? 0 }}</span>
+        to <span class="font-semibold">{{ $tests->lastItem() ?? 0 }}</span>
+        of <span class="font-semibold">{{ $tests->total() }}</span> results
+      </div>
       <div>{{ $tests->withQueryString()->links() }}</div>
     </div>
   </div>
