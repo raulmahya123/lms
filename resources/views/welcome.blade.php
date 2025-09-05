@@ -7,19 +7,48 @@
 <style>
   [x-cloak]{display:none}
   .text-balance { text-wrap: balance; }
-  /* decorative blobs */
-  .blob { filter: blur(60px); opacity:.35; }
+
+  /* === Blobs dekoratif, pastikan di belakang konten === */
+  .blob       { filter: blur(80px); opacity:.35; }
+  .blob-layer { position:absolute; inset:0; pointer-events:none; z-index:-1; }
+
+  /* === Ticker logo bahasa (marquee tanpa <marquee>) === */
+  .logo-ticker-mask{
+    mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+    -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
+  }
+  .logo-viewport{ overflow:hidden; }
+  .logo-track{
+    display:flex; gap:1rem; align-items:center; white-space:nowrap;
+    width: max-content;
+    animation:logo-scroll 28s linear infinite;
+  }
+  .logo-track:hover{ animation-play-state: paused; }
+  @keyframes logo-scroll{
+    from{ transform:translateX(0); }
+    to  { transform:translateX(-50%); } /* karena kita duplikasi konten */
+  }
+
+  .logo-chip{
+    height:40px; width:40px; border-radius:9999px; background:#fff;
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid rgba(15,23,42,.08); box-shadow:0 2px 10px rgba(2,6,23,.06);
+    padding:.5rem;
+  }
+  .logo-chip img{ height:100%; width:auto; object-fit:contain; }
 </style>
 @endpush
 
 @section('content')
   {{-- ===================== HERO ===================== --}}
   <section class="relative overflow-hidden bg-gradient-to-b from-sky-50 via-white to-white">
-    {{-- dekorasi --}}
-    <div class="pointer-events-none absolute -top-24 -right-24 w-[28rem] h-[28rem] rounded-full bg-sky-300 blob"></div>
-    <div class="pointer-events-none absolute -bottom-24 -left-24 w-[28rem] h-[28rem] rounded-full bg-blue-300 blob"></div>
+    {{-- layer blob di belakang --}}
+    <div class="blob-layer">
+      <div class="absolute -top-24 -right-24 w-[28rem] h-[28rem] rounded-full bg-sky-300 blob"></div>
+      <div class="absolute -bottom-24 -left-24 w-[28rem] h-[28rem] rounded-full bg-blue-300 blob"></div>
+    </div>
 
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20 grid lg:grid-cols-2 gap-10">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20 grid lg:grid-cols-2 gap-10 relative z-10">
       {{-- kiri: teks --}}
       <div class="flex flex-col justify-center">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-medium w-max">
