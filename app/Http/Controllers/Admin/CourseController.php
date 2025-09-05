@@ -15,7 +15,7 @@ class CourseController extends Controller
     {
         $courses = Course::query()
             ->withCount('modules')
-            ->when($r->filled('q'), fn($q) => $q->where('title','like','%'.$r->q.'%'))
+            ->when($r->filled('q'), fn($q) => $q->where('title', 'like', '%'.$r->q.'%'))
             ->when($r->filled('published'), function ($q) use ($r) {
                 if ($r->published === '1') $q->where('is_published', 1);
                 if ($r->published === '0') $q->where('is_published', 0);
@@ -35,19 +35,22 @@ class CourseController extends Controller
     public function store(Request $r)
     {
         $data = $r->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'cover'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048', // ≤2MB
-            'cover_url'   => 'nullable|url|ends_with:jpg,jpeg,png,webp',
-            'is_published'=> 'nullable', // checkbox
+            'title'        => 'required|string|max:255',
+            'description'  => 'nullable|string',
+            'cover'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048', // ≤2MB
+           'cover_url'   => [
+        'nullable',
+        'regex:/^(https?:\/\/.+|\/[A-Za-z0-9_\-\/\.]+)$/'
+    ],
+            'is_published' => 'nullable',     // dinormalkan di bawah
         ]);
 
         // Tentukan sumber cover: file upload > url manual > null
         $finalCoverUrl = null;
 
         if ($r->hasFile('cover')) {
-            $path = $r->file('cover')->store('covers', 'public'); // storage/app/public/covers
-            $finalCoverUrl = Storage::disk('public')->url($path); // /storage/covers/xxxx.jpg
+            $path = $r->file('cover')->store('covers', 'public');
+            $finalCoverUrl = Storage::disk('public')->url($path); // biasanya "/storage/covers/xxx.webp"
         } elseif (!empty($data['cover_url'])) {
             $finalCoverUrl = $data['cover_url'];
         }
@@ -56,12 +59,12 @@ class CourseController extends Controller
             'title'        => $data['title'],
             'description'  => $data['description'] ?? null,
             'cover_url'    => $finalCoverUrl,
-            'is_published' => $r->has('is_published') ? 1 : 0,
+            'is_published' => $r->boolean('is_published'),
             'created_by'   => Auth::id(),
         ]);
 
         return redirect()
-            ->route('admin.courses.index', $course)
+            ->route('admin.courses.index')
             ->with('ok', 'Course dibuat');
     }
 
@@ -74,45 +77,46 @@ class CourseController extends Controller
     public function update(Request $r, Course $course)
     {
         $data = $r->validate([
-            'title'       => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'cover'       => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'cover_url'   => 'nullable|url|ends_with:jpg,jpeg,png,webp',
-            'is_published'=> 'nullable',
+            'title'        => 'required|string|max:255',
+            'description'  => 'nullable|string',
+            'cover'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            'cover_url'    => 'nullable|url', // ends_with DIHAPUS
+            'is_published' => 'nullable',
         ]);
 
         $finalCoverUrl = $course->cover_url;
 
-        // Jika user upload file baru → simpan & (opsional) hapus file lama jika lokal
+        // PRIORITAS 1: upload file -> timpa cover lama
         if ($r->hasFile('cover')) {
-            // Hapus file lama kalau berasal dari storage lokal
             $this->deleteOldLocalCoverIfAny($course->cover_url);
 
             $path = $r->file('cover')->store('covers', 'public');
             $finalCoverUrl = Storage::disk('public')->url($path);
-        } elseif (array_key_exists('cover_url', $data)) {
-            // User mengubah URL manual (atau mengosongkan)
-            // Jika mengosongkan & sebelumnya file lokal, hapus file lokal
+        }
+        // PRIORITAS 2: tidak upload file, tapi form mengirim cover_url (bisa kosong atau diisi)
+        elseif (array_key_exists('cover_url', $data)) {
             if (empty($data['cover_url'])) {
+                // user mengosongkan -> hapus file lokal lama bila ada
                 $this->deleteOldLocalCoverIfAny($course->cover_url);
                 $finalCoverUrl = null;
             } else {
-                // Ganti ke URL eksternal → hapus file lokal lama jika ada
+                // user ganti ke URL baru -> hapus file lokal lama bila ada
                 $this->deleteOldLocalCoverIfAny($course->cover_url);
                 $finalCoverUrl = $data['cover_url'];
             }
         }
+        // PRIORITAS 3: tidak upload file & tidak kirim cover_url -> biarkan yang lama
 
         $course->update([
             'title'        => $data['title'],
             'description'  => $data['description'] ?? null,
             'cover_url'    => $finalCoverUrl,
-            'is_published' => $r->has('is_published') ? 1 : 0,
+            'is_published' => $r->boolean('is_published'),
         ]);
 
-         // -> balik ke index
-    return redirect()->route('admin.courses.index')
-        ->with('ok', 'Course berhasil diupdate');
+        return redirect()
+            ->route('admin.courses.index')
+            ->with('ok', 'Course berhasil diupdate');
     }
 
     public function destroy(Course $course)
@@ -121,9 +125,10 @@ class CourseController extends Controller
         $this->deleteOldLocalCoverIfAny($course->cover_url);
 
         $course->delete();
+
         return redirect()
             ->route('admin.courses.index')
-            ->with('ok','Course dihapus');
+            ->with('ok', 'Course dihapus');
     }
 
     // Opsional: API daftar modules untuk course tertentu
@@ -138,18 +143,22 @@ class CourseController extends Controller
     }
 
     /**
-     * Hapus file lama jika cover_url mengarah ke storage lokal (/storage/...).
-     * Supaya aman, kita hanya menghapus jika path-nya berada di disk 'public'.
+     * Hapus file lama jika cover_url menunjuk ke berkas lokal di disk 'public' (/storage/...).
+     * Mendukung path absolut atau full URL (https://domainmu/storage/...).
      */
     protected function deleteOldLocalCoverIfAny(?string $coverUrl): void
     {
         if (!$coverUrl) return;
 
-        // Biasanya Storage::url() memberi "/storage/..."
-        // Kita terjemahkan kembali menjadi path di disk 'public'.
-        if (Str::startsWith($coverUrl, ['/storage/', 'storage/'])) {
-            $relative = ltrim(str_replace('/storage/', '', $coverUrl), '/'); // "covers/xxx.jpg"
-            if (Storage::disk('public')->exists($relative)) {
+        // Ambil path dari URL (jika full URL), atau pakai apa adanya
+        $pathPart = parse_url($coverUrl, PHP_URL_PATH) ?: $coverUrl;
+
+        // Hanya kalau memang mengarah ke /storage/...
+        if (Str::startsWith($pathPart, ['/storage/', 'storage/'])) {
+            // Normalisasi ke path relatif di disk 'public'
+            $relative = ltrim(Str::after($pathPart, '/storage/'), '/'); // ex: "covers/xxx.webp"
+
+            if ($relative && Storage::disk('public')->exists($relative)) {
                 Storage::disk('public')->delete($relative);
             }
         }

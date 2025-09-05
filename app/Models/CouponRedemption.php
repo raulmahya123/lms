@@ -16,7 +16,11 @@ class CouponRedemption extends Model
         'amount_discounted',
     ];
 
-    protected $dates = ['used_at'];
+    // ✅ Gunakan casts, bukan $dates
+    protected $casts = [
+        'used_at' => 'datetime',
+        'amount_discounted' => 'decimal:2', // opsional, biar format angka rapi
+    ];
 
     public function coupon(): BelongsTo
     {

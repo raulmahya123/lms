@@ -15,6 +15,11 @@ class Coupon extends Model
         'usage_limit',
     ];
 
+    protected $casts = [
+        'valid_from'  => 'datetime',
+        'valid_until' => 'datetime',
+    ];
+
     protected $dates = ['valid_from', 'valid_until'];
 
     public function redemptions(): HasMany

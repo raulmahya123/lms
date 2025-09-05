@@ -121,7 +121,7 @@ class DashboardController extends Controller
             'data'   => $planCounts->values()->map(fn($x)=>(int)$x)->values(),
         ];
 
-        return view('admin.dashboard.index', compact(
+        return view('admin.dashboard_admin.index', compact(
             'stats','recentPayments','recentEnrolls',
             'revenueMonthly','paymentsStatus','paymentsProviders','enrollmentsDaily','membershipsByPlan'
         ));
@@ -175,7 +175,7 @@ class DashboardController extends Controller
     public function charts()
     {
         // Halaman builder (UI pilih grafik)
-        return view('admin.dashboard.index');
+        return view('admin.dashboard_admin.index');
     }
 
     // ===== Helpers =====

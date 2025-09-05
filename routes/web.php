@@ -1,112 +1,173 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
-use App\Http\Controllers\ProfileController;
+
+// =====================
+// Public
+// =====================
+use App\Http\Controllers\HomeController;
+
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Cache\RateLimiting\Limit;
+
+// Definisikan limiter untuk throttle:quiz
+RateLimiter::for('quiz', function ($request) {
+    return [
+        Limit::perMinute(5)->by(optional($request->user())->id ?: $request->ip()),
+    ];
+});
+
+Route::get('/', [HomeController::class, 'index'])->name('home');
+
+// =====================
+// Auth scaffolding
+// =====================
+require __DIR__ . '/auth.php';
+
+// =====================
+// Admin Controllers (alias agar tak tabrakan)
+// =====================
 use App\Http\Controllers\Admin\{
-    CouponController,
-    CourseController,
-    EnrollmentController,
-    LessonController,
-    MembershipController,
-    ModuleController,
-    OptionController,
-    PaymentController,
-    PlanController,
-    PlanCourseController,
-    QuestionController,
-    QuizController,
-    ResourceController,
-    DashboardController,
+    CouponController         as AdminCouponController,
+    CourseController         as AdminCourseController,
+    EnrollmentController     as AdminEnrollmentController,
+    LessonController         as AdminLessonController,
+    MembershipController     as AdminMembershipController,
+    ModuleController         as AdminModuleController,
+    OptionController         as AdminOptionController,
+    PaymentController        as AdminPaymentController,
+    PlanController           as AdminPlanController,
+    PlanCourseController     as AdminPlanCourseController,
+    QuestionController       as AdminQuestionController,
+    QuizController           as AdminQuizController,
+    ResourceController       as AdminResourceController,
+    DashboardController      as AdminDashboardController,
 };
 
-/*
-|--------------------------------------------------------------------------
-| Public
-|--------------------------------------------------------------------------
-*/
+// =====================
+// User Controllers
+// =====================
+use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\User\{
+    DashboardController      as UserDashboardController,
+    CourseBrowseController,
+    EnrollmentController     as UserEnrollmentController,
+    LessonController         as UserLessonController,
+    QuizController           as UserQuizController,
+    CouponController         as UserCouponController,
+    CheckoutController,
+    MembershipController     as UserMembershipController,
+    PaymentController        as UserPaymentController,
+    ResourceController       as UserResourceController,
+    PlanController           as UserPlanController,
+    CertificateController,
+};
 
-Route::get('/', fn() => view('welcome'))->name('home');
+// =====================
+// User Area (login diperlukan)
+// =====================
+Route::middleware(['auth', 'verified'])->group(function () {
 
-/*
-|--------------------------------------------------------------------------
-| Dashboard (user login)
-| - Kalau kamu tetap pakai halaman /dashboard untuk user, biarkan ini.
-| - Redirect setelah login diatur di AuthenticatedSessionController (admin → admin.dashboard, user → home)
-|--------------------------------------------------------------------------
-*/
-Route::get('/dashboard', fn() => view('dashboard'))
-    ->middleware(['auth', 'verified'])
-    ->name('dashboard');
+    // Dashboard (USER)
+    Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
+    Route::get('/app/dashboard', [UserDashboardController::class, 'index'])->name('app.dashboard'); // alias
 
-/*
-|--------------------------------------------------------------------------
-| Profile (user login)
-|--------------------------------------------------------------------------
-*/
-Route::middleware('auth')->group(function () {
+    // Katalog & detail kursus
+    Route::get('/courses', [CourseBrowseController::class, 'index'])->name('app.courses.index');
+    Route::get('/courses/{course}', [CourseBrowseController::class, 'show'])->name('app.courses.show');
+
+    // Kursus saya & enroll
+    Route::get('/my/courses', [UserEnrollmentController::class, 'index'])->name('app.my.courses');
+    Route::post('/courses/{course}/enroll', [UserEnrollmentController::class, 'store'])->name('app.courses.enroll');
+
+    // Pelajaran & progress
+    Route::get('/lessons/{lesson}', [UserLessonController::class, 'show'])
+        ->middleware('app.ensure.lesson.accessible')->name('app.lessons.show');
+    Route::post('/lessons/{lesson}/progress', [UserLessonController::class, 'updateProgress'])
+        ->middleware('app.ensure.lesson.accessible')->name('app.lessons.progress');
+
+    // Resource per lesson
+    Route::get('/resources/{resource}', [UserResourceController::class, 'show'])->name('app.resources.show');
+
+    // Quiz (rate-limit submit)
+    Route::post('/lessons/{lesson}/quiz/start', [UserQuizController::class, 'start'])
+        ->middleware('app.ensure.lesson.accessible')->name('app.quiz.start');
+    Route::post('/quizzes/{quiz}/submit', [UserQuizController::class, 'submit'])
+        ->middleware('throttle:quiz')->name('app.quiz.submit');
+    Route::get('/attempts/{attempt}', [UserQuizController::class, 'result'])
+        ->middleware('ensure.attempt.owner')->name('app.quiz.result');
+
+    // Kupon
+    Route::post('/coupons/validate', [UserCouponController::class, 'validateCode'])->name('app.coupons.validate');
+
+    // Checkout plan & course + confirm
+    Route::post('/checkout/plan/{plan}', [CheckoutController::class, 'checkoutPlan'])->name('app.checkout.plan');
+    Route::post('/checkout/course/{course}', [CheckoutController::class, 'checkoutCourse'])->name('app.checkout.course');
+    Route::post('/checkout/{payment}/confirm', [CheckoutController::class, 'confirm'])->name('app.checkout.confirm');
+
+    // Sertifikat (PDF)
+    Route::get('/courses/{course}/certificate', [CertificateController::class, 'course'])->name('app.certificate.course');
+
+    // Membership & Plan (USER)
+    Route::get('/memberships', [UserMembershipController::class, 'index'])->name('app.memberships.index');
+    Route::get('/plans', [UserPlanController::class, 'index'])->name('app.plans.index');
+
+    // Payments (USER)
+    Route::get('/payments', [UserPaymentController::class, 'index'])->name('app.payments.index');
+    Route::get('/payments/{payment}', [UserPaymentController::class, 'show'])->name('app.payments.show');
+
+    // Profile
     Route::get('/profile',  [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-/*
-|--------------------------------------------------------------------------
-| Admin Area (hanya role admin)
-|--------------------------------------------------------------------------
-*/
+// =====================
+// Admin Area (role admin)
+// =====================
 Route::middleware(['auth', 'can:admin'])
     ->prefix('admin')
     ->as('admin.')
     ->group(function () {
-        // Admin Dashboard → gunakan layout admin
-        Route::get('/dashboard', fn() => view('layouts.admin'))->name('dashboard');
+
+        // Admin Dashboard (/admin/dashboard)
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        // Resource khusus
+        Route::resource('dashboard_admin', AdminDashboardController::class);
 
         // === Courses ===
-        Route::resource('courses', CourseController::class);
-        Route::get('courses/{course}/modules', [CourseController::class, 'modules'])
-            ->name('courses.modules');
+        Route::resource('courses', AdminCourseController::class);
+        Route::get('courses/{course}/modules', [AdminCourseController::class, 'modules'])->name('courses.modules');
 
         // === Modules ===
-        Route::resource('modules', ModuleController::class);
-        Route::get('modules/{module}/lessons', [ModuleController::class, 'lessons'])
-            ->name('modules.lessons');
+        Route::resource('modules', AdminModuleController::class);
+        Route::get('modules/{module}/lessons', [AdminModuleController::class, 'lessons'])->name('modules.lessons');
 
         // === Lessons ===
-        Route::resource('lessons', LessonController::class);
+        Route::resource('lessons', AdminLessonController::class);
 
-        // === Lesson Resources (file/link pendukung) ===
-        Route::resource('resources', ResourceController::class)
-            ->only(['index', 'create', 'store', 'update', 'destroy', 'show', 'edit']);
+        // === Resources ===
+        Route::resource('resources', AdminResourceController::class)->only(['index','create','store','update','destroy','show','edit']);
+
         // === Quizzes / Questions / Options ===
-        Route::resource('quizzes', QuizController::class);
-        Route::resource('questions', QuestionController::class); // full (index/create/store/show/edit/update/destroy)
-        Route::resource('options',   OptionController::class);   // full
-        Route::resource('dashboard',   DashboardController::class);   // full
+        Route::resource('quizzes',   AdminQuizController::class);
+        Route::resource('questions', AdminQuestionController::class);
+        Route::resource('options',   AdminOptionController::class);
 
-        // === Plans (paket berlangganan) ===
-        Route::resource('plans', PlanController::class);
+        // === Plans & Plan-Course ===
+        Route::resource('plans', AdminPlanController::class);
+        Route::resource('plan-courses', AdminPlanCourseController::class)->only(['store','destroy']);
 
-        // === PlanCourse (relasi plan ↔ course) ===
-        Route::resource('plan-courses', PlanCourseController::class)
-            ->only(['store', 'destroy']);
-
-        // === Memberships (keanggotaan user pada plan) ===
-        Route::resource('memberships', MembershipController::class); // full
+        // === Memberships ===
+        Route::resource('memberships', AdminMembershipController::class);
 
         // === Payments ===
-        Route::resource('payments', PaymentController::class)
-            ->only(['index', 'show', 'update']);
+        Route::resource('payments', AdminPaymentController::class)->only(['index','show','update']);
 
-        // === Enrollments (pendaftaran user ke course) ===
-        Route::resource('enrollments', EnrollmentController::class); // full
+        // === Enrollments ===
+        Route::resource('enrollments', AdminEnrollmentController::class);
 
         // === Coupons ===
-        Route::resource('coupons', CouponController::class);
+        Route::resource('coupons', AdminCouponController::class);
     });
-
-/*
-|--------------------------------------------------------------------------
-| Auth scaffolding (Breeze/Fortify/etc)
-|--------------------------------------------------------------------------
-*/
-require __DIR__ . '/auth.php';

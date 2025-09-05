@@ -7,6 +7,9 @@ use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LessonProgress extends Model
 {
+    // ⬇️ samakan dengan nama tabel dari migration
+    protected $table = 'lesson_progresses';
+
     protected $fillable = [
         'lesson_id',
         'user_id',
@@ -17,7 +20,7 @@ class LessonProgress extends Model
     protected $dates = ['completed_at'];
 
     protected $casts = [
-        'progress' => 'array', // ✅ sekarang progress bisa array
+        'progress' => 'array',
     ];
 
     public function lesson(): BelongsTo
