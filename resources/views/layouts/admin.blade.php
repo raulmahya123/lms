@@ -64,6 +64,10 @@
           ['Plans','admin.plans.index'],
           ['Coupons','admin.coupons.index'],
           ['Resources','admin.resources.index'],
+          ['Certificate Templates','admin.certificate-templates.index'],
+          ['Certificate Issues','admin.certificate-issues.index'],
+          ['Psych Tests','admin.psy-tests.index'],
+          ['Qa_Threads','admin.qa-threads.index'],
           ['Lihat Situs','home' /* link ke home, bukan admin.home */],
         ];
 
@@ -84,6 +88,10 @@
             'Coupons'     => "<svg $base><path d='M21 12a3 3 0 1 1 0-6H3v12h18a3 3 0 1 1 0-6z'/><path d='M7 6v12'/></svg>",
             'Resources'   => "<svg $base><path d='M4 4h16v16H4z'/><path d='M8 4v16'/><path d='M4 8h16'/></svg>",
             'Lihat Situs' => "<svg $base><circle cx='12' cy='12' r='10'/><path d='M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>",
+            'Certificate Templates' => "<svg $base><path d='M4 4h16v12H5.17L4 17.17V4z'/><path d='M8 8h8v2H8V8Zm0 3h5v2H8v-2Z'/></svg>",
+            'Certificate Issues'    => "<svg $base><path d='M4 4h16v12H5.17L4 17.17V4Z'/><path d='M8 8h8v2H8V8Zm0 3h5v2H8v-2Z'/></svg>",
+            'Psych Tests'           => "<svg $base><path d='M12 20'/><path d='M16.24 18.24A9 9 0 1 0 5.76 5.76a9 9 0 0 0 10.48 12.48z'/><line x1='12' y1='2' x2='12' y2='22'/><line x1='2' y1='12' x2='22' y2='12'/></svg>",
+            'Qa_Threads'  => "<svg $base><path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'/><line x1='11' y1='10' x2='11' y2='10'/><line x1='15' y1='10' x2='15' y2='10'/><line x1='19' y1='10' x2='19' y2='10'/></svg>",
             default       => "<svg $base><circle cx='12' cy='12' r='9'/></svg>",
           };
         };

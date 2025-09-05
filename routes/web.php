@@ -148,26 +148,39 @@ Route::middleware(['auth', 'can:admin'])
         Route::resource('lessons', AdminLessonController::class);
 
         // === Resources ===
-        Route::resource('resources', AdminResourceController::class)->only(['index','create','store','update','destroy','show','edit']);
+        Route::resource('resources', AdminResourceController::class)->only(['index', 'create', 'store', 'update', 'destroy', 'show', 'edit']);
 
         // === Quizzes / Questions / Options ===
         Route::resource('quizzes',   AdminQuizController::class);
         Route::resource('questions', AdminQuestionController::class);
         Route::resource('options',   AdminOptionController::class);
 
-        // === Plans & Plan-Course ===
+       // === Plans & Plan-Course ===
         Route::resource('plans', AdminPlanController::class);
-        Route::resource('plan-courses', AdminPlanCourseController::class)->only(['store','destroy']);
+        Route::resource('plan-courses', AdminPlanCourseController::class)->only(['store', 'destroy']);
 
         // === Memberships ===
         Route::resource('memberships', AdminMembershipController::class);
 
         // === Payments ===
-        Route::resource('payments', AdminPaymentController::class)->only(['index','show','update']);
+        Route::resource('payments', AdminPaymentController::class)->only(['index', 'show', 'update']);
 
         // === Enrollments ===
         Route::resource('enrollments', AdminEnrollmentController::class);
 
         // === Coupons ===
         Route::resource('coupons', AdminCouponController::class);
+
+        // === Q&A ===
+        Route::resource('qa-threads', \App\Http\Controllers\Admin\QaThreadController::class);
+        Route::post('qa-threads/{thread}/replies', [\App\Http\Controllers\Admin\QaReplyController::class, 'store'])->name('qa-threads.replies.store');
+        Route::patch('qa-replies/{reply}/answer', [\App\Http\Controllers\Admin\QaReplyController::class, 'markAnswer'])->name('qa-replies.answer');
+
+        // === Certificates ===
+        Route::resource('certificate-templates', \App\Http\Controllers\Admin\CertificateTemplateController::class);
+        Route::resource('certificate-issues', \App\Http\Controllers\Admin\CertificateIssueController::class)->only(['index', 'show', 'destroy']);
+
+        // === Psych Tests ===
+        Route::resource('psy-tests', \App\Http\Controllers\Admin\PsyTestController::class);
+        Route::resource('psy-tests.questions', \App\Http\Controllers\Admin\PsyQuestionController::class)->shallow(); // <— opsional tapi enak
     });
