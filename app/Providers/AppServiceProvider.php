@@ -24,29 +24,42 @@ class AppServiceProvider extends ServiceProvider
     /**
      * Bootstrap any application services.
      */
-    public function boot(): void
-    {
-        View::composer('*', function ($view) {
-            // Kalau butuh user login
-            $user = Auth::user();
+   public function boot(): void
+{
+    View::composer('*', function ($view) {
+        $user = Auth::user();
 
-            $badges = [
-                'Dashboard'   => 1, // contoh static
-                'Courses'     => Course::count(),
-                'Modules'     => Module::count(),
-                'Lessons'     => Lesson::count(),
-                'Quizzes'     => Quiz::count(),
-                'Questions'   => Question::count(),
-                'Options'     => Option::count(),
-                'Memberships' => Membership::count(),
-                'Enrollments' => Enrollment::count(),
-                'Payments'    => Payment::where('status','pending')->count(),
-                'Plans'       => Plan::count(),
-                'Coupons'     => Coupon::count(),
-                'Resources'   => Resource::count(),
-            ];
+        $now = now();
 
-            $view->with('badges', $badges);
-        });
-    }
+        $badges = [
+            'Dashboard'             => 1, // contoh static
+            'Courses'               => \App\Models\Course::count(),
+            'Modules'               => \App\Models\Module::count(),
+            'Lessons'               => \App\Models\Lesson::count(),
+            'Quizzes'               => \App\Models\Quiz::count(),
+            'Questions'             => \App\Models\Question::count(),
+            'Options'               => \App\Models\Option::count(),
+            'Memberships'           => \App\Models\Membership::count(),
+            'Enrollments'           => \App\Models\Enrollment::count(),
+            'Payments'              => \App\Models\Payment::where('status','pending')->count(),
+            'Plans'                 => \App\Models\Plan::count(),
+            'Coupons'               => \App\Models\Coupon::count(),
+            'Resources'             => \App\Models\Resource::count(),
+
+            // === tambahan ===
+            'Certificate Templates' => \App\Models\CertificateTemplate::count(),
+            'Certificate Issues'    => \App\Models\CertificateIssue::where(function($q){
+                                            $q->whereNull('pdf_path')->orWhereNull('issued_at');
+                                        })->count(),
+            'Psych Tests'           => \App\Models\PsyTest::where('is_active',1)->count(),
+            'Psych Questions'       => \App\Models\PsyQuestion::count(),
+            'Qa_Threads'            => \App\Models\QaThread::whereDoesntHave('replies', function($q){
+                                            $q->where('is_answer',1);
+                                        })->count(),
+        ];
+
+        $view->with('badges', $badges);
+    });
+}
+
 }
