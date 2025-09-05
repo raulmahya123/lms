@@ -41,10 +41,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
 
   <style>
-    body{font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial}
+    body{font-family:'Poppins',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
     [x-cloak]{display:none!important}
     .size-9{width:2.25rem;height:2.25rem}
   </style>
+
+  {{-- tempat halaman lain menyuntik CSS tambahan --}}
+  @stack('styles')
 </head>
 <body
   class="min-h-screen bg-ivory-50 text-ink-900 dark:bg-ink-900 dark:text-ivory-100"
@@ -247,5 +250,7 @@
     </div>
   </footer>
 
+  {{-- tempat halaman lain menyuntik JS tambahan --}}
+  @stack('scripts')
 </body>
 </html>

@@ -5,8 +5,9 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use App\Models\LessonProgress;
 use App\Models\Lesson;
+use App\Models\Enrollment;
+use Illuminate\Support\Facades\Auth;
 
 class EnsureLessonAccessible
 {
@@ -17,25 +18,38 @@ class EnsureLessonAccessible
     {
         $lesson = $request->route('lesson');
 
-        // kalau lesson bukan instance Lesson, resolve dari ID
+        // pastikan instance Lesson
         if (! $lesson instanceof Lesson) {
-            $lesson = Lesson::find($lesson);
+            $lesson = Lesson::where('id', $lesson)->orWhere('slug', $lesson)->first();
         }
 
-        // jika lesson tidak ada
         if (! $lesson) {
             abort(404, 'Lesson not found');
         }
 
+        // pastikan relasi module.course terload
+        $lesson->loadMissing('module.course');
+        $course = $lesson->module?->course;
+
+        if (! $course) {
+            abort(404, 'Course not found for this lesson');
+        }
+
         $user = $request->user();
 
-        // cek apakah user sudah punya progress / enroll
-        $progress = LessonProgress::where('lesson_id', $lesson->id)
-            ->where('user_id', $user->id)
-            ->first();
+        // Admin selalu boleh
+        if ($user->can('admin')) {
+            return $next($request);
+        }
 
-        if (! $progress) {
-            abort(404, 'Lesson not accessible');
+        // cek apakah user terdaftar di course
+        $enrolled = Enrollment::where('user_id', $user->id)
+            ->where('course_id', $course->id)
+            ->exists();
+
+        if (! $enrolled) {
+            // sebaiknya pakai 403, biar beda sama "lesson tidak ada"
+            abort(403, 'Anda belum terdaftar pada kursus ini');
         }
 
         return $next($request);
