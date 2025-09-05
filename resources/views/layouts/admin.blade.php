@@ -64,6 +64,7 @@
           ['Plans','admin.plans.index'],
           ['Coupons','admin.coupons.index'],
           ['Resources','admin.resources.index'],
+          ['Lihat Situs','home' /* link ke home, bukan admin.home */],
         ];
 
         $icon = function($label) {
@@ -82,6 +83,7 @@
             'Plans'       => "<svg $base><path d='M4 6h16M6 10h12M8 14h8M10 18h4'/></svg>",
             'Coupons'     => "<svg $base><path d='M21 12a3 3 0 1 1 0-6H3v12h18a3 3 0 1 1 0-6z'/><path d='M7 6v12'/></svg>",
             'Resources'   => "<svg $base><path d='M4 4h16v16H4z'/><path d='M8 4v16'/><path d='M4 8h16'/></svg>",
+            'Lihat Situs' => "<svg $base><circle cx='12' cy='12' r='10'/><path d='M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z'/></svg>",
             default       => "<svg $base><circle cx='12' cy='12' r='9'/></svg>",
           };
         };
