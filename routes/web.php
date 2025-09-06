@@ -66,6 +66,8 @@ use App\Http\Controllers\User\{
     PsyTestController        as UserPsyTestController,
     PsyQuestionController    as UserPsyQuestionController,
     PsyAttemptController     as UserPsyAttemptController,
+    QaThreadController       as UserQaThreadController,
+    QaReplyController        as UserQaReplyController,
 };
 
 // =====================
@@ -153,7 +155,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{slugOrId}/result/{attempt}', [UserPsyAttemptController::class, 'result'])
             ->name('app.psy.attempts.result');
     });
+    // Q&A (USER)
+    Route::resource('qa-threads', UserQaThreadController::class)
+        ->names('app.qa-threads')
+        // kalau pakai edit, WAJIB sertakan update juga
+        ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 
+    Route::post('qa-threads/{thread}/replies', [UserQaReplyController::class, 'store'])
+        ->name('app.qa-threads.replies.store');
+
+    // Tandai sebagai jawaban (PATCH)
+    Route::patch('qa-replies/{reply}/answer', [UserQaReplyController::class, 'markAnswer'])
+        ->name('app.qa-replies.answer');
+
+    // Hapus reply (DELETE), JANGAN pakai PATCH
+    Route::delete('qa-replies/{reply}', [UserQaReplyController::class, 'destroy'])
+        ->name('app.qa-replies.destroy');
     // Profile
     Route::get('/profile',  [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -235,5 +252,5 @@ Route::middleware(['auth', 'can:admin'])
         Route::post('psy-questions', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalStore'])
             ->name('psy-questions.store');
         Route::resource('psy-attempts', AdminPsyAttemptController::class)
-            ->only(['index','show','destroy']);
+            ->only(['index', 'show', 'destroy']);
     });

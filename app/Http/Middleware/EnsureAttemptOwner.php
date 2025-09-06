@@ -4,26 +4,43 @@ namespace App\Http\Middleware;
 
 use Closure;
 use Illuminate\Http\Request;
+use Symfony\Component\HttpFoundation\Response;
+use App\Models\QuizAttempt; // pastikan model ini ada & benar namespace-nya
 
 class EnsureAttemptOwner
 {
-    public function handle(Request $request, Closure $next)
+    /**
+     * Pastikan user yang mengakses adalah pemilik attempt
+     * atau punya hak admin.
+     */
+    public function handle(Request $request, Closure $next): Response
     {
-        $user    = $request->user();
-        $attempt = $request->route('attempt'); // implicit binding: App\Models\QuizAttempt
+        // Dengan implicit binding, param {attempt} otomatis jadi instance QuizAttempt
+        /** @var QuizAttempt|null $attempt */
+        $attempt = $request->route('attempt');
 
-        // === 404: Attempt tidak ditemukan ===
-        if (!$attempt) {
+        if (! $attempt instanceof QuizAttempt) {
             abort(404, 'Attempt tidak ditemukan.');
         }
 
-        // === 422: User tidak valid / tidak login ===
-        if (!$user) {
-            abort(422, 'User tidak valid atau belum login.');
+        // Seharusnya middleware 'auth' sudah dijalankan lebih dulu di route.
+        $user = $request->user();
+        if (! $user) {
+            // kalau tetap mau jaga-jaga:
+            abort(401, 'Silakan login untuk melihat hasil.');
         }
 
-        // === 403: User bukan pemilik attempt dan bukan admin ===
-        if ($attempt->user_id !== $user->id && !$user->can('admin')) {
+        // Izinkan jika pemilik, atau punya ability/role admin
+        $isOwner = ($attempt->user_id === $user->id);
+
+        // Sesuaikan sesuai sistem auth kamu:
+        // 1) kalau pakai Gate ability 'admin' (Gate::define('admin', ...))
+        $isAdmin = $user->can('admin');
+
+        // 2) atau kalau pakai kolom is_admin:
+        // $isAdmin = (bool) $user->is_admin;
+
+        if (! $isOwner && ! $isAdmin) {
             abort(403, 'Anda tidak berhak melihat hasil ini.');
         }
 

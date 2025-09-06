@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\{Course, Module, Lesson, Enrollment, Plan, Coupon, Quiz, PsyTest}; // + PsyTest
 use Carbon\Carbon;
+use App\Models\QaThread;
 
 class HomeController extends Controller
 {
@@ -22,7 +23,7 @@ class HomeController extends Controller
         // --- KELAS TERBARU (publish) ---
         $latestCourses = Course::query()
             ->where('is_published', 1)
-            ->withCount(['modules','enrollments'])
+            ->withCount(['modules', 'enrollments'])
             ->latest('id')
             ->take(6)
             ->get();
@@ -30,7 +31,7 @@ class HomeController extends Controller
         // --- KELAS POPULER (banyak enrollment) ---
         $popularCourses = Course::query()
             ->where('is_published', 1)
-            ->withCount(['modules','enrollments'])
+            ->withCount(['modules', 'enrollments'])
             ->orderByDesc('enrollments_count')
             ->take(6)
             ->get();
@@ -64,12 +65,18 @@ class HomeController extends Controller
         // --- Kategori (statis) ---
         $categories = [
             ['key' => 'backend', 'name' => 'Backend'],
-            ['key' => 'frontend','name' => 'Frontend'],
+            ['key' => 'frontend', 'name' => 'Frontend'],
             ['key' => 'mobile',  'name' => 'Mobile'],
             ['key' => 'data',    'name' => 'Data & AI'],
             ['key' => 'devops',  'name' => 'DevOps'],
             ['key' => 'uiux',    'name' => 'UI/UX'],
         ];
+
+        $latestThreads = QaThread::with(['user:id,name', 'course:id,title', 'lesson:id,title'])
+            ->withCount('replies')
+            ->latest('id')
+            ->take(3)
+            ->get();
 
         return view('welcome', compact(
             'stats',
@@ -78,7 +85,8 @@ class HomeController extends Controller
             'plans',
             'activeCoupons',
             'categories',
-            'psyTests' // <— kirim ke view (dipakai di section PSI)
+            'psyTests' ,
+            'latestThreads',
         ));
     }
 }

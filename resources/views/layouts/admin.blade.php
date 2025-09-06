@@ -162,8 +162,18 @@
         <line x1='12' y1='2' x2='12' y2='22' />
         <line x1='2' y1='12' x2='22' y2='12' />
       </svg>",
-      'Pysch Questions' => "<svg $base>
-        <path d='M6 2h12v20l-6-3-6 3V2Z' />
+      'Psych Questions' => "<svg $base>
+        <rect x='3' y='3' width='18' height='18' rx='2' />
+        <path d='M12 8a3 3 0 0 1 3 3c0 2-3 2-3 4' />
+        <line x1='12' y1='17' x2='12.01' y2='17' />
+      </svg>",
+      'Psych Attempts' => "<svg $base>
+        <circle cx='12' cy='12' r='9' />
+        <polyline points='12 7 12 12 15 15' />
+        <line x1='12' y1='2' x2='12' y2='4' />
+        <line x1='20' y1='12' x2='22' y2='12' />
+        <line x1='12' y1='20' x2='12' y2='22' />
+        <line x1='2' y1='12' x2='4' y2='12' />
       </svg>",
       'Qa_Threads' => "<svg $base>
         <path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' />

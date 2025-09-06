@@ -107,7 +107,8 @@
     <div class="py-6 border-t">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 logo-viewport logo-ticker-mask">
         @php
-          $logos = ['laravel.png','vue.png'];
+          $logos = ['laravel.png','vue.png','react.png','node.png','python.png','golang.png',
+                    'docker.png','mysql.png','postgres.png','redis.png','tailwind.png'];
         @endphp
         <div class="logo-track">
           @foreach (array_merge($logos, $logos) as $logo)
@@ -408,6 +409,83 @@
           </a>
         </div>
       @endif
+    </div>
+  </section>
+
+   {{-- ===================== FORUM TANYA-JAWAB ===================== --}}
+  <section id="forum" class="py-12 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-end justify-between gap-4">
+        <div>
+          <h2 class="text-2xl sm:text-3xl font-bold text-blue-900">Forum Tanya-Jawab</h2>
+          <p class="mt-2 text-gray-600">Tanya apa saja soal materi. Dapat bantuan dari mentor & komunitas.</p>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="{{ route('app.qa-threads.create') }}"
+             class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
+            Buat Thread
+          </a>
+          <a href="{{ route('app.qa-threads.index') }}"
+             class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl border hover:bg-gray-50">
+            Lihat Semua
+          </a>
+        </div>
+      </div>
+
+      @php
+        $__threads = isset($latestThreads) ? $latestThreads : collect();
+      @endphp
+
+      <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        @forelse($__threads as $t)
+          <a href="{{ route('app.qa-threads.show', $t) }}"
+             class="group card card-lg p-5 block hover:shadow-xl transition">
+            <div class="flex items-start justify-between gap-3">
+              <span class="inline-block text-xs px-2 py-0.5 rounded-full
+                {{ ($t->status ?? 'open')==='resolved' ? 'bg-emerald-100 text-emerald-700' : (($t->status ?? 'open')==='closed' ? 'bg-gray-200 text-gray-700' : 'bg-amber-100 text-amber-700') }}">
+                {{ ucfirst($t->status ?? 'open') }}
+              </span>
+              <span class="text-xs text-gray-500">{{ $t->created_at?->diffForHumans() }}</span>
+            </div>
+
+            <h3 class="mt-3 font-semibold text-blue-950 line-clamp-2 group-hover:underline">
+              {{ $t->title }}
+            </h3>
+
+            @if(!empty($t->body))
+              <p class="mt-2 text-sm text-gray-600 line-clamp-2">
+                {{ strip_tags($t->body) }}
+              </p>
+            @endif
+
+            <div class="mt-4 flex items-center justify-between text-xs text-gray-600">
+              <div class="flex items-center gap-2 truncate">
+                <span class="font-medium text-gray-700">{{ $t->user?->name ?? 'User' }}</span>
+                @if($t->course) <span>• {{ $t->course->title }}</span> @endif
+                @if($t->lesson) <span>• {{ $t->lesson->title }}</span> @endif
+              </div>
+              <div>💬 {{ $t->replies_count ?? 0 }}</div>
+            </div>
+          </a>
+        @empty
+          <div class="sm:col-span-2 lg:col-span-3">
+            <div class="p-6 card bg-sky-50 border-sky-100 text-blue-900">
+              Belum ada diskusi terbaru. <a class="underline" href="{{ route('app.qa-threads.create') }}">Mulai bertanya</a>.
+            </div>
+          </div>
+        @endforelse
+      </div>
+
+      <div class="mt-6 flex items-center gap-3 sm:hidden">
+        <a href="{{ route('app.qa-threads.create') }}"
+           class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white">
+          Buat Thread
+        </a>
+        <a href="{{ route('app.qa-threads.index') }}"
+           class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border">
+          Lihat Semua
+        </a>
+      </div>
     </div>
   </section>
 
