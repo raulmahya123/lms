@@ -107,8 +107,7 @@
     <div class="py-6 border-t">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 logo-viewport logo-ticker-mask">
         @php
-          $logos = ['laravel.png','vue.png','react.png','node.png','python.png','golang.png',
-                    'docker.png','mysql.png','postgres.png','redis.png','tailwind.png'];
+          $logos = ['laravel.png','vue.png'];
         @endphp
         <div class="logo-track">
           @foreach (array_merge($logos, $logos) as $logo)
