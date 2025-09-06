@@ -80,8 +80,10 @@
       ['Certificate Issues','admin.certificate-issues.index'],
       ['Psych Tests','admin.psy-tests.index'],
       ['Psych Questions','admin.psy-questions.index'],
+      ['Psych Attempts','admin.psy-attempts.index'],
       ['Qa_Threads','admin.qa-threads.index'],
-      ['Lihat Situs','home'], ];
+      ['Lihat Situs','home'],
+      ];
       $icon = function($label) {
       $base = 'class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"';
       return match($label) {

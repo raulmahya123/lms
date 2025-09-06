@@ -42,6 +42,7 @@ use App\Http\Controllers\Admin\{
     ResourceController       as AdminResourceController,
     DashboardController      as AdminDashboardController,
     PsyTestController        as AdminPsyTestController, // optional if referenced directly
+    PsyAttemptController     as AdminPsyAttemptController,
 };
 
 // =====================
@@ -233,4 +234,6 @@ Route::middleware(['auth', 'can:admin'])
             ->name('psy-questions.create');
         Route::post('psy-questions', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalStore'])
             ->name('psy-questions.store');
+        Route::resource('psy-attempts', AdminPsyAttemptController::class)
+            ->only(['index','show','destroy']);
     });
