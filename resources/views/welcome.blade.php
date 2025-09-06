@@ -95,7 +95,7 @@
       {{-- kanan: hero image + card --}}
       <div class="relative">
         {{-- GANTI path foto sesuai file yang sudah kamu taruh di public/assets/images --}}
-        <img src="{{ asset('assets/images/hero-welcome.jpg') }}"
+        <img src="{{ asset('assets/images/KKN.jpeg') }}"
              alt="Belajar di alam"
              class="w-full h-72 sm:h-96 object-cover rounded-2xl shadow-2xl border border-blue-100" />
         <div class="absolute -bottom-4 -right-4 bg-white/90 backdrop-blur rounded-xl shadow-lg p-4 border">
