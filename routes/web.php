@@ -78,6 +78,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
     Route::get('/app/dashboard', [UserDashboardController::class, 'index'])->name('app.dashboard'); // alias
 
+    // Membership (USER)
+Route::get('/memberships', [UserMembershipController::class, 'index'])
+    ->name('app.memberships.index');
+
+// daftar paket membership versi user (dipakai UI saya: route('app.memberships.plans'))
+Route::get('/memberships/plans', [UserMembershipController::class, 'plans'])
+    ->name('app.memberships.plans');
+
+// mulai subscribe (buat membership status "pending" untuk plan terpilih)
+Route::post('/memberships/subscribe/{plan}', [UserMembershipController::class, 'subscribe'])
+    ->name('app.memberships.subscribe');
+
+// halaman checkout membership pending
+Route::get('/memberships/checkout/{membership}', [UserMembershipController::class, 'checkout'])
+    ->name('app.memberships.checkout');
+
+// aktivasi membership (dipanggil setelah pembayaran sukses / simulasi dev)
+Route::post('/memberships/activate/{membership}', [UserMembershipController::class, 'activate'])
+    ->name('app.memberships.activate');
+
+// batalkan/nonaktifkan membership user
+Route::post('/memberships/cancel/{membership}', [UserMembershipController::class, 'cancel'])
+    ->name('app.memberships.cancel');
+
+// update membership oleh user (opsional)
+Route::patch('/memberships/{membership}', [UserMembershipController::class, 'update'])
+    ->name('app.memberships.update');
+
     // Katalog & detail kursus
     Route::get('/courses', [CourseBrowseController::class, 'index'])->name('app.courses.index');
     Route::get('/courses/{course}', [CourseBrowseController::class, 'show'])->name('app.courses.show');
