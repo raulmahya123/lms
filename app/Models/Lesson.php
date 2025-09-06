@@ -10,26 +10,27 @@ class Lesson extends Model
     protected $fillable = [
         'module_id',
         'title',
-        'content',
-        'content_url',
+        'content',      // JSON berisi blok konten
+        'content_url',  // JSON berisi daftar link/video/dsb
         'ordering',
         'is_free',
     ];
 
-    // ⬇️ Tambahan penting
     protected $casts = [
+        'content'     => 'array',   // ⬅️ penting agar tidak tampil mentah
         'content_url' => 'array',   // auto decode/encode JSON <-> array
-        'is_free'     => 'boolean', // pastikan true/false
+        'is_free'     => 'boolean',
         'ordering'    => 'integer',
     ];
 
-    // (Opsional) default nilai
     protected $attributes = [
-        'is_free'  => false,
-        'ordering' => 0,
+        'is_free'     => false,
+        'ordering'    => 0,
+        'content'     => '[]',   // aman kalau belum diisi
+        'content_url' => '[]',
     ];
 
-    // (Opsional) scopes buat controller/index
+    /** Scopes */
     public function scopeSearch($q, ?string $term)
     {
         return $q->when($term, fn($qq) => $qq->where('title', 'like', "%{$term}%"));
@@ -40,9 +41,14 @@ class Lesson extends Model
         return $q->when($moduleId, fn($qq) => $qq->where('module_id', $moduleId));
     }
 
-    // Relations
-    public function module(): BelongsTo { return $this->belongsTo(Module::class); }
-    public function resources(): HasMany { return $this->hasMany(Resource::class); }
-    public function quiz(): HasOne { return $this->hasOne(Quiz::class); }
-    public function progresses(): HasMany { return $this->hasMany(LessonProgress::class); }
+    public function scopeOrdered($q)
+    {
+        return $q->orderBy('ordering')->orderBy('id');
+    }
+
+    /** Relations */
+    public function module(): BelongsTo     { return $this->belongsTo(Module::class); }
+    public function resources(): HasMany    { return $this->hasMany(Resource::class); }
+    public function quiz(): HasOne          { return $this->hasOne(Quiz::class); }
+    public function progresses(): HasMany   { return $this->hasMany(LessonProgress::class); }
 }

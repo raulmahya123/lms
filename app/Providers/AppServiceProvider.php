@@ -57,11 +57,8 @@ class AppServiceProvider extends ServiceProvider
                 'Psych Questions'       => PsyQuestion::count(),
                 'Psych Attempts'        => PsyAttempt::count(), // <— DITAMBAHKAN
 
-                'Qa_Threads'            => QaThread::whereDoesntHave('replies', function($q){
-                                                $q->where('is_answer', 1);
-                                            })->count(),
+                'Qa_Threads'            => QaThread::count(),
             ];
-
             $view->with('badges', $badges);
         });
     }
