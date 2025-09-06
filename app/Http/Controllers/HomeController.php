@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\{Course, Module, Lesson, Enrollment, Plan, Coupon, Quiz};
+use App\Models\{Course, Module, Lesson, Enrollment, Plan, Coupon, Quiz, PsyTest}; // + PsyTest
 use Carbon\Carbon;
 
 class HomeController extends Controller
@@ -22,7 +22,7 @@ class HomeController extends Controller
         // --- KELAS TERBARU (publish) ---
         $latestCourses = Course::query()
             ->where('is_published', 1)
-            ->withCount(['modules','enrollments']) // butuh relasi enrollments (sudah ada di model)
+            ->withCount(['modules','enrollments'])
             ->latest('id')
             ->take(6)
             ->get();
@@ -35,12 +35,20 @@ class HomeController extends Controller
             ->take(6)
             ->get();
 
+        // --- TES PSIKOLOGI (aktif) ---
+        $psyTests = PsyTest::query()
+            ->where('is_active', true)
+            ->withCount('questions')
+            ->latest('id')
+            ->take(6)
+            ->get();
+
         // --- PLANS (dengan jumlah course di setiap plan) ---
         $plans = Plan::query()
             ->withCount('planCourses')
             ->get();
 
-        // --- COUPON (opsional) yang masih valid hari ini ---
+        // --- COUPON aktif (valid hari ini) ---
         $today = Carbon::today();
         $activeCoupons = Coupon::query()
             ->where(function ($q) use ($today) {
@@ -53,7 +61,7 @@ class HomeController extends Controller
             ->take(3)
             ->get();
 
-        // --- Kategori (opsional, statis dulu) ---
+        // --- Kategori (statis) ---
         $categories = [
             ['key' => 'backend', 'name' => 'Backend'],
             ['key' => 'frontend','name' => 'Frontend'],
@@ -69,7 +77,8 @@ class HomeController extends Controller
             'popularCourses',
             'plans',
             'activeCoupons',
-            'categories'
+            'categories',
+            'psyTests' // <— kirim ke view (dipakai di section PSI)
         ));
     }
 }

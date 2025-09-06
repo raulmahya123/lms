@@ -1,16 +1,15 @@
 <?php
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\RateLimiter;
+use Illuminate\Cache\RateLimiting\Limit;
 
 // =====================
 // Public
 // =====================
 use App\Http\Controllers\HomeController;
 
-use Illuminate\Support\Facades\RateLimiter;
-use Illuminate\Cache\RateLimiting\Limit;
-
-// Definisikan limiter untuk throttle:quiz
+// Throttle untuk quiz/psy-tests
 RateLimiter::for('quiz', function ($request) {
     return [
         Limit::perMinute(5)->by(optional($request->user())->id ?: $request->ip()),
@@ -42,7 +41,7 @@ use App\Http\Controllers\Admin\{
     QuizController           as AdminQuizController,
     ResourceController       as AdminResourceController,
     DashboardController      as AdminDashboardController,
-    PsyTestController        as AdminPsyTestController,
+    PsyTestController        as AdminPsyTestController, // optional if referenced directly
 };
 
 // =====================
@@ -62,13 +61,16 @@ use App\Http\Controllers\User\{
     ResourceController       as UserResourceController,
     PlanController           as UserPlanController,
     CertificateController,
+    // Psy (USER)
+    PsyTestController        as UserPsyTestController,
+    PsyQuestionController    as UserPsyQuestionController,
+    PsyAttemptController     as UserPsyAttemptController,
 };
 
 // =====================
 // User Area (login diperlukan)
 // =====================
 Route::middleware(['auth', 'verified'])->group(function () {
-
     // Dashboard (USER)
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
     Route::get('/app/dashboard', [UserDashboardController::class, 'index'])->name('app.dashboard'); // alias
@@ -117,6 +119,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/payments', [UserPaymentController::class, 'index'])->name('app.payments.index');
     Route::get('/payments/{payment}', [UserPaymentController::class, 'show'])->name('app.payments.show');
 
+    Route::prefix('psy-tests')->group(function () {
+        // List
+        Route::get('/', [UserPsyTestController::class, 'index'])
+            ->name('app.psytests.index');
+
+        // Detail
+        Route::get('/{slugOrId}', [UserPsyTestController::class, 'show'])
+            ->name('app.psytests.show');
+
+        // Tampilkan 1 soal
+        Route::get('/{slugOrId}/questions/{question}', [UserPsyQuestionController::class, 'show'])
+            ->whereNumber('question')
+            ->name('app.psytests.questions.show');
+
+        // Mulai / lanjut attempt
+        Route::post('/{slugOrId}/start', [UserPsyAttemptController::class, 'start'])
+            ->middleware('throttle:quiz')
+            ->name('app.psy.attempts.start');
+
+        // Simpan jawaban 1 soal
+        Route::post('/{slugOrId}/q/{question}/answer', [UserPsyAttemptController::class, 'answer'])
+            ->middleware('throttle:quiz')
+            ->whereNumber('question')
+            ->name('app.psy.attempts.answer');
+
+        // Submit & hitung hasil
+        Route::get('/{slugOrId}/submit', [UserPsyAttemptController::class, 'submit'])
+            ->name('app.psy.attempts.submit');
+
+        // Lihat hasil attempt
+        Route::get('/{slugOrId}/result/{attempt}', [UserPsyAttemptController::class, 'result'])
+            ->name('app.psy.attempts.result');
+    });
+
     // Profile
     Route::get('/profile',  [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
@@ -149,7 +185,8 @@ Route::middleware(['auth', 'can:admin'])
         Route::resource('lessons', AdminLessonController::class);
 
         // === Resources ===
-        Route::resource('resources', AdminResourceController::class)->only(['index', 'create', 'store', 'update', 'destroy', 'show', 'edit']);
+        Route::resource('resources', AdminResourceController::class)
+            ->only(['index', 'create', 'store', 'update', 'destroy', 'show', 'edit']);
 
         // === Quizzes / Questions / Options ===
         Route::resource('quizzes',   AdminQuizController::class);
@@ -184,18 +221,16 @@ Route::middleware(['auth', 'can:admin'])
         // === Psych Tests ===
         Route::resource('psy-tests', \App\Http\Controllers\Admin\PsyTestController::class);
 
-        // Nested untuk operasi selain index/create/store (tetap shallow)
+        // Nested: psy-tests/{psy_test}/questions
+        // (aktifkan SEMUA method shg admin.psy-tests.questions.index dkk tersedia)
         Route::resource('psy-tests.questions', \App\Http\Controllers\Admin\PsyQuestionController::class)
-            ->shallow()
-            ->except(['index', 'create', 'store']);
+            ->shallow();
 
-        // GLOBAL: index + create + store (tanpa parameter psy_test)
+        // GLOBAL (opsional, untuk semua soal lintas tes)
         Route::get('psy-questions', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalIndex'])
             ->name('psy-questions.index');
-
         Route::get('psy-questions/create', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalCreate'])
             ->name('psy-questions.create');
-
         Route::post('psy-questions', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalStore'])
             ->name('psy-questions.store');
     });

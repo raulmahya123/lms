@@ -26,7 +26,7 @@
   .logo-track:hover{ animation-play-state: paused; }
   @keyframes logo-scroll{
     from{ transform:translateX(0); }
-    to  { transform:translateX(-50%); } /* karena kita duplikasi konten */
+    to  { transform:translateX(-50%); }
   }
 
   .logo-chip{
@@ -42,14 +42,12 @@
 @section('content')
   {{-- ===================== HERO ===================== --}}
   <section class="relative overflow-hidden bg-gradient-to-b from-sky-50 via-white to-white">
-    {{-- layer blob di belakang --}}
     <div class="blob-layer">
       <div class="absolute -top-24 -right-24 w-[28rem] h-[28rem] rounded-full bg-sky-300 blob"></div>
       <div class="absolute -bottom-24 -left-24 w-[28rem] h-[28rem] rounded-full bg-blue-300 blob"></div>
     </div>
 
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20 grid lg:grid-cols-2 gap-10 relative z-10">
-      {{-- kiri: teks --}}
       <div class="flex flex-col justify-center">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-medium w-max">
           <span class="h-2 w-2 rounded-full bg-sky-500"></span> Belajar di Alam, Kapan Saja
@@ -92,15 +90,30 @@
         </div>
       </div>
 
-      {{-- kanan: hero image + card --}}
       <div class="relative">
-        {{-- GANTI path foto sesuai file yang sudah kamu taruh di public/assets/images --}}
         <img src="{{ asset('assets/images/hero-welcome.jpg') }}"
              alt="Belajar di alam"
              class="w-full h-72 sm:h-96 object-cover rounded-2xl shadow-2xl border border-blue-100" />
         <div class="absolute -bottom-4 -right-4 bg-white/90 backdrop-blur rounded-xl shadow-lg p-4 border">
           <p class="text-xs text-gray-600">Total Pembelajar</p>
           <p class="text-2xl font-bold text-blue-900">{{ number_format(($stats['enrollments'] ?? 0) + 12000) }}+</p>
+        </div>
+      </div>
+    </div>
+
+    {{-- ===================== LOGO TICKER ===================== --}}
+    <div class="py-6 border-t">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 logo-viewport logo-ticker-mask">
+        @php
+          $logos = ['laravel.png','vue.png','react.png','node.png','python.png','golang.png',
+                    'docker.png','mysql.png','postgres.png','redis.png','tailwind.png'];
+        @endphp
+        <div class="logo-track">
+          @foreach (array_merge($logos, $logos) as $logo)
+            <div class="logo-chip">
+              <img src="{{ asset('assets/logos/'.$logo) }}" alt="{{ pathinfo($logo, PATHINFO_FILENAME) }}">
+            </div>
+          @endforeach
         </div>
       </div>
     </div>
@@ -111,6 +124,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center gap-2 text-sm">
       <a href="#kursus-baru" class="px-3 py-2 rounded-full bg-sky-50 text-blue-800 hover:bg-sky-100">Kelas Terbaru</a>
       <a href="#kursus-populer" class="px-3 py-2 rounded-full bg-sky-50 text-blue-800 hover:bg-sky-100">Populer</a>
+      <a href="#psi" class="px-3 py-2 rounded-full bg-sky-50 text-blue-800 hover:bg-sky-100">Tes Psikologi</a>
       <a href="#plans" class="px-3 py-2 rounded-full bg-sky-50 text-blue-800 hover:bg-sky-100">Paket</a>
       <a href="#kupon" class="px-3 py-2 rounded-full bg-sky-50 text-blue-800 hover:bg-sky-100">Kupon</a>
       <div class="ms-auto flex items-center gap-2">
@@ -183,13 +197,6 @@
           </div>
         @endforelse
       </div>
-
-      <div class="sm:hidden mt-6">
-        <a href="{{ auth()->check() ? route('app.courses.index') : route('register') }}"
-           class="inline-flex items-center gap-2 text-blue-700 hover:underline">
-          Lihat Semua →
-        </a>
-      </div>
     </div>
   </section>
 
@@ -232,6 +239,149 @@
       </div>
     </div>
   </section>
+
+  {{-- ===================== TES PSIKOLOGI (PSI) ===================== --}}
+{{-- ===================== TES PSIKOLOGI (PSI) ===================== --}}
+<section id="psi" class="relative py-14">
+  {{-- dekorasi halus --}}
+  <div class="pointer-events-none absolute inset-0 -z-10">
+    <div class="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-sky-200/50 blur-3xl"></div>
+    <div class="absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-blue-200/40 blur-3xl"></div>
+  </div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    {{-- header --}}
+    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+      <div>
+        <div class="inline-flex items-center gap-2 text-xs text-blue-700">
+          <span class="h-2 w-2 rounded-full bg-blue-600"></span> Penilaian Personal
+        </div>
+        <h2 class="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
+          Tes Psikologi
+        </h2>
+        <p class="mt-2 text-slate-600 max-w-2xl">
+          Kenali kekuatan & preferensimu. Hasil langsung dengan rekomendasi otomatis.
+        </p>
+      </div>
+      <a href="{{ route('app.psytests.index') }}"
+         class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-blue-200 text-blue-700 hover:bg-blue-50 transition">
+        Lihat Semua Tes
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+             stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
+             d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+      </a>
+    </div>
+
+    @php
+      $__psy = isset($psyTests) ? $psyTests : collect();
+      // warna per tipe (fallback 'custom')
+      $typeColors = [
+        'likert'  => 'from-blue-500 to-indigo-500',
+        'mcq'     => 'from-violet-500 to-purple-500',
+        'iq'      => 'from-emerald-500 to-teal-500',
+        'disc'    => 'from-amber-500 to-orange-500',
+        'big5'    => 'from-fuchsia-500 to-pink-500',
+        'custom'  => 'from-slate-500 to-slate-700',
+      ];
+    @endphp
+
+    @if($__psy->count())
+      {{-- grid desktop + snap scroll mobile --}}
+      <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3
+                  md:[&>*]:snap-none [&>*]:snap-start overflow-x-auto md:overflow-visible scroll-smooth">
+        @foreach($__psy as $t)
+          @php
+            $type = strtolower($t->type ?? 'custom');
+            $grad = $typeColors[$type] ?? $typeColors['custom'];
+            $qs   = (int)($t->questions_count ?? 0);
+            // estimasi durasi (≈ 40–60 dtk/soal), minimal 5 menit
+            $est  = max(5, round($qs * 0.75));
+          @endphp
+
+          <div class="min-w-[88%] sm:min-w-0 group relative rounded-2xl border bg-white/90 backdrop-blur
+                      border-slate-200 shadow-sm hover:shadow-xl transition overflow-hidden">
+            {{-- stripe gradien --}}
+            <div class="h-1.5 bg-gradient-to-r {{ $grad }}"></div>
+
+            <div class="p-4">
+              <div class="flex items-center gap-2 text-xs">
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
+                       stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
+                       d="M12 6v6l4 2"/></svg>
+                  {{ $est }} menit
+                </span>
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700">
+                  {{ strtoupper($t->type ?? 'custom') }}
+                </span>
+                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-teal-50 text-teal-700">
+                  {{ ucfirst($t->track ?? 'general') }}
+                </span>
+              </div>
+
+              <h3 class="mt-3 text-lg font-semibold text-slate-900 line-clamp-2">
+                {{ $t->name }}
+              </h3>
+
+              <div class="mt-1 text-xs text-slate-500 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                     stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
+                     d="M4 6h16M4 12h16M4 18h7"/></svg>
+                {{ $qs }} soal
+              </div>
+
+              @if(!empty($t->description))
+                <p class="mt-3 text-sm text-slate-600 line-clamp-2">{{ $t->description }}</p>
+              @endif
+
+              <div class="mt-5 flex items-center gap-2">
+                <form method="POST" action="{{ route('app.psy.attempts.start', $t) }}">
+                  @csrf
+                  <button
+                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-white bg-gradient-to-r {{ $grad }}
+                           hover:brightness-105 active:brightness-95 transition text-sm">
+                    Mulai Tes
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                         stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
+                         d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                  </button>
+                </form>
+
+                <a href="{{ route('app.psytests.show', $t->slug ?: $t->id) }}"
+                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-slate-700 hover:bg-slate-50 text-sm transition">
+                  Detail
+                </a>
+              </div>
+            </div>
+
+            {{-- efek glow saat hover --}}
+            <div class="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition
+                        bg-gradient-to-r {{ $grad }} blur-[16px] rounded-2xl"></div>
+          </div>
+        @endforeach
+      </div>
+    @else
+      {{-- empty state --}}
+      <div class="mt-8 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+        <div class="mx-auto mb-3 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-700" fill="none" viewBox="0 0 24 24"
+               stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
+               d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+        </div>
+        <h3 class="text-lg font-semibold text-slate-900">Belum ada tes tersedia</h3>
+        <p class="mt-1 text-slate-600">Saat tes sudah aktif, kamu bisa mulai dari sini.</p>
+        <a href="{{ route('app.psytests.index') }}"
+           class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">
+          Jelajahi Tes
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+               stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
+               d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+        </a>
+      </div>
+    @endif
+  </div>
+</section>
+
 
   {{-- ===================== PLANS ===================== --}}
   <section id="plans" class="py-12 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white">
@@ -354,7 +504,7 @@
            class="px-5 py-3 rounded-xl bg-white text-blue-800 font-semibold hover:bg-blue-50">
           Buat Akun
         </a>
-      </div>
+    </div>
     </div>
   </section>
   @endguest
