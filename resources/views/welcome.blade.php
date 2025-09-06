@@ -8,11 +8,11 @@
   [x-cloak]{display:none}
   .text-balance { text-wrap: balance; }
 
-  /* === Blobs dekoratif, pastikan di belakang konten === */
-  .blob       { filter: blur(80px); opacity:.35; }
+  /* === Blobs dekoratif (makin halus & tidak menutupi konten) === */
+  .blob       { filter: blur(80px); opacity:.25; }
   .blob-layer { position:absolute; inset:0; pointer-events:none; z-index:-1; }
 
-  /* === Ticker logo bahasa (marquee tanpa <marquee>) === */
+  /* === Logo ticker === */
   .logo-ticker-mask{
     mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
     -webkit-mask-image: linear-gradient(to right, transparent, #000 10%, #000 90%, transparent);
@@ -20,22 +20,24 @@
   .logo-viewport{ overflow:hidden; }
   .logo-track{
     display:flex; gap:1rem; align-items:center; white-space:nowrap;
-    width: max-content;
-    animation:logo-scroll 28s linear infinite;
+    width:max-content; animation:logo-scroll 28s linear infinite;
   }
   .logo-track:hover{ animation-play-state: paused; }
-  @keyframes logo-scroll{
-    from{ transform:translateX(0); }
-    to  { transform:translateX(-50%); }
-  }
-
+  @keyframes logo-scroll{ from{transform:translateX(0)} to{transform:translateX(-50%)} }
   .logo-chip{
     height:40px; width:40px; border-radius:9999px; background:#fff;
     display:flex; align-items:center; justify-content:center;
-    border:1px solid rgba(15,23,42,.08); box-shadow:0 2px 10px rgba(2,6,23,.06);
-    padding:.5rem;
+    border:1px solid rgba(15,23,42,.08); box-shadow:0 2px 10px rgba(2,6,23,.06); padding:.5rem;
   }
   .logo-chip img{ height:100%; width:auto; object-fit:contain; }
+
+  /* === Card helpers === */
+  .card      { background:#fff; border:1px solid rgba(2,6,23,.06); border-radius:1rem; box-shadow:0 4px 24px rgba(2,6,23,.06); }
+  .card-lg   { border-radius:1.25rem; }
+  .card-ghost{ background:rgba(255,255,255,.9); backdrop-filter:saturate(120%) blur(6px); }
+
+  /* Fix: jangan ada overlay/glow nutup isi PSI */
+  .psi-glow { display:none; }
 </style>
 @endpush
 
@@ -82,7 +84,7 @@
             ];
           @endphp
           @foreach ($statItems as $s)
-            <div class="bg-white/80 backdrop-blur border rounded-xl p-4 text-center">
+            <div class="card p-4 text-center">
               <div class="text-2xl font-semibold text-blue-900">{{ number_format($s['value']) }}</div>
               <div class="text-xs text-gray-600 mt-1">{{ $s['label'] }}</div>
             </div>
@@ -94,7 +96,7 @@
         <img src="{{ asset('assets/images/KKN.jpeg') }}"
              alt="Belajar di alam"
              class="w-full h-72 sm:h-96 object-cover rounded-2xl shadow-2xl border border-blue-100" />
-        <div class="absolute -bottom-4 -right-4 bg-white/90 backdrop-blur rounded-xl shadow-lg p-4 border">
+        <div class="absolute -bottom-4 -right-4 card card-ghost p-4">
           <p class="text-xs text-gray-600">Total Pembelajar</p>
           <p class="text-2xl font-bold text-blue-900">{{ number_format(($stats['enrollments'] ?? 0) + 12000) }}+</p>
         </div>
@@ -105,8 +107,7 @@
     <div class="py-6 border-t">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 logo-viewport logo-ticker-mask">
         @php
-          $logos = ['laravel.png','vue.png','react.png','node.png','python.png','golang.png',
-                    'docker.png','mysql.png','postgres.png','redis.png','tailwind.png'];
+          $logos = ['laravel.png','vue.png'];
         @endphp
         <div class="logo-track">
           @foreach (array_merge($logos, $logos) as $logo)
@@ -137,6 +138,45 @@
       </div>
     </div>
   </section>
+
+  {{-- ===================== ALERT CENTER (global & coupon reason) ===================== --}}
+  @if ($errors->has('global') || $errors->has('coupon') || session('coupon_status'))
+    <div id="alerts" x-data="{open:true}" x-show="open"
+         class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mt-4">
+      @error('global')
+        <div class="mb-3 rounded-xl border border-amber-200 bg-amber-50 text-amber-900 px-4 py-3 relative">
+          <strong class="font-semibold">Perhatian:</strong>
+          <span class="ms-1">{{ $message }}</span>
+          <button type="button" @click="open=false"
+                  class="absolute top-2 right-2 inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-amber-100">✕</button>
+        </div>
+      @enderror
+
+      @error('coupon')
+        <div class="mb-3 rounded-xl border border-red-200 bg-red-50 text-red-800 px-4 py-3 relative">
+          <strong class="font-semibold">Kupon gagal:</strong>
+          <span class="ms-1">{{ $message }}</span>
+          <a href="#kupon" class="ms-2 underline">Lihat bagian Kupon</a>
+          <button type="button" @click="open=false"
+                  class="absolute top-2 right-2 inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-red-100">✕</button>
+        </div>
+      @enderror
+
+      @if (session('coupon_status') === 'valid')
+        <div class="mb-3 rounded-xl border border-emerald-200 bg-emerald-50 text-emerald-800 px-4 py-3 relative">
+          <strong class="font-semibold">Kupon berhasil dipakai.</strong>
+          <div class="text-sm mt-1">
+            Diskon {{ session('discount_percent') }}%
+            (−{{ number_format(session('discount_amount'), 2) }}).
+            Total akhir: <span class="font-semibold">{{ number_format(session('final_amount'), 2) }}</span>.
+          </div>
+          <a href="#plans" class="mt-1 inline-block underline text-emerald-700">Lanjut pilih paket</a>
+          <button type="button" @click="open=false"
+                  class="absolute top-2 right-2 inline-flex items-center justify-center h-7 w-7 rounded-md hover:bg-emerald-100">✕</button>
+        </div>
+      @endif
+    </div>
+  @endif
 
   {{-- ===================== KATEGORI ===================== --}}
   <section class="py-10 bg-gradient-to-b from-white to-sky-50/40">
@@ -174,7 +214,7 @@
         @forelse ($latestCourses as $course)
           @php $cover = $course->cover_url ?? asset('assets/images/placeholder-course.png'); @endphp
           <a href="{{ auth()->check() ? route('app.courses.show', $course) : route('register') }}"
-             class="group bg-white border rounded-2xl overflow-hidden hover:shadow-xl transition block">
+             class="group card card-lg overflow-hidden hover:shadow-xl transition block">
             <div class="aspect-[16/9] overflow-hidden bg-gray-100">
               <img src="{{ $cover }}" alt="{{ $course->title }}"
                    class="w-full h-full object-cover group-hover:scale-105 transition" />
@@ -191,7 +231,7 @@
           </a>
         @empty
           <div class="sm:col-span-2 lg:col-span-3">
-            <div class="p-6 border rounded-2xl bg-sky-50 text-blue-900">
+            <div class="p-6 card bg-sky-50 border-sky-100 text-blue-900">
               Belum ada kelas terbaru.
             </div>
           </div>
@@ -214,7 +254,7 @@
         @forelse ($popularCourses as $course)
           @php $cover = $course->cover_url ?? asset('assets/images/placeholder-course.png'); @endphp
           <a href="{{ auth()->check() ? route('app.courses.show', $course) : route('register') }}"
-             class="group bg-white border rounded-2xl overflow-hidden hover:shadow-xl transition block">
+             class="group card card-lg overflow-hidden hover:shadow-xl transition block">
             <div class="aspect-[16/9] overflow-hidden bg-gray-100">
               <img src="{{ $cover }}" alt="{{ $course->title }}"
                    class="w-full h-full object-cover group-hover:scale-105 transition" />
@@ -231,7 +271,7 @@
           </a>
         @empty
           <div class="sm:col-span-2 lg:col-span-3">
-            <div class="p-6 border rounded-2xl bg-sky-50 text-blue-900">
+            <div class="p-6 card bg-sky-50 border-sky-100 text-blue-900">
               Belum ada kelas populer.
             </div>
           </div>
@@ -241,147 +281,135 @@
   </section>
 
   {{-- ===================== TES PSIKOLOGI (PSI) ===================== --}}
-{{-- ===================== TES PSIKOLOGI (PSI) ===================== --}}
-<section id="psi" class="relative py-14">
-  {{-- dekorasi halus --}}
-  <div class="pointer-events-none absolute inset-0 -z-10">
-    <div class="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-sky-200/50 blur-3xl"></div>
-    <div class="absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-blue-200/40 blur-3xl"></div>
-  </div>
-
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    {{-- header --}}
-    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-      <div>
-        <div class="inline-flex items-center gap-2 text-xs text-blue-700">
-          <span class="h-2 w-2 rounded-full bg-blue-600"></span> Penilaian Personal
-        </div>
-        <h2 class="mt-1 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">
-          Tes Psikologi
-        </h2>
-        <p class="mt-2 text-slate-600 max-w-2xl">
-          Kenali kekuatan & preferensimu. Hasil langsung dengan rekomendasi otomatis.
-        </p>
-      </div>
-      <a href="{{ route('app.psytests.index') }}"
-         class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-blue-200 text-blue-700 hover:bg-blue-50 transition">
-        Lihat Semua Tes
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-             stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
-             d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-      </a>
+  <section id="psi" class="relative py-14">
+    <div class="pointer-events-none absolute inset-0 -z-10">
+      <div class="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-sky-200/50 blur-3xl"></div>
+      <div class="absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-blue-200/40 blur-3xl"></div>
     </div>
 
-    @php
-      $__psy = isset($psyTests) ? $psyTests : collect();
-      // warna per tipe (fallback 'custom')
-      $typeColors = [
-        'likert'  => 'from-blue-500 to-indigo-500',
-        'mcq'     => 'from-violet-500 to-purple-500',
-        'iq'      => 'from-emerald-500 to-teal-500',
-        'disc'    => 'from-amber-500 to-orange-500',
-        'big5'    => 'from-fuchsia-500 to-pink-500',
-        'custom'  => 'from-slate-500 to-slate-700',
-      ];
-    @endphp
-
-    @if($__psy->count())
-      {{-- grid desktop + snap scroll mobile --}}
-      <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3
-                  md:[&>*]:snap-none [&>*]:snap-start overflow-x-auto md:overflow-visible scroll-smooth">
-        @foreach($__psy as $t)
-          @php
-            $type = strtolower($t->type ?? 'custom');
-            $grad = $typeColors[$type] ?? $typeColors['custom'];
-            $qs   = (int)($t->questions_count ?? 0);
-            // estimasi durasi (≈ 40–60 dtk/soal), minimal 5 menit
-            $est  = max(5, round($qs * 0.75));
-          @endphp
-
-          <div class="min-w-[88%] sm:min-w-0 group relative rounded-2xl border bg-white/90 backdrop-blur
-                      border-slate-200 shadow-sm hover:shadow-xl transition overflow-hidden">
-            {{-- stripe gradien --}}
-            <div class="h-1.5 bg-gradient-to-r {{ $grad }}"></div>
-
-            <div class="p-4">
-              <div class="flex items-center gap-2 text-xs">
-                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
-                       stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
-                       d="M12 6v6l4 2"/></svg>
-                  {{ $est }} menit
-                </span>
-                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700">
-                  {{ strtoupper($t->type ?? 'custom') }}
-                </span>
-                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-teal-50 text-teal-700">
-                  {{ ucfirst($t->track ?? 'general') }}
-                </span>
-              </div>
-
-              <h3 class="mt-3 text-lg font-semibold text-slate-900 line-clamp-2">
-                {{ $t->name }}
-              </h3>
-
-              <div class="mt-1 text-xs text-slate-500 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                     stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
-                     d="M4 6h16M4 12h16M4 18h7"/></svg>
-                {{ $qs }} soal
-              </div>
-
-              @if(!empty($t->description))
-                <p class="mt-3 text-sm text-slate-600 line-clamp-2">{{ $t->description }}</p>
-              @endif
-
-              <div class="mt-5 flex items-center gap-2">
-                <form method="POST" action="{{ route('app.psy.attempts.start', $t) }}">
-                  @csrf
-                  <button
-                    class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-white bg-gradient-to-r {{ $grad }}
-                           hover:brightness-105 active:brightness-95 transition text-sm">
-                    Mulai Tes
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
-                         stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
-                         d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
-                  </button>
-                </form>
-
-                <a href="{{ route('app.psytests.show', $t->slug ?: $t->id) }}"
-                   class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-slate-700 hover:bg-slate-50 text-sm transition">
-                  Detail
-                </a>
-              </div>
-            </div>
-
-            {{-- efek glow saat hover --}}
-            <div class="pointer-events-none absolute -inset-px opacity-0 group-hover:opacity-100 transition
-                        bg-gradient-to-r {{ $grad }} blur-[16px] rounded-2xl"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      {{-- header --}}
+      <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
+        <div>
+          <div class="inline-flex items-center gap-2 text-xs text-blue-700">
+            <span class="h-2 w-2 rounded-full bg-blue-600"></span> Penilaian Personal
           </div>
-        @endforeach
-      </div>
-    @else
-      {{-- empty state --}}
-      <div class="mt-8 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
-        <div class="mx-auto mb-3 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-700" fill="none" viewBox="0 0 24 24"
-               stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
-               d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+          <h2 class="mt-1 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">
+            Tes Psikologi
+          </h2>
+          <p class="mt-2 text-slate-600 max-w-2xl">
+            Kenali kekuatan & preferensimu. Hasil langsung dengan rekomendasi otomatis.
+          </p>
         </div>
-        <h3 class="text-lg font-semibold text-slate-900">Belum ada tes tersedia</h3>
-        <p class="mt-1 text-slate-600">Saat tes sudah aktif, kamu bisa mulai dari sini.</p>
         <a href="{{ route('app.psytests.index') }}"
-           class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">
-          Jelajahi Tes
+           class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-blue-200 text-blue-700 hover:bg-blue-50 transition">
+          Lihat Semua Tes
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
                stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
                d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
         </a>
       </div>
-    @endif
-  </div>
-</section>
 
+      @php
+        $__psy = isset($psyTests) ? $psyTests : collect();
+        $typeColors = [
+          'likert'  => 'from-blue-500 to-indigo-500',
+          'mcq'     => 'from-violet-500 to-purple-500',
+          'iq'      => 'from-emerald-500 to-teal-500',
+          'disc'    => 'from-amber-500 to-orange-500',
+          'big5'    => 'from-fuchsia-500 to-pink-500',
+          'custom'  => 'from-slate-500 to-slate-700',
+        ];
+      @endphp
+
+      @if($__psy->count())
+        {{-- grid desktop + snap scroll mobile --}}
+        <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 md:[&>*]:snap-none [&>*]:snap-start overflow-x-auto md:overflow-visible scroll-smooth">
+          @foreach($__psy as $t)
+            @php
+              $type = strtolower($t->type ?? 'custom');
+              $grad = $typeColors[$type] ?? $typeColors['custom'];
+              $qs   = (int)($t->questions_count ?? 0);
+              $est  = max(5, round($qs * 0.75)); // 45 detik/soal estimasi
+            @endphp
+
+            <div class="min-w-[88%] sm:min-w-0 group card card-lg overflow-hidden transition hover:shadow-2xl">
+              {{-- stripe gradien halus --}}
+              <div class="h-1.5 bg-gradient-to-r {{ $grad }}"></div>
+
+              <div class="p-5">
+                <div class="flex flex-wrap items-center gap-2 text-xs">
+                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24"
+                         stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
+                         d="M12 6v6l4 2"/></svg>
+                    {{ $est }} menit
+                  </span>
+                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700">
+                    {{ strtoupper($t->type ?? 'custom') }}
+                  </span>
+                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-teal-50 text-teal-700">
+                    {{ ucfirst($t->track ?? 'general') }}
+                  </span>
+                </div>
+
+                <h3 class="mt-3 text-lg font-semibold text-slate-900 line-clamp-2">
+                  {{ $t->name }}
+                </h3>
+
+                <div class="mt-1 text-xs text-slate-500 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                       stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
+                       d="M4 6h16M4 12h16M4 18h7"/></svg>
+                  {{ $qs }} soal
+                </div>
+
+                @if(!empty($t->description))
+                  <p class="mt-3 text-sm text-slate-600 line-clamp-2">{{ $t->description }}</p>
+                @endif
+
+                <div class="mt-5 flex items-center gap-2">
+                  <form method="POST" action="{{ route('app.psy.attempts.start', $t) }}">
+                    @csrf
+                    <button
+                      class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-white bg-gradient-to-r {{ $grad }}
+                             hover:brightness-105 active:brightness-95 transition text-sm">
+                      Mulai Tes
+                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                           stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
+                           d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+                    </button>
+                  </form>
+
+                  <a href="{{ route('app.psytests.show', $t->slug ?: $t->id) }}"
+                     class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-slate-700 hover:bg-slate-50 text-sm transition">
+                    Detail
+                  </a>
+                </div>
+              </div>
+            </div>
+          @endforeach
+        </div>
+      @else
+        <div class="mt-8 card border-dashed p-8 text-center">
+          <div class="mx-auto mb-3 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-700" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
+                 d="M12 6v6m0 0v6m0-6h6m-6 0H6"/></svg>
+          </div>
+          <h3 class="text-lg font-semibold text-slate-900">Belum ada tes tersedia</h3>
+          <p class="mt-1 text-slate-600">Saat tes sudah aktif, kamu bisa mulai dari sini.</p>
+          <a href="{{ route('app.psytests.index') }}"
+             class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">
+            Jelajahi Tes
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24"
+                 stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
+                 d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+          </a>
+        </div>
+      @endif
+    </div>
+  </section>
 
   {{-- ===================== PLANS ===================== --}}
   <section id="plans" class="py-12 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white">
@@ -395,7 +423,7 @@
 
       <div class="mt-8 grid md:grid-cols-3 gap-6">
         @forelse ($plans as $plan)
-          <div class="bg-white/10 backdrop-blur rounded-2xl border border-white/15 p-6">
+          <div class="rounded-2xl border border-white/15 p-6 bg-white/10 backdrop-blur">
             <div class="flex items-baseline justify-between">
               <h3 class="text-xl font-semibold">{{ $plan->name ?? 'Plan' }}</h3>
               @if(($plan->is_recommended ?? false))
@@ -431,7 +459,7 @@
           </div>
         @empty
           <div class="md:col-span-3">
-            <div class="bg-white/10 border border-white/20 rounded-2xl p-6">Belum ada paket tersedia.</div>
+            <div class="rounded-2xl border border-white/20 p-6 bg-white/10">Belum ada paket tersedia.</div>
           </div>
         @endforelse
       </div>
@@ -450,7 +478,7 @@
 
       <div class="mt-6 grid md:grid-cols-3 gap-4">
         @forelse ($activeCoupons as $cp)
-          <div class="border rounded-2xl p-5 bg-gradient-to-br from-white to-sky-50">
+          <div class="card p-5 bg-gradient-to-br from-white to-sky-50">
             <div class="flex items-center justify-between">
               <div>
                 <div class="text-sm text-gray-600">Kode Kupon</div>
@@ -468,7 +496,7 @@
               Berlaku: {{ $vf }} — {{ $vu }}
             </div>
             @auth
-              <form method="POST" action="{{ route('app.coupons.validate') }}" class="mt-4">
+              <form method="POST" action="{{ route('app.coupons.validate') }}#alerts" class="mt-4">
                 @csrf
                 <input type="hidden" name="code" value="{{ $cp->code }}">
                 <button class="w-full px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 text-sm">
@@ -484,7 +512,7 @@
           </div>
         @empty
           <div class="md:col-span-3">
-            <div class="p-6 border rounded-2xl bg-sky-50 text-blue-900">Belum ada kupon aktif.</div>
+            <div class="p-6 card bg-sky-50 border-sky-100 text-blue-900">Belum ada kupon aktif.</div>
           </div>
         @endforelse
       </div>
@@ -504,7 +532,7 @@
            class="px-5 py-3 rounded-xl bg-white text-blue-800 font-semibold hover:bg-blue-50">
           Buat Akun
         </a>
-    </div>
+      </div>
     </div>
   </section>
   @endguest
