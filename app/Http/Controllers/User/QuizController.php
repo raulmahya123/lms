@@ -4,8 +4,7 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\User\QuizSubmitRequest;
-use App\Models\{Lesson, Quiz, QuizAttempt, Answer};
-use App\Models\CertificateIssue;
+use App\Models\{Lesson, Quiz, QuizAttempt, Answer, CertificateIssue};
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -21,20 +20,18 @@ class QuizController extends Controller
         $quiz = $lesson->quiz;
         abort_if(!$quiz, 404, 'Quiz tidak tersedia');
 
-        // Hitung attempt yang SUDAH submit
+        // hitung attempt yg sudah disubmit
         $submittedCount = $quiz->attempts()
             ->where('user_id', auth()->id())
             ->whereNotNull('submitted_at')
             ->count();
 
-        // Batas attempt:
-        //   - null → unlimited
-        //   - angka → maksimal angka tsb
+        // batas attempt (null = unlimited)
         if (!is_null($quiz->max_attempts) && $submittedCount >= $quiz->max_attempts) {
             return back()->with('status', "Batas percobaan tercapai (max {$quiz->max_attempts}x).");
         }
 
-        // Cek kalau ada attempt aktif (belum submit), pakai itu; kalau tidak ada, buat attempt baru.
+        // pakai attempt aktif jika ada; kalau tidak, buat baru
         $attempt = $quiz->attempts()
             ->where('user_id', auth()->id())
             ->whereNull('submitted_at')
@@ -54,12 +51,11 @@ class QuizController extends Controller
     }
 
     /**
-     * Submit attempt kuis.
-     * - Hitung skor (tetap dihitung jika kamu butuh tampilkan angka)
-     * - Hitung persen benar berbasis jumlah soal MCQ
+     * Submit attempt kuis:
      * - Simpan jawaban
-     * - Update attempt (submitted_at)
-     * - Auto-terbit certificate issue jika >= 80% benar
+     * - Hitung skor & % benar MCQ
+     * - Tandai submitted
+     * - Upsert certificate issue (satu per user-course) jika >= 80%
      */
     public function submit(QuizSubmitRequest $r, Quiz $quiz)
     {
@@ -70,13 +66,13 @@ class QuizController extends Controller
 
         abort_if($attempt->submitted_at, 422, 'Attempt sudah disubmit.');
 
-        // Muat semua yang diperlukan untuk penilaian dan akses course
-        $quiz->load('questions.options', 'lesson.module.course');
+        // muat untuk penilaian
+        $quiz->load('questions.options','lesson.module.course');
         $questions = $quiz->questions;
 
         $score = 0;
-        $correctCount = 0;         // jumlah jawaban benar (hanya mcq)
-        $totalGradable = 0;        // jumlah soal yang dinilai otomatis (mcq)
+        $correctCount = 0;   // benar MCQ
+        $totalGradable = 0;  // total MCQ
 
         DB::transaction(function () use ($r, $questions, &$score, &$correctCount, &$totalGradable, $attempt) {
             foreach ($questions as $q) {
@@ -91,9 +87,8 @@ class QuizController extends Controller
                     $correct  = $q->options()->where('is_correct', 1)->first();
                     $isCorrect = $correct && $correct->id === $optionId;
                 } else {
-                    // Essay/open text → tidak dihitung dalam persentase otomatis
                     $text = trim((string) $input);
-                    $isCorrect = false;
+                    $isCorrect = false; // essay tak dinilai otomatis
                 }
 
                 if ($isCorrect) {
@@ -116,25 +111,26 @@ class QuizController extends Controller
             ]);
         });
 
-        // Hitung % benar (berbasis MCQ)
+        // % benar MCQ utk attempt ini
         $percent = $totalGradable > 0 ? ($correctCount / $totalGradable) * 100 : 0;
 
-        // === Auto-issue sertifikat bila >= 80% benar ===
+        // === Upsert certificate issue (satu per user-course) bila >= 80% ===
         if ($percent >= 80) {
             $course = $quiz->lesson->module->course;
 
-            CertificateIssue::firstOrCreate(
+            // kunci unik: user_id + course_id + assessment_type
+            CertificateIssue::updateOrCreate(
                 [
                     'user_id'         => Auth::id(),
                     'course_id'       => $course->id ?? null,
                     'assessment_type' => 'course',
-                    'assessment_id'   => $attempt->id,
                 ],
                 [
-                    'template_id' => $course->certificate_template_id ?? 1, // fallback template id = 1
-                    'serial'      => Str::upper(Str::random(12)),
-                    'score'       => $score,    // simpan juga skor kalau ingin ditampilkan di sertifikat
-                    'issued_at'   => now(),
+                    'assessment_id' => $attempt->id, // simpan attempt yang meluluskan/terbaru
+                    'template_id'   => $course->certificate_template_id ?? 1,
+                    'serial'        => Str::upper(Str::random(12)),
+                    'score'         => $score,
+                    'issued_at'     => now(),
                 ]
             );
         }
@@ -145,30 +141,87 @@ class QuizController extends Controller
     }
 
     /**
-     * Halaman hasil attempt kuis:
-     * - Tampilkan eligibility berdasarkan 80% benar (MCQ)
+     * Halaman hasil attempt:
+     * - Tampilkan % benar attempt ini (eligible_current)
+     * - Hitung juga attempt TERBAIK user di course yang sama (eligible_best)
      */
     public function result(QuizAttempt $attempt)
     {
         $attempt->load(['quiz.lesson.module.course', 'answers.question.options']);
+        $course = $attempt->quiz->lesson->module->course;
 
-        // Hitung % benar dari jawaban yang dapat dinilai otomatis (MCQ)
-        $mcqAnswers       = $attempt->answers->filter(fn($a) => $a->question && $a->question->type === 'mcq');
-        $totalGradable    = $mcqAnswers->count();
-        $correctCount     = $mcqAnswers->where('is_correct', true)->count();
-        $percent          = $totalGradable > 0 ? ($correctCount / $totalGradable) * 100 : 0;
+        // % untuk attempt ini
+        [$percentCurrent, $correctCurrent, $totalCurrent] = $this->percentForAttempt($attempt);
 
-        $course   = $attempt->quiz->lesson->module->course;
-        $eligible = $percent >= 80; // syarat 80% benar
+        // cari attempt TERBAIK user pada course yang sama
+        [$bestAttempt, $bestPercent, $bestCorrect, $bestTotal] = $this->bestAttemptOnCourse(
+            userId: $attempt->user_id,
+            courseId: $course->id
+        );
 
-        // Kalau mau, kamu bisa kirim $percent ke view juga untuk ditampilkan
         return view('app.quizzes.result', [
-            'attempt'  => $attempt,
-            'eligible' => $eligible,
-            'course'   => $course,
-            'percent'  => $percent,
-            'correct'  => $correctCount,
-            'total'    => $totalGradable,
+            'attempt'         => $attempt,
+            'course'          => $course,
+
+            // attempt ini
+            'percent'         => $percentCurrent,
+            'correct'         => $correctCurrent,
+            'total'           => $totalCurrent,
+            'eligible'        => $percentCurrent >= 80, // kompatibel dgn view lama
+
+            // attempt terbaik (pakai ini utk tombol “Unduh Sertifikat” agar konsisten dgn download)
+            'bestAttempt'     => $bestAttempt,
+            'best_percent'    => $bestPercent,
+            'best_correct'    => $bestCorrect,
+            'best_total'      => $bestTotal,
+            'eligible_best'   => $bestPercent >= 80,
         ]);
+    }
+
+    /**
+     * Hitung % benar MCQ untuk satu attempt.
+     * @return array [percent, correct, total]
+     */
+    private function percentForAttempt(QuizAttempt $attempt): array
+    {
+        $mcq = $attempt->answers->filter(fn($a) => $a->question && $a->question->type === 'mcq');
+        $total   = $mcq->count();
+        $correct = $mcq->where('is_correct', true)->count();
+        $percent = $total > 0 ? ($correct / $total) * 100 : 0;
+        return [$percent, $correct, $total];
+    }
+
+    /**
+     * Ambil attempt TERBAIK (persentase MCQ tertinggi) milik user pada course.
+     * @return array [QuizAttempt|null $bestAttempt, float $percent, int $correct, int $total]
+     */
+    private function bestAttemptOnCourse(int $userId, int $courseId): array
+    {
+        $attempts = QuizAttempt::with(['answers.question','quiz.lesson.module.course'])
+            ->where('user_id', $userId)
+            ->whereNotNull('submitted_at')
+            ->whereHas('quiz.lesson.module.course', fn($q) => $q->where('id', $courseId))
+            ->get();
+
+        $bestAttempt = null;
+        $bestPercent = 0.0;
+        $bestCorrect = 0;
+        $bestTotal   = 0;
+
+        foreach ($attempts as $att) {
+            $mcq = $att->answers->filter(fn($a) => $a->question && $a->question->type === 'mcq');
+            $total   = $mcq->count();
+            $correct = $mcq->where('is_correct', true)->count();
+            $pct     = $total > 0 ? ($correct / $total) * 100 : 0;
+
+            if ($pct > $bestPercent) {
+                $bestAttempt = $att;
+                $bestPercent = $pct;
+                $bestCorrect = $correct;
+                $bestTotal   = $total;
+            }
+        }
+
+        return [$bestAttempt, $bestPercent, $bestCorrect, $bestTotal];
     }
 }

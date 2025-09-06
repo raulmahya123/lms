@@ -3,56 +3,44 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Course, Enrollment, QuizAttempt, CertificateIssue, CertificateTemplate};
+use App\Models\{
+    Course, Enrollment, QuizAttempt,
+    CertificateIssue, CertificateTemplate
+};
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Storage;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Support\Str;
 
 class CertificateController extends Controller
 {
-    /**
-     * Generate/unduh sertifikat course:
-     * - Pastikan user enrolled
-     * - Pastikan eligible (>=80% benar dari MCQ di course ini)
-     * - Catat ke certificate_issues (sinkron dgn Admin)
-     * - Render & simpan PDF ke storage, update pdf_path
-     */
     public function course(Course $course)
     {
-        // 1) Enrolled check
-        $enrolled = Enrollment::where('user_id', Auth::id())
+        $user = Auth::user();
+
+        // 1) Pastikan enrolled
+        $enrolled = Enrollment::where('user_id', $user->id)
             ->where('course_id', $course->id)
             ->where('status', 'active')
             ->exists();
 
-        abort_unless($enrolled, 403, 'Kamu belum terdaftar di kursus ini.');
+        abort_unless($enrolled, 403, 'Kamu belum terdaftar/aktif di kursus ini.');
 
-        $user = Auth::user();
+        // 2) Ambil attempt terbaik (>=80% MCQ benar)
+        [$bestAttempt, $percent, $correct, $total] = $this->bestAttemptEligibilityForCourse($user->id, $course->id);
+        abort_unless($total > 0, 403, 'Belum ada soal MCQ yang bisa dinilai.');
+        abort_unless($percent >= 80, 403, "Belum memenuhi syarat ({$correct}/{$total} = ".round($percent,2)."%).");
 
-        // 2) Eligibility: 80% benar (hitung dari attempt yang SUBMITTED di course ini)
-        [$percent, $correct, $total] = $this->computePercentCorrectForCourse($user->id, $course->id);
-        abort_unless($total > 0 && $percent >= 80, 403, 'Belum memenuhi syarat (>= 80% benar).');
-
-        // Ambil attempt dengan skor tertinggi (opsional, buat ditampilkan)
-        $bestAttempt = QuizAttempt::where('user_id', $user->id)
-            ->whereHas('quiz.lesson.module.course', fn($q) => $q->where('id', $course->id))
-            ->whereNotNull('submitted_at')
-            ->orderByDesc('score')
-            ->first();
-
-        // 3) Pilih template aktif (prioritas: yang tertaut ke course -> fallback: template aktif pertama -> id=1)
+        // 3) Template sertifikat
         $templateId = $course->certificate_template_id
             ?? CertificateTemplate::where('is_active', true)->value('id')
             ?? 1;
 
-        // 4) Catat/ambil issue agar Admin melihat datanya
-        $issue = CertificateIssue::firstOrCreate(
+        // 4) Catat issue (supaya admin bisa lihat)
+        CertificateIssue::firstOrCreate(
             [
                 'user_id'         => $user->id,
                 'course_id'       => $course->id,
                 'assessment_type' => 'course',
-                // Simpan assessment_id sebagai attempt terbaik jika ada
                 'assessment_id'   => optional($bestAttempt)->id,
             ],
             [
@@ -63,82 +51,64 @@ class CertificateController extends Controller
             ]
         );
 
-        // 5) Render PDF & simpan file (kalau belum ada atau mau regen)
+        // 5) Render PDF langsung (tanpa simpan)
         $data = [
             'user'        => $user,
             'course'      => $course,
             'bestAttempt' => $bestAttempt,
-            'issued_at'   => $issue->issued_at,
-            'serial'      => $issue->serial,
+            'issued_at'   => now(),
+            'serial'      => $this->makeSerial($user->id, $course->id),
             'percent'     => round($percent, 2),
             'correct'     => $correct,
             'total'       => $total,
-            // Kalau perlu, kirim juga $issue->template untuk style background, dll.
             'template'    => CertificateTemplate::find($templateId),
         ];
 
-        $pdf = Pdf::loadView('app.certificates.course', $data)
-            ->setPaper('a4', 'landscape');
+        $pdf = Pdf::loadView('app.certificates.course', $data)->setPaper('a4', 'landscape');
 
-        // Path simpan (public storage agar bisa diakses admin)
-        $dir      = "certificates/{$course->id}";
+        // Langsung download tanpa save
         $filename = "certificate-{$course->id}-user-{$user->id}.pdf";
-        $path     = "{$dir}/{$filename}";
+        return $pdf->download($filename);
 
-        // Pastikan direktori ada
-        if (!Storage::disk('public')->exists($dir)) {
-            Storage::disk('public')->makeDirectory($dir);
-        }
-
-        // Simpan file & update path bila kosong/berbeda
-        Storage::disk('public')->put($path, $pdf->output());
-        if ($issue->pdf_path !== $path) {
-            $issue->update(['pdf_path' => $path]);
-        }
-
-        // 6) Download ke user (kalau mau stream pakai ->stream($filename))
-        return response()->download(
-            storage_path("app/public/{$path}"),
-            $filename,
-            ['Content-Type' => 'application/pdf']
-        );
+        // Kalau mau tampil di browser:
+        // return $pdf->stream($filename);
     }
 
-    /**
-     * Hitung persentase benar (MCQ) untuk seluruh quiz di course.
-     * Hanya hitung attempt yang submitted.
-     * @return array [percent, correctCount, totalGradable]
-     */
-    private function computePercentCorrectForCourse(int $userId, int $courseId): array
+    private function bestAttemptEligibilityForCourse(int $userId, int $courseId): array
     {
-        // Ambil SEMUA jawaban dari attempts user pada course ini
         $attempts = QuizAttempt::with(['answers.question', 'quiz.lesson.module.course'])
             ->where('user_id', $userId)
             ->whereNotNull('submitted_at')
             ->whereHas('quiz.lesson.module.course', fn($q) => $q->where('id', $courseId))
             ->get();
 
-        $correct = 0;
-        $total   = 0;
+        $bestAttempt = null;
+        $bestPercent = 0;
+        $bestCorrect = 0;
+        $bestTotal   = 0;
 
         foreach ($attempts as $attempt) {
-            foreach ($attempt->answers as $ans) {
-                if ($ans->question && $ans->question->type === 'mcq') {
-                    $total++;
-                    if ($ans->is_correct) $correct++;
-                }
+            $mcq     = $attempt->answers->filter(fn($a) => $a->question && $a->question->type === 'mcq');
+            $total   = $mcq->count();
+            $correct = $mcq->where('is_correct', true)->count();
+            $pct     = $total > 0 ? ($correct / $total) * 100 : 0;
+
+            if ($pct > $bestPercent) {
+                $bestAttempt = $attempt;
+                $bestPercent = $pct;
+                $bestCorrect = $correct;
+                $bestTotal   = $total;
             }
         }
 
-        $percent = $total > 0 ? ($correct / $total) * 100 : 0;
-        return [$percent, $correct, $total];
+        return [$bestAttempt, $bestPercent, $bestCorrect, $bestTotal];
     }
 
-    /**
-     * Format serial unik untuk sertifikat.
-     */
     private function makeSerial(int $userId, int $courseId): string
     {
-        return 'CERT-' . now()->format('Ymd') . '-' . Str::padLeft((string)$userId, 5, '0') . '-' . Str::padLeft((string)$courseId, 5, '0');
+        return 'CERT-'
+            . now()->format('Ymd') . '-'
+            . Str::padLeft((string)$userId, 5, '0') . '-'
+            . Str::padLeft((string)$courseId, 5, '0');
     }
 }
