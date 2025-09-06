@@ -43,6 +43,7 @@ use App\Http\Controllers\Admin\{
     DashboardController      as AdminDashboardController,
     PsyTestController        as AdminPsyTestController, // optional if referenced directly
     PsyAttemptController     as AdminPsyAttemptController,
+    TestIqController as AdminTestIqController,
 };
 
 // =====================
@@ -79,32 +80,32 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/app/dashboard', [UserDashboardController::class, 'index'])->name('app.dashboard'); // alias
 
     // Membership (USER)
-Route::get('/memberships', [UserMembershipController::class, 'index'])
-    ->name('app.memberships.index');
+    Route::get('/memberships', [UserMembershipController::class, 'index'])
+        ->name('app.memberships.index');
 
-// daftar paket membership versi user (dipakai UI saya: route('app.memberships.plans'))
-Route::get('/memberships/plans', [UserMembershipController::class, 'plans'])
-    ->name('app.memberships.plans');
+    // daftar paket membership versi user (dipakai UI saya: route('app.memberships.plans'))
+    Route::get('/memberships/plans', [UserMembershipController::class, 'plans'])
+        ->name('app.memberships.plans');
 
-// mulai subscribe (buat membership status "pending" untuk plan terpilih)
-Route::post('/memberships/subscribe/{plan}', [UserMembershipController::class, 'subscribe'])
-    ->name('app.memberships.subscribe');
+    // mulai subscribe (buat membership status "pending" untuk plan terpilih)
+    Route::post('/memberships/subscribe/{plan}', [UserMembershipController::class, 'subscribe'])
+        ->name('app.memberships.subscribe');
 
-// halaman checkout membership pending
-Route::get('/memberships/checkout/{membership}', [UserMembershipController::class, 'checkout'])
-    ->name('app.memberships.checkout');
+    // halaman checkout membership pending
+    Route::get('/memberships/checkout/{membership}', [UserMembershipController::class, 'checkout'])
+        ->name('app.memberships.checkout');
 
-// aktivasi membership (dipanggil setelah pembayaran sukses / simulasi dev)
-Route::post('/memberships/activate/{membership}', [UserMembershipController::class, 'activate'])
-    ->name('app.memberships.activate');
+    // aktivasi membership (dipanggil setelah pembayaran sukses / simulasi dev)
+    Route::post('/memberships/activate/{membership}', [UserMembershipController::class, 'activate'])
+        ->name('app.memberships.activate');
 
-// batalkan/nonaktifkan membership user
-Route::post('/memberships/cancel/{membership}', [UserMembershipController::class, 'cancel'])
-    ->name('app.memberships.cancel');
+    // batalkan/nonaktifkan membership user
+    Route::post('/memberships/cancel/{membership}', [UserMembershipController::class, 'cancel'])
+        ->name('app.memberships.cancel');
 
-// update membership oleh user (opsional)
-Route::patch('/memberships/{membership}', [UserMembershipController::class, 'update'])
-    ->name('app.memberships.update');
+    // update membership oleh user (opsional)
+    Route::patch('/memberships/{membership}', [UserMembershipController::class, 'update'])
+        ->name('app.memberships.update');
 
     // Katalog & detail kursus
     Route::get('/courses', [CourseBrowseController::class, 'index'])->name('app.courses.index');
@@ -215,6 +216,17 @@ Route::middleware(['auth', 'can:admin'])
 
         // Admin Dashboard (/admin/dashboard)
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+
+        Route::get('test-iq',            [AdminTestIqController::class, 'index'])->name('test-iq.index');
+        Route::get('test-iq/create',     [AdminTestIqController::class, 'create'])->name('test-iq.create');
+        Route::post('test-iq',           [AdminTestIqController::class, 'store'])->name('test-iq.store');
+        Route::get('test-iq/{testIq}/edit', [AdminTestIqController::class, 'edit'])->name('test-iq.edit');
+        Route::put('test-iq/{testIq}',   [AdminTestIqController::class, 'update'])->name('test-iq.update');
+        Route::delete('test-iq/{testIq}', [AdminTestIqController::class, 'destroy'])->name('test-iq.destroy');
+
+        // opsional toggle
+        Route::post('test-iq/{testIq}/toggle', [AdminTestIqController::class, 'toggle'])->name('test-iq.toggle');
+
 
         // Resource khusus
         Route::resource('dashboard_admin', AdminDashboardController::class);

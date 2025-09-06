@@ -11,8 +11,10 @@ use App\Models\{
     Membership, Enrollment, Payment, Plan, Coupon, Resource,
     CertificateTemplate, CertificateIssue,
     PsyTest, PsyQuestion, PsyAttempt,
-    QaThread
+    QaThread,
+    TestIq,
 };
+use PHPUnit\Event\Code\Test;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -56,7 +58,7 @@ class AppServiceProvider extends ServiceProvider
                 'Psych Tests'           => PsyTest::where('is_active', 1)->count(),
                 'Psych Questions'       => PsyQuestion::count(),
                 'Psych Attempts'        => PsyAttempt::count(), // <— DITAMBAHKAN
-
+                'Test Iq'               =>  TestIq::count(),
                 'Qa_Threads'            => QaThread::count(),
             ];
             $view->with('badges', $badges);

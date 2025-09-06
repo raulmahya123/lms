@@ -82,6 +82,7 @@
       ['Psych Questions','admin.psy-questions.index'],
       ['Psych Attempts','admin.psy-attempts.index'],
       ['Qa_Threads','admin.qa-threads.index'],
+      ['Test Iq','admin.test-iq.index'],
       ['Lihat Situs','home'],
       ];
       $icon = function($label) {
@@ -174,6 +175,12 @@
         <line x1='20' y1='12' x2='22' y2='12' />
         <line x1='12' y1='20' x2='12' y2='22' />
         <line x1='2' y1='12' x2='4' y2='12' />
+      </svg>",
+      'Test Iq' => "<svg $base>
+        <circle cx='12' cy='12' r='10' />
+        <path d='M8 14s1.5 2 4 2 4-2 4-2' />
+        <line x1='9' y1='9' x2='9.01' y2='9' />
+        <line x1='15' y1='9' x2='15.01' y2='9' />
       </svg>",
       'Qa_Threads' => "<svg $base>
         <path d='M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z' />
