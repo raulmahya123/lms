@@ -139,28 +139,31 @@
                 </div>
                 <div class="border-t border-ivory-200 dark:border-ink-700">
                   <a href="{{ route('app.dashboard') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
-                    <i class="fa-solid fa-house nav-icon"></i>Dashboard User
+                    <i class="fa-solid fa-house mr-2"></i>Dashboard User
                   </a>
 
                   {{-- Certificates di dropdown --}}
                   <a href="{{ route('app.certificates.index') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
-                    <i class="fa-solid fa-certificate nav-icon"></i>Certificates
+                    <i class="fa-solid fa-certificate mr-2"></i>Certificates
                   </a>
 
                   @if($isAdmin)
                     <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
-                      <i class="fa-solid fa-shield-halved nav-icon"></i>Dashboard Admin
+                      <i class="fa-solid fa-shield-halved mr-2"></i>Dashboard Admin
                     </a>
                   @endif
+                    <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
+                      <i class="fa-solid fa-user-pen mr-2"></i>Edit Profile
+                    </a>
                   <a href="{{ route('app.my.courses') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
-                    <i class="fa-solid fa-book-open nav-icon"></i>Kursus Saya
+                      <i class="fa-solid fa-book-open mr-2"></i>Kursus Saya
                   </a>
                 </div>
                 <div class="border-t border-ivory-200 dark:border-ink-700">
                   <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-ink-800">
-                      <i class="fa-solid fa-right-from-bracket nav-icon"></i>Logout
+                      <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
                     </button>
                   </form>
                 </div>
@@ -191,7 +194,7 @@
             <a href="{{ route('app.dashboard') }}" class="inline-flex items-center justify-center size-9 rounded-full bg-bluecamp-500/10 text-bluecamp-700 hover:bg-bluecamp-500/20 dark:text-bluecamp-200 dark:hover:bg-ink-700">
               <i class="fa-solid fa-user"></i>
             </a>
-          @endauth>
+          @endauth
 
           <button @click="mobileOpen=!mobileOpen"
                   class="inline-flex items-center justify-center size-9 rounded-full bg-bluecamp-500/10 text-bluecamp-700 hover:bg-bluecamp-500/20 dark:text-bluecamp-200 dark:hover:bg-ink-700"
@@ -275,7 +278,11 @@
       </div>
     @endif
 
-    @yield('content')
+  @isset($slot)
+    {{ $slot }}       {{-- untuk halaman yang pakai <x-app-layout> --}}
+  @else
+    @yield('content') {{-- untuk halaman yang pakai @extends/@section --}}
+  @endisset
   </main>
 
   {{-- ================= FOOTER ================= --}}

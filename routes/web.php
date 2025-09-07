@@ -3,6 +3,8 @@
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
+use Illuminate\Http\Request;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 // =====================
 // Public
@@ -217,9 +219,31 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/iq/{testIq}/result', [UserTestIqController::class, 'result'])->name('user.test-iq.result');
 
     // Profile
-    Route::get('/profile',  [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+    // Route::get('/profile',  [ProfileController::class, 'edit'])->name('profile.edit');
+    // Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/profile', fn() => view('profile.index'))->name('profile.edit');
+
+    Route::get('/profile/updateinformation', fn(\Illuminate\Http\Request $r) =>
+        view('profile.updateinformation', [
+            'user' => $r->user(),
+            'mustVerifyEmail' => $r->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail,
+            'status' => session('status'),
+        ])
+    )->name('profile.info.edit');
+
+    Route::get('/profile/updatepass', fn() => view('profile.updatepass', ['status'=>session('status')]))
+        ->name('profile.pass.edit');
+
+    Route::get('/profile/delacc', fn() => view('profile.delacc'))
+        ->name('profile.delete.confirm');
+
+    Route::patch('/profile', [\App\Http\Controllers\ProfileController::class,'update'])->name('profile.update');
+    Route::delete('/profile', [\App\Http\Controllers\ProfileController::class,'destroy'])->name('profile.destroy');
+});
 });
 
 // =====================
