@@ -8,7 +8,7 @@
     <div class="py-12 font-[Poppins,sans-serif]">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8 space-y-6">
 
-            <!-- Update Profile Information -->
+            {{-- Update Profile Information --}}
             <div class="p-1 rounded-2xl shadow
                         bg-gradient-to-br from-[rgb(219,234,254)]
                                            via-[rgb(59,130,246)]
@@ -20,7 +20,7 @@
                 </div>
             </div>
 
-            <!-- Update Password -->
+            {{-- Update Password --}}
             <div class="p-1 rounded-2xl shadow
                         bg-gradient-to-br from-[rgb(219,234,254)]
                                            via-[rgb(59,130,246)]
@@ -32,7 +32,7 @@
                 </div>
             </div>
 
-            <!-- Delete User -->
+            {{-- Delete User --}}
             <div class="p-1 rounded-2xl shadow
                         bg-gradient-to-br from-[rgb(254,226,226)]
                                            via-[rgb(248,113,113)]
