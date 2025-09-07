@@ -90,6 +90,14 @@
   .course-meta{ font-size:.78rem; color:#64748b; }
   .progress-rail{ height:6px; width:100%; background:#e2e8f0; border-radius:999px; overflow:hidden; }
   .progress-fill{ height:100%; background:linear-gradient(90deg,#2563eb,#7c3aed); }
+
+  /* === PROFILE CARD (baru) === */
+  .avatar-dot{
+    display:inline-flex; align-items:center; justify-content:center;
+    width:40px; height:40px; border-radius:9999px;
+    background:#e8f0ff; color:#1d4ed8; font-weight:700;
+    border:1px solid rgba(2,6,23,.06);
+  }
 </style>
 @endpush
 
@@ -104,7 +112,7 @@
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20 grid lg:grid-cols-2 gap-10 relative z-10">
       <div class="flex flex-col justify-center">
         <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-medium w-max">
-          <span class="h-2 w-2 rounded-full bg-sky-500"></span> Belajar di Alam, Kapan Saja
+          <span class="h-2 w-2 rounded-full bg-sky-500"></span> Belajar di Mana Dan, Kapan Saja
         </div>
         <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold leading-tight text-balance">
           Upgrade <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-700 to-blue-900">Skill Programming</span> kamu dengan <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-900 to-indigo-900">praktik nyata</span>
@@ -198,6 +206,46 @@
       </div>
     </div>
   </section>
+
+  {{-- ===================== PROFIL (BARU) ===================== --}}
+  @auth
+  @php
+    $u = auth()->user();
+    $initial = strtoupper(mb_substr($u->name ?? 'U', 0, 1));
+    $membershipText = ($isMember ?? false) ? 'Member Aktif' : 'Belum Berlangganan';
+    // angka progres contoh (opsional kalau kamu sudah kirim dari controller bisa ganti)
+    $completedPct = (int)($u->profile_progress_percent ?? 0);
+  @endphp
+  <section id="profil" class="py-8 bg-gradient-to-b from-white to-sky-50/40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="card card-lg p-5 sm:p-6 hover-lift">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <span class="avatar-dot">{{ $initial }}</span>
+            <div>
+              <div class="font-semibold text-blue-950 leading-tight">{{ $u->name }}</div>
+              <div class="text-xs text-slate-600">{{ $u->email }}</div>
+              <div class="mt-1 inline-flex items-center gap-2 text-xs">
+                <span class="px-2 py-0.5 rounded-full bg-sky-100 text-blue-800">{{ $membershipText }}</span>
+                @if($completedPct > 0)
+                  <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{{ $completedPct }}% profil</span>
+                @endif
+              </div>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
+            <a href="{{ route('app.my.courses') }}" class="px-3 py-2 rounded-lg border hover:bg-gray-50 text-sm">My Courses</a>
+            <a href="{{ route('app.certificates.index') }}" class="px-3 py-2 rounded-lg border hover:bg-gray-50 text-sm">Certificates</a>
+            <a href="{{ route('app.payments.index') }}" class="px-3 py-2 rounded-lg border hover:bg-gray-50 text-sm">Payments</a>
+            <a href="{{ route('app.memberships.index') }}" class="px-3 py-2 rounded-lg border hover:bg-gray-50 text-sm">Memberships</a>
+            <a href="{{ route('profile.edit') }}" class="px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm">Edit Profile</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+  @endauth
 
   {{-- ===================== KEUNGGULAN ===================== --}}
   <section class="py-10 bg-gradient-to-b from-white to-sky-50/40">
@@ -616,7 +664,7 @@
                 </div>
 
                 @if(!empty($t->description))
-                  <p class="mt-3 text-sm text-slate-600 line-clamp-2">{{ $t->description }}</p>
+                  <p class="mt-3 text-sm text-slate-600">{{ $t->description }}</p>
                 @endif
 
                 <div class="mt-5 flex items-center gap-2">
