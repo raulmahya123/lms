@@ -10,7 +10,7 @@ class Enrollment extends Model
     protected $fillable = ['user_id', 'course_id', 'status', 'activated_at'];
 
     protected $dates = ['activated_at'];
-     protected $casts = [
+    protected $casts = [
         'activated_at' => 'datetime',
     ];
 
@@ -22,5 +22,12 @@ class Enrollment extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+    // di App\Models\Enrollment
+    public function getProgressPercentAttribute(): int
+    {
+        $total = (int) ($this->total_lessons ?? 0);
+        $done  = (int) ($this->done_lessons  ?? 0);
+        return $total > 0 ? (int) round($done * 100 / $total) : 0;
     }
 }

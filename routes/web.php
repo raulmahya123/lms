@@ -69,6 +69,7 @@ use App\Http\Controllers\User\{
     PsyAttemptController     as UserPsyAttemptController,
     QaThreadController       as UserQaThreadController,
     QaReplyController        as UserQaReplyController,
+    TestIqController as UserTestIqController,
 };
 
 // =====================
@@ -200,6 +201,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Hapus reply (DELETE), JANGAN pakai PATCH
     Route::delete('qa-replies/{reply}', [UserQaReplyController::class, 'destroy'])
         ->name('app.qa-replies.destroy');
+
+    Route::get('/iq/{testIq}', [UserTestIqController::class, 'show'])->name('user.test-iq.show');
+    Route::post('/iq/{testIq}/submit', [UserTestIqController::class, 'submit'])->name('user.test-iq.submit');
+    Route::get('/iq/{testIq}/result', [UserTestIqController::class, 'result'])->name('user.test-iq.result');
+
     // Profile
     Route::get('/profile',  [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
