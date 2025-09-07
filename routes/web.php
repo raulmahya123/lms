@@ -143,7 +143,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Sertifikat (PDF)
     Route::get('/courses/{course}/certificate', [CertificateController::class, 'course'])->name('app.certificate.course');
-
+    Route::get('/certificates', [CertificateController::class, 'index'])
+        ->name('app.certificates.index');
     // Membership & Plan (USER)
     Route::get('/memberships', [UserMembershipController::class, 'index'])->name('app.memberships.index');
     Route::get('/plans', [UserPlanController::class, 'index'])->name('app.plans.index');
@@ -185,6 +186,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{slugOrId}/result/{attempt}', [UserPsyAttemptController::class, 'result'])
             ->name('app.psy.attempts.result');
     });
+    // ⬇️ Tambahan ini yang bikin app.certificates.show (dan preview/download) ada
+    Route::get('/certificates/{issue}', [CertificateController::class, 'show'])
+        ->name('app.certificates.show');
+
+    Route::get('/certificates/{issue}/preview', [CertificateController::class, 'preview'])
+        ->name('app.certificates.preview');
+
+    Route::get('/certificates/{issue}/download', [CertificateController::class, 'download'])
+        ->name('app.certificates.download');
     // Q&A (USER)
     Route::resource('qa-threads', UserQaThreadController::class)
         ->names('app.qa-threads')

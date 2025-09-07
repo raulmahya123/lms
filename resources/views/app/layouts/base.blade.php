@@ -44,9 +44,10 @@
     body{font-family:'Poppins',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
     [x-cloak]{display:none!important}
     .size-9{width:2.25rem;height:2.25rem}
+    /* Jaga ikon FA seragam dan tidak bikin navbar makin tinggi */
+    .nav-icon { display:inline-block; width:1rem; text-align:center; font-size:14px; line-height:1; }
   </style>
 
-  {{-- tempat halaman lain menyuntik CSS tambahan --}}
   @stack('styles')
 </head>
 <body
@@ -85,18 +86,37 @@
             $isAdmin = $u ? (method_exists($u,'isAdmin') ? $u->isAdmin() : (isset($u->is_admin) && $u->is_admin)) : false;
           @endphp
 
-          <a href="{{ route('home') }}" class="px-3 py-2 rounded-full {{ $isActive('home') }}"><i class="fa-solid fa-house mr-2"></i> Home</a>
-          <a href="{{ route('app.courses.index') }}" class="px-3 py-2 rounded-full {{ $isActive('app.courses.index') }}"><i class="fa-solid fa-graduation-cap mr-2"></i> Courses</a>
-          <a href="{{ route('app.my.courses') }}" class="px-3 py-2 rounded-full {{ $isActive('app.my.courses') }}"><i class="fa-solid fa-book-open mr-2"></i> My Courses</a>
-          <a href="{{ route('app.memberships.index') }}" class="px-3 py-2 rounded-full {{ $isActive('app.memberships.index') }}"><i class="fa-solid fa-id-card mr-2"></i> Memberships</a>
-          <a href="{{ route('app.payments.index') }}" class="px-3 py-2 rounded-full {{ $isActive('app.payments.index') }}"><i class="fa-solid fa-wallet mr-2"></i> Payments</a>
+          <a href="{{ route('home') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('home') }}">
+            <i class="fa-solid fa-house nav-icon"></i><span>Home</span>
+          </a>
+          <a href="{{ route('app.courses.index') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.courses.index') }}">
+            <i class="fa-solid fa-graduation-cap nav-icon"></i><span>Courses</span>
+          </a>
+          <a href="{{ route('app.my.courses') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.my.courses') }}">
+            <i class="fa-solid fa-book-open nav-icon"></i><span>My Courses</span>
+          </a>
+          <a href="{{ route('app.memberships.index') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.memberships.index') }}">
+            <i class="fa-solid fa-id-card nav-icon"></i><span>Memberships</span>
+          </a>
+          <a href="{{ route('app.payments.index') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.payments.index') }}">
+            <i class="fa-solid fa-wallet nav-icon"></i><span>Payments</span>
+          </a>
+
+          {{-- Certificates: hanya muncul saat login --}}
+          @auth
+            <a href="{{ route('app.certificates.index') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.certificates.index') }}">
+              <i class="fa-solid fa-certificate nav-icon"></i><span>Certificates</span>
+            </a>
+          @endauth
 
           @auth
-            <a href="{{ route('app.dashboard') }}" class="px-3 py-2 rounded-full {{ $isActive('app.dashboard') }}"><i class="fa-solid fa-user mr-2"></i> Dashboard User</a>
+            <a href="{{ route('app.dashboard') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.dashboard') }}">
+              <i class="fa-solid fa-user nav-icon"></i><span>Dashboard User</span>
+            </a>
             @if($isAdmin)
               <a href="{{ route('admin.dashboard') }}"
-                 class="px-3 py-2 rounded-full ring-1 ring-bluecamp-300 text-bluecamp-700 hover:bg-bluecamp-50 hover:text-bluecamp-800 {{ request()->routeIs('admin.*') ? 'bg-bluecamp-100 dark:bg-bluecamp-800/30 dark:text-bluecamp-200' : '' }} dark:ring-ink-600 dark:text-bluecamp-200 dark:hover:bg-ink-700">
-                <i class="fa-solid fa-shield-halved mr-2"></i> Admin
+                 class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 ring-1 ring-bluecamp-300 text-bluecamp-700 hover:bg-bluecamp-50 hover:text-bluecamp-800 {{ request()->routeIs('admin.*') ? 'bg-bluecamp-100 dark:bg-bluecamp-800/30 dark:text-bluecamp-200' : '' }} dark:ring-ink-600 dark:text-bluecamp-200 dark:hover:bg-ink-700">
+                <i class="fa-solid fa-shield-halved nav-icon"></i><span>Admin</span>
               </a>
             @endif
 
@@ -118,17 +138,29 @@
                   <p class="text-sm font-medium text-ink-900 dark:text-ivory-100 truncate">{{ Auth::user()->email }}</p>
                 </div>
                 <div class="border-t border-ivory-200 dark:border-ink-700">
-                  <a href="{{ route('app.dashboard') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800"><i class="fa-solid fa-house mr-2"></i>Dashboard User</a>
+                  <a href="{{ route('app.dashboard') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
+                    <i class="fa-solid fa-house nav-icon"></i>Dashboard User
+                  </a>
+
+                  {{-- Certificates di dropdown --}}
+                  <a href="{{ route('app.certificates.index') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
+                    <i class="fa-solid fa-certificate nav-icon"></i>Certificates
+                  </a>
+
                   @if($isAdmin)
-                    <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800"><i class="fa-solid fa-shield-halved mr-2"></i>Dashboard Admin</a>
+                    <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
+                      <i class="fa-solid fa-shield-halved nav-icon"></i>Dashboard Admin
+                    </a>
                   @endif
-                  <a href="{{ route('app.my.courses') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800"><i class="fa-solid fa-book-open mr-2"></i>Kursus Saya</a>
+                  <a href="{{ route('app.my.courses') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
+                    <i class="fa-solid fa-book-open nav-icon"></i>Kursus Saya
+                  </a>
                 </div>
                 <div class="border-t border-ivory-200 dark:border-ink-700">
                   <form method="POST" action="{{ route('logout') }}">
                     @csrf
                     <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-ink-800">
-                      <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
+                      <i class="fa-solid fa-right-from-bracket nav-icon"></i>Logout
                     </button>
                   </form>
                 </div>
@@ -137,8 +169,12 @@
           @endauth
 
           @guest
-            <a href="{{ route('login') }}" class="px-3 py-2 rounded-full {{ $isActive('login') }}"><i class="fa-solid fa-right-to-bracket mr-2"></i> Login</a>
-            <a href="{{ route('register') }}" class="px-3 py-2 rounded-full text-white bg-bluecamp-600 hover:opacity-90 drop-shadow-brand"><i class="fa-solid fa-user-plus mr-2"></i> Register</a>
+            <a href="{{ route('login') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('login') }}">
+              <i class="fa-solid fa-right-to-bracket nav-icon"></i><span>Login</span>
+            </a>
+            <a href="{{ route('register') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 text-white bg-bluecamp-600 hover:opacity-90 drop-shadow-brand">
+              <i class="fa-solid fa-user-plus nav-icon"></i><span>Register</span>
+            </a>
           @endguest
         </nav>
 
@@ -155,7 +191,7 @@
             <a href="{{ route('app.dashboard') }}" class="inline-flex items-center justify-center size-9 rounded-full bg-bluecamp-500/10 text-bluecamp-700 hover:bg-bluecamp-500/20 dark:text-bluecamp-200 dark:hover:bg-ink-700">
               <i class="fa-solid fa-user"></i>
             </a>
-          @endauth
+          @endauth>
 
           <button @click="mobileOpen=!mobileOpen"
                   class="inline-flex items-center justify-center size-9 rounded-full bg-bluecamp-500/10 text-bluecamp-700 hover:bg-bluecamp-500/20 dark:text-bluecamp-200 dark:hover:bg-ink-700"
@@ -169,16 +205,38 @@
       {{-- Mobile Drawer --}}
       <div x-cloak x-show="mobileOpen" x-transition class="md:hidden mt-3 border-t border-ivory-200 pt-3 dark:border-ink-700">
         <nav class="grid gap-2 text-sm">
-          <a href="{{ route('home') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('home') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}"><i class="fa-solid fa-house mr-2"></i>Home</a>
-          <a href="{{ route('app.courses.index') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.courses.index') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}"><i class="fa-solid fa-graduation-cap mr-2"></i>Courses</a>
-          <a href="{{ route('app.my.courses') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.my.courses') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}"><i class="fa-solid fa-book-open mr-2"></i>My Courses</a>
-          <a href="{{ route('app.memberships.index') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.memberships.index') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}"><i class="fa-solid fa-id-card mr-2"></i>Memberships</a>
-          <a href="{{ route('app.payments.index') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.payments.index') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}"><i class="fa-solid fa-wallet mr-2"></i>Payments</a>
+          <a href="{{ route('home') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('home') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
+            <i class="fa-solid fa-house nav-icon"></i>Home
+          </a>
+          <a href="{{ route('app.courses.index') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.courses.index') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
+            <i class="fa-solid fa-graduation-cap nav-icon"></i>Courses
+          </a>
+          <a href="{{ route('app.my.courses') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.my.courses') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
+            <i class="fa-solid fa-book-open nav-icon"></i>My Courses
+          </a>
+          <a href="{{ route('app.memberships.index') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.memberships.index') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
+            <i class="fa-solid fa-id-card nav-icon"></i>Memberships
+          </a>
+          <a href="{{ route('app.payments.index') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.payments.index') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
+            <i class="fa-solid fa-wallet nav-icon"></i>Payments
+          </a>
+
+          {{-- Certificates di Mobile: hanya saat login --}}
+          @auth
+            <a href="{{ route('app.certificates.index') }}"
+               class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.certificates.index') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
+              <i class="fa-solid fa-certificate nav-icon"></i>Certificates
+            </a>
+          @endauth
 
           @auth
-            <a href="{{ route('app.dashboard') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.dashboard') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}"><i class="fa-solid fa-user mr-2"></i>Dashboard User</a>
+            <a href="{{ route('app.dashboard') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.dashboard') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
+              <i class="fa-solid fa-user nav-icon"></i>Dashboard User
+            </a>
             @if($isAdmin)
-              <a href="{{ route('admin.dashboard') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('admin.dashboard') ? 'bg-ivory-100 text-bluecamp-700' : 'text-bluecamp-700 dark:text-bluecamp-200 dark:hover:bg-ink-800' }}"><i class="fa-solid fa-shield-halved mr-2"></i>Dashboard Admin</a>
+              <a href="{{ route('admin.dashboard') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('admin.dashboard') ? 'bg-ivory-100 text-bluecamp-700' : 'text-bluecamp-700 dark:text-bluecamp-200 dark:hover:bg-ink-800' }}">
+                <i class="fa-solid fa-shield-halved nav-icon"></i>Dashboard Admin
+              </a>
             @endif
 
             <div class="border-t border-ivory-200 my-2 dark:border-ink-700"></div>
@@ -187,13 +245,19 @@
 
             <form method="POST" action="{{ route('logout') }}" class="mt-1">
               @csrf
-              <button class="w-full text-left px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-ink-800"><i class="fa-solid fa-right-from-bracket mr-2"></i>Logout</button>
+              <button class="w-full text-left px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-ink-800">
+                <i class="fa-solid fa-right-from-bracket nav-icon"></i>Logout
+              </button>
             </form>
           @endauth
 
           @guest
-            <a href="{{ route('login') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('login') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}"><i class="fa-solid fa-right-to-bracket mr-2"></i>Login</a>
-            <a href="{{ route('register') }}" class="px-3 py-2 rounded-lg bg-bluecamp-600 text-white hover:opacity-90"><i class="fa-solid fa-user-plus mr-2"></i>Register</a>
+            <a href="{{ route('login') }}" class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('login') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
+              <i class="fa-solid fa-right-to-bracket nav-icon"></i>Login
+            </a>
+            <a href="{{ route('register') }}" class="px-3 py-2 rounded-lg bg-bluecamp-600 text-white hover:opacity-90">
+              <i class="fa-solid fa-user-plus nav-icon"></i>Register
+            </a>
           @endguest
         </nav>
       </div>
@@ -206,7 +270,9 @@
   {{-- ================= CONTENT ================= --}}
   <main class="max-w-7xl mx-auto px-4 py-8">
     @if (session('status'))
-      <div class="mb-4 p-3 rounded-xl bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-600/30">{{ session('status') }}</div>
+      <div class="mb-4 p-3 rounded-xl bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-600/30">
+        {{ session('status') }}
+      </div>
     @endif
 
     @yield('content')
@@ -250,7 +316,6 @@
     </div>
   </footer>
 
-  {{-- tempat halaman lain menyuntik JS tambahan --}}
   @stack('scripts')
 </body>
 </html>
