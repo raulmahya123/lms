@@ -14,7 +14,7 @@ class TestIqController extends Controller
     {
         abort_unless($testIq->is_active, 404);
 
-        return view('user.test_iq.show', [
+        return view('app.test_iq.show', [
             'test' => $testIq,
         ]);
     }
@@ -70,7 +70,7 @@ class TestIqController extends Controller
         $subs = collect($testIq->submissions ?? [])->where('user_id',$userId)->values();
         $last = $subs->isEmpty() ? null : $subs->last();
 
-        return view('user.test_iq.result', [
+        return view('app.test_iq.result', [
             'test' => $testIq,
             'result' => $last,
         ]);
