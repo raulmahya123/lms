@@ -1,9 +1,9 @@
 <section
   class="rounded-2xl p-1 shadow
-         bg-gradient-to-br from-[rgb(219,234,254)] via-[rgb(59,130,246)] to-[rgb(30,64,175)]">
+         bg-gradient-to-br from-white via-[rgb(219,234,254)] to-white">
   <!-- inner panel -->
-  <div class="rounded-2xl p-6 bg-[rgb(239,246,255)]">
-    <header class="mb-6">
+  <div class="rounded-2xl p-6 bg-white border border-[rgb(229,231,235)]">
+    <header class="mb-6 border-b pb-4">
       <h2 class="text-xl font-semibold text-[rgb(30,64,175)]">
         {{ __('Profile Information') }}
       </h2>
@@ -27,9 +27,9 @@
             </label>
             <input id="name" name="name" type="text"
                    class="mt-2 block w-full rounded-xl
-                          border border-[rgb(191,219,254)]
+                          border border-[rgb(209,213,219)]
                           bg-white text-[rgb(30,41,59)]
-                          focus:border-[rgb(37,99,235)] focus:ring focus:ring-[rgba(37,99,235,0.25)]
+                          focus:border-[rgb(37,99,235)] focus:ring focus:ring-[rgba(37,99,235,0.2)]
                           transition"
                    value="{{ old('name', $user->name) }}" required autofocus autocomplete="name">
             @error('name')
@@ -44,9 +44,9 @@
             </label>
             <input id="email" name="email" type="email"
                    class="mt-2 block w-full rounded-xl
-                          border border-[rgb(191,219,254)]
+                          border border-[rgb(209,213,219)]
                           bg-white text-[rgb(30,41,59)]
-                          focus:border-[rgb(37,99,235)] focus:ring focus:ring-[rgba(37,99,235,0.25)]
+                          focus:border-[rgb(37,99,235)] focus:ring focus:ring-[rgba(37,99,235,0.2)]
                           transition"
                    value="{{ old('email', $user->email) }}" required autocomplete="username">
             @error('email')
@@ -77,7 +77,7 @@
                     class="inline-flex items-center px-5 py-2.5 rounded-xl text-white font-medium
                            bg-[rgb(37,99,235)] hover:bg-[rgb(29,78,216)]
                            focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[rgb(59,130,246)]
-                           transition">
+                           shadow-sm transition">
                 {{ __('Save') }}
             </button>
 
