@@ -102,13 +102,6 @@
             <i class="fa-solid fa-wallet nav-icon"></i><span>Payments</span>
           </a>
 
-          {{-- Certificates: hanya muncul saat login --}}
-          @auth
-            <a href="{{ route('app.certificates.index') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.certificates.index') }}">
-              <i class="fa-solid fa-certificate nav-icon"></i><span>Certificates</span>
-            </a>
-          @endauth
-
           @auth
             <a href="{{ route('app.dashboard') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.dashboard') }}">
               <i class="fa-solid fa-user nav-icon"></i><span>Dashboard User</span>
