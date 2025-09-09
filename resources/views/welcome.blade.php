@@ -345,19 +345,7 @@
                   <div class="mt-1 flex items-center justify-between course-meta">
                     <span>{{ $pp }}% selesai</span>
                     <span>{{ $pd }}/{{ $pt }} pelajaran</span>
-                  </div>
-
-                  @auth
-                    @if($pp > 0 && $pp < 100)
-                      <a href="{{ route('app.courses.show', $course) }}"
-                         class="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-slate-700 hover:bg-slate-50 text-xs hover-lift">
-                        Lanjutkan
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                        </svg>
-                      </a>
-                    @endif
-                  @endauth
+          </div>
                 </div>
               @endif
 
@@ -437,18 +425,6 @@
                     <span>{{ $pp }}% selesai</span>
                     <span>{{ $pd }}/{{ $pt }} pelajaran</span>
                   </div>
-
-                  @auth
-                    @if($pp > 0 && $pp < 100)
-                      <a href="{{ route('app.courses.show', $course) }}"
-                         class="mt-2 inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-slate-700 hover:bg-slate-50 text-xs hover-lift">
-                        Lanjutkan
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-                        </svg>
-                      </a>
-                    @endif
-                  @endauth
                 </div>
               @endif
             </div>
