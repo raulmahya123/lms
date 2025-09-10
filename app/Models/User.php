@@ -52,4 +52,12 @@ class User extends Authenticatable
     {
         return $this->hasMany(Payment::class);
     }
+    // app/Models/User.php
+public function whitelistedLessons(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+{
+    return $this->belongsToMany(\App\Models\Lesson::class, 'lesson_drive_whitelists')
+        ->withPivot(['email','status','verified_at'])
+        ->withTimestamps();
+}
+
 }

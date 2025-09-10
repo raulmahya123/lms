@@ -75,17 +75,11 @@
 
     <div class="flex items-end gap-2">
       <button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition">
-        {{-- funnel icon --}}
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3.75 6A.75.75 0 0 1 4.5 5.25h15a.75.75 0 0 1 .6 1.2l-5.4 7.2v4.35a.75.75 0 0 1-1.065.683l-3-1.35A.75.75 0 0 1 10.5 16.5v-2.85l-5.4-7.2A.75.75 0 0 1 3.75 6Z"/></svg>
         Apply
       </button>
       @if(request()->hasAny(['module_id','q']))
         <a href="{{ route('admin.lessons.index') }}"
            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border hover:bg-gray-50 transition">
-          {{-- reset icon --}}
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M12 5.25a6.75 6.75 0 1 0 6.53 8.4.75.75 0 1 1 1.46.3 8.25 8.25 0 1 1-1.92-7.17V5.25a.75.75 0 0 1 1.5 0v3.5a.75.75 0 0 1-.75.75h-3.5a.75.75 0 0 1 0-1.5h1.86A6.73 6.73 0 0 0 12 5.25Z"/>
-          </svg>
           Reset
         </a>
       @endif
@@ -94,7 +88,6 @@
 
   {{-- TABLE CARD --}}
   <div class="rounded-2xl border bg-white overflow-hidden">
-    {{-- header strip --}}
     <div class="px-4 py-3 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
       <div class="text-sm">
         <span class="font-semibold">{{ $lessons->total() }}</span>
@@ -112,6 +105,7 @@
             <th class="p-3 text-left">Module</th>
             <th class="p-3 text-left">Title</th>
             <th class="p-3 text-left">Content URLs</th>
+            <th class="p-3 text-left w-56">Drive</th>
             <th class="p-3 text-left w-28">Ordering</th>
             <th class="p-3 text-left w-24">Free?</th>
             <th class="p-3 text-center w-44">Actions</th>
@@ -119,19 +113,34 @@
         </thead>
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse($lessons as $l)
+            @php
+              $videos = $l->content_url;
+              if (is_string($videos)) {
+                  $decoded = json_decode($videos, true);
+                  $videos = is_array($decoded) ? $decoded : [];
+              }
+
+              $wl = $l->driveWhitelists ?? collect();
+              $total = $wl->count();
+              $approved = $wl->where('status','approved')->count();
+              $pending  = $wl->where('status','pending')->count();
+              $rejected = $wl->where('status','rejected')->count();
+
+              $driveStatus = $l->drive_status ?? null;
+              $statusClass = match($driveStatus){
+                'approved' => 'bg-green-100 text-green-700',
+                'rejected' => 'bg-red-100 text-red-700',
+                'pending'  => 'bg-yellow-100 text-yellow-700',
+                default    => 'bg-gray-100 text-gray-700',
+              };
+            @endphp
             <tr class="border-t">
               <td class="p-3 font-semibold text-gray-700">#{{ $l->id }}</td>
               <td class="p-3">{{ $l->module?->course?->title ?? '-' }}</td>
               <td class="p-3">{{ $l->module?->title ?? '-' }}</td>
               <td class="p-3 font-medium">{{ $l->title }}</td>
+
               <td class="p-3">
-                @php
-                  $videos = $l->content_url;
-                  if (is_string($videos)) {
-                      $decoded = json_decode($videos, true);
-                      $videos = is_array($decoded) ? $decoded : [];
-                  }
-                @endphp
                 @if(!empty($videos))
                   <div class="flex flex-wrap gap-1.5 max-w-[420px]">
                     @foreach($videos as $i => $video)
@@ -147,7 +156,41 @@
                   <span class="text-xs opacity-60">-</span>
                 @endif
               </td>
+
+              {{-- Drive summary --}}
+              <td class="p-3">
+                <div class="flex items-center gap-2 flex-wrap">
+                  @php $hasLink = !empty($l->drive_link ?? null); @endphp
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs"
+                        title="{{ $hasLink ? $l->drive_link : 'No drive link' }}">
+                    {{ $hasLink ? 'Link' : 'No Link' }}
+                  </span>
+
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs {{ $statusClass }}">
+                    {{ $driveStatus ? ucfirst($driveStatus) : '—' }}
+                  </span>
+
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 text-xs"
+                        title="Approved: {{ $approved }} • Pending: {{ $pending }} • Rejected: {{ $rejected }}">
+                    WL {{ $total }}/4
+                  </span>
+
+                  @if($approved > 0)
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs">
+                      Approved: {{ $approved }}
+                    </span>
+                  @endif
+
+                  @if($pending > 0)
+                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs">
+                      Pending: {{ $pending }}
+                    </span>
+                  @endif
+                </div>
+              </td>
+
               <td class="p-3">{{ $l->ordering }}</td>
+
               <td class="p-3">
                 @if($l->is_free)
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">Yes</span>
@@ -155,14 +198,12 @@
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">No</span>
                 @endif
               </td>
+
               <td class="p-3 text-center">
                 <div class="flex items-center justify-center gap-2">
                   <a href="{{ route('admin.lessons.show',$l) }}"
                      class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition"
                      title="View / Play">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                      <path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/>
-                    </svg>
                     View
                   </a>
                   <a href="{{ route('admin.lessons.edit',$l) }}"
@@ -181,7 +222,7 @@
             </tr>
           @empty
             <tr>
-              <td colspan="8" class="p-10 text-center text-sm opacity-70">
+              <td colspan="9" class="p-10 text-center text-sm opacity-70">
                 Belum ada lesson.
               </td>
             </tr>
