@@ -16,7 +16,7 @@ class LessonController extends Controller
             'quiz.questions.options',
             'resources',
             // whitelist drive (hanya field yang diperlukan)
-            'driveWhitelists' => fn($q) => $q->select(['id','lesson_id','user_id','email','status','verified_at']),
+            'driveWhitelists' => fn($q) => $q->select(['id', 'lesson_id', 'user_id', 'email', 'status', 'verified_at']),
         ]);
 
         $user   = Auth::user();
@@ -35,13 +35,13 @@ class LessonController extends Controller
         // --- whitelist drive (SINGLE SOURCE OF TRUTH) ---
         $wls  = $lesson->driveWhitelists;
         $myWl = $wls->firstWhere('user_id', $user->id)
-             ?? $wls->firstWhere('email', $user->email);
+            ?? $wls->firstWhere('email', $user->email);
         $myStatus = $myWl->status ?? 'none';
 
         $summary = [
-            'approved' => $wls->where('status','approved')->count(),
-            'pending'  => $wls->where('status','pending')->count(),
-            'rejected' => $wls->where('status','rejected')->count(),
+            'approved' => $wls->where('status', 'approved')->count(),
+            'pending'  => $wls->where('status', 'pending')->count(),
+            'rejected' => $wls->where('status', 'rejected')->count(),
             'total'    => $wls->count(),
         ];
 
@@ -77,31 +77,58 @@ class LessonController extends Controller
         $resources = $lesson->resources()->orderBy('id')->get();
 
         return view('app.lessons.show', compact(
-            'lesson','course','blocks','links','resources','prev','next','progress','drive'
+            'lesson',
+            'course',
+            'blocks',
+            'links',
+            'resources',
+            'prev',
+            'next',
+            'progress',
+            'drive'
         ));
     }
 
     public function updateProgress(UpdateProgressRequest $r, Lesson $lesson)
     {
-        $payload = [
-            'progress' => $r->input('progress', []),
-        ];
+        $userId   = Auth::id();
+        $existing = LessonProgress::where('lesson_id', $lesson->id)
+            ->where('user_id', $userId)
+            ->first();
 
-        if ($r->boolean('completed')) {
-            $payload['completed_at'] = now();
+        $old = $existing?->progress ?? [];
+        $oldItems = (array) data_get($old, 'items', []);
+
+        // Daftar semua key item yang ada di form (dibuat di Blade)
+        $allKeysCsv = (string) $r->input('all_keys', '');
+        $allKeys    = array_values(array_filter(array_map('trim', explode(',', $allKeysCsv))));
+
+        // Checkbox yang dicentang: progress[items][<key>] = "1"
+        $checked = array_keys((array) $r->input('progress.items', [])); // hanya yang dicentang masuk request
+
+        // Bangun map item baru (false untuk yang tidak dicentang)
+        $newItems = $oldItems;
+        foreach ($allKeys as $k) {
+            $newItems[$k] = in_array($k, $checked, true);
         }
 
+        // Completed manual lewat checkbox "completed"
+        $completed = $r->boolean('completed');
+
         LessonProgress::updateOrCreate(
-            ['lesson_id' => $lesson->id, 'user_id' => Auth::id()],
-            $payload + [
-                'lesson_id' => $lesson->id,
-                'user_id'   => Auth::id(),
-                'watched'   => (bool)($r->input('progress.watched', true)),
+            ['lesson_id' => $lesson->id, 'user_id' => $userId],
+            [
+                'lesson_id'    => $lesson->id,
+                'user_id'      => $userId,
+                'progress'     => array_replace($old, ['items' => $newItems]),
+                'completed_at' => $completed ? now() : null, // boleh uncomplete
             ]
         );
 
         return back()->with('status', 'Progress tersimpan.');
     }
+
+
 
     // ====================== Helpers ======================
 
@@ -118,5 +145,37 @@ class LessonController extends Controller
     protected function isDrive(?string $url): bool
     {
         return $url && str_contains($url, 'drive.google.com');
+    }
+    public function requestDriveAccess(Lesson $lesson)
+    {
+        $user  = Auth::user();
+        $email = $user->email;
+
+        // Cari entri whitelist existing utk user ini (prioritas by user_id, fallback by email)
+        $existing = $lesson->driveWhitelists()
+            ->where(function ($q) use ($user, $email) {
+                $q->where('user_id', $user->id)->orWhere('email', $email);
+            })
+            ->first();
+
+        // Jika sudah approved, jangan ditimpa
+        if ($existing && $existing->status === 'approved') {
+            return back()->with('status', 'Akses Drive kamu sudah disetujui.');
+        }
+
+        // Upsert ke status pending
+        $lesson->driveWhitelists()->updateOrCreate(
+            [
+                'user_id'   => $user->id,
+                'lesson_id' => $lesson->id,
+            ],
+            [
+                'email'       => $email,
+                'status'      => 'pending',
+                'verified_at' => null, // reset verifikasi saat ajukan ulang
+            ]
+        );
+
+        return back()->with('status', 'Permintaan akses dikirim. Status: pending.');
     }
 }

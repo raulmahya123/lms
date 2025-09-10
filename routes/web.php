@@ -134,7 +134,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('throttle:quiz')->name('app.quiz.submit');
     Route::get('/attempts/{attempt}', [UserQuizController::class, 'result'])
         ->middleware('ensure.attempt.owner')->name('app.quiz.result');
-
+    Route::post('/lessons/{lesson}/drive/request', [UserLessonController::class, 'requestDriveAccess'])
+    ->name('lessons.drive.request');
     // Kupon
     Route::post('/coupons/validate', [UserCouponController::class, 'validateCode'])->name('app.coupons.validate');
 
