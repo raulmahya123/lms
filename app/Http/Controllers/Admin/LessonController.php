@@ -15,13 +15,14 @@ class LessonController extends Controller
     {
         $lessons = Lesson::query()
             ->with([
-                'module' => fn($q) => $q->select(['id', 'course_id', 'title']),
-                'module.course' => fn($q) => $q->select(['id', 'title']),
-                // opsional: preload whitelist utk tampilan ringkas
+                'module' => fn($q) => $q->select(['id','course_id','title']),
+                'module.course' => fn($q) => $q->select(['id','title']),
+                // preload whitelist (ringkas; ambil status untuk badge)
                 'driveWhitelists:id,lesson_id,status',
             ])
-            ->when($r->filled('module_id'), fn($q) => $q->where('module_id', $r->integer('module_id')))
-            ->when($r->filled('q'), fn($q) => $q->where('title', 'like', '%' . $r->q . '%'))
+            // NOTE: kalau module_id kamu UUID, pakai input biasa (bukan ->integer())
+            ->when($r->filled('module_id'), fn($q) => $q->where('module_id', $r->input('module_id')))
+            ->when($r->filled('q'), fn($q) => $q->where('title', 'like', '%'.$r->q.'%'))
             ->orderBy('module_id')->orderBy('ordering')
             ->paginate(20)
             ->withQueryString();
@@ -37,11 +38,9 @@ class LessonController extends Controller
         $modules = Module::with('course:id,title')
             ->orderBy('course_id')->orderBy('ordering')->get();
 
-        $users = User::select('id', 'name', 'email')
-            ->orderBy('name')
-            ->get();
+        $users = User::select('id','name','email')->orderBy('name')->get();
 
-        return view('admin.lessons.create', compact('modules', 'users'));
+        return view('admin.lessons.create', compact('modules','users'));
     }
 
     // =====================
@@ -69,7 +68,7 @@ class LessonController extends Controller
 
             // kolom opsional di lessons
             'drive_link'             => 'nullable|url',
-            'drive_status'           => 'nullable|in:pending,approved,rejected',
+            // ⛔️ HAPUS drive_status — tidak dipakai
         ]);
 
         $data['ordering']    = $data['ordering'] ?? 1;
@@ -89,7 +88,7 @@ class LessonController extends Controller
             ->values()
             ->all();
 
-        // Sinkron ke tabel whitelist & cache ke kolom lessons
+        // Sinkron ke tabel whitelist & cache email ke kolom lessons (opsional)
         $lesson->syncDriveEmails($emails);
         $lesson->forceFill(['drive_emails' => $emails])->save();
 
@@ -104,13 +103,11 @@ class LessonController extends Controller
         $modules = Module::orderBy('course_id')->orderBy('ordering')->get();
 
         // preload relasi + whitelist beserta user
-        $lesson->load(['resources', 'quiz', 'driveWhitelists.user']);
+        $lesson->load(['resources','quiz','driveWhitelists.user']);
 
-        $users = User::select('id', 'name', 'email')
-            ->orderBy('name')
-            ->get();
+        $users = User::select('id','name','email')->orderBy('name')->get();
 
-        return view('admin.lessons.edit', compact('lesson', 'modules', 'users'));
+        return view('admin.lessons.edit', compact('lesson','modules','users'));
     }
 
     // =====================
@@ -135,10 +132,11 @@ class LessonController extends Controller
             'drive_user_ids.*'       => 'required_with:drive_user_ids|integer|exists:users,id',
 
             'drive_link'             => 'nullable|url',
-            'drive_status'           => 'nullable|in:pending,approved,rejected',
+            // ⛔️ HAPUS drive_status — tidak dipakai
         ]);
 
         $data['is_free']     = $r->boolean('is_free');
+        $data['content']     = $this->coerceJsonToArray($data['content'] ?? null);
         $data['content']     = $this->coerceJsonToArray($data['content'] ?? null);
         $data['content_url'] = $data['content_url'] ?? [];
 
@@ -184,29 +182,17 @@ class LessonController extends Controller
         }
 
         $active = request()->integer('v', 0);
-        if ($active < 0 || $active >= count($videos)) {
-            $active = 0;
-        }
+        if ($active < 0 || $active >= count($videos)) $active = 0;
 
-        return view('admin.lessons.show', [
-            'lesson' => $lesson,
-            'videos' => $videos,
-            'active' => $active,
-        ]);
+        return view('admin.lessons.show', compact('lesson','videos','active'));
     }
 
     // =====================
     // Helpers
     // =====================
-    /**
-     * Terima array atau string JSON; kembalikan array valid.
-     * Jika gagal decode, fallback ke [].
-     */
     protected function coerceJsonToArray($value): array
     {
-        if (is_array($value)) {
-            return $value;
-        }
+        if (is_array($value)) return $value;
         if (is_string($value) && $value !== '') {
             $decoded = json_decode($value, true);
             return is_array($decoded) ? $decoded : [];

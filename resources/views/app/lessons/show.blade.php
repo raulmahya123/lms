@@ -98,20 +98,18 @@
     $activeUrl   = $activeVideo['url']   ?? null;
     $activeEmbed = $activeUrl ? $toEmbed($activeUrl) : null;
 
-    // ====== DATA DRIVE DARI CONTROLLER USER ======
-    // Struktur $drive:
-    // ['link','status','my_whitelist'=>['status','verified_at'], 'summary'=>[...]]
-    $driveLink         = $drive['link'] ?? null;
-    $driveStatusGlobal = $drive['status'] ?? null; // pending/approved/rejected/NULL
-    $myWlStatus        = data_get($drive, 'my_whitelist.status', 'none'); // approved/pending/rejected/none
-    $myWlVerifiedAt    = data_get($drive, 'my_whitelist.verified_at');
-    $sumApproved       = data_get($drive, 'summary.approved', 0);
-    $sumPending        = data_get($drive, 'summary.pending', 0);
-    $sumRejected       = data_get($drive, 'summary.rejected', 0);
-    $sumTotal          = data_get($drive, 'summary.total', 0);
+    // ====== DATA DRIVE DARI CONTROLLER USER (tanpa global) ======
+    // Struktur $drive: ['link','my_whitelist'=>['status','verified_at'], 'summary'=>[...]]
+    $driveLink       = $drive['link'] ?? null; // <- dari controller: null jika belum approved
+    $myWlStatus      = data_get($drive, 'my_whitelist.status', 'none'); // approved/pending/rejected/none
+    $myWlVerifiedAt  = data_get($drive, 'my_whitelist.verified_at');
+    $sumApproved     = data_get($drive, 'summary.approved', 0);
+    $sumPending      = data_get($drive, 'summary.pending', 0);
+    $sumRejected     = data_get($drive, 'summary.rejected', 0);
+    $sumTotal        = data_get($drive, 'summary.total', 0);
 
-    $activeIsDrive     = $isDriveUrl($activeUrl);
-    $driveBlocked      = $activeIsDrive && ($myWlStatus !== 'approved');
+    $activeIsDrive   = $isDriveUrl($activeUrl);
+    $driveBlocked    = $activeIsDrive && ($myWlStatus !== 'approved');
 @endphp
 
 @section('content')
@@ -153,7 +151,7 @@
                   Hubungi admin untuk ditambahkan ke whitelist.
                 @endif
               </p>
-              @if($driveLink)
+              @if($driveLink && $myWlStatus === 'approved')
                 <div class="mt-3">
                   <a href="{{ $driveLink }}" target="_blank" rel="noopener"
                      class="inline-flex items-center gap-2 px-3 py-2 rounded bg-gray-900 text-white hover:bg-gray-800">
@@ -242,15 +240,22 @@
                       @endif
                     @endif
                   </div>
+
                   <div class="mt-1">
-                    <a class="inline-flex items-center text-sm {{ $blocked ? 'text-gray-500 pointer-events-none opacity-60' : 'text-blue-700 hover:underline' }}"
-                       href="{{ $url }}" target="_blank" rel="noopener">
-                      Buka {{ strtoupper($t) }}
-                      <svg class="ms-1 h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
-                        <path d="M12.5 2.5a1 1 0 011 1V8a1 1 0 11-2 0V6.414L6.707 11.207a1 1 0 01-1.414-1.414L10.586 5H9a1 1 0 110-2h3.5z"></path>
-                        <path d="M5 9a1 1 0 011 1v4a1 1 0 001 1h4a1 1 0 110 2H7a3 3 0 01-3-3v-4a1 1 0 011-1z"></path>
-                      </svg>
-                    </a>
+                    @if($isGDrive && $blocked)
+                      <span class="inline-flex items-center text-sm text-gray-500">
+                        Akses diblokir (minta approve)
+                      </span>
+                    @else
+                      <a class="inline-flex items-center text-sm text-blue-700 hover:underline"
+                        href="{{ $url }}" target="_blank" rel="noopener">
+                        Buka {{ strtoupper($t) }}
+                        <svg class="ms-1 h-4 w-4" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+                          <path d="M12.5 2.5a1 1 0 011 1V8a1 1 0 11-2 0V6.414L6.707 11.207a1 1 0 01-1.414-1.414L10.586 5H9a1 1 0 110-2h3.5z"></path>
+                          <path d="M5 9a1 1 0 011 1v4a1 1 0 001 1h4a1 1 0 110 2H7a3 3 0 01-3-3v-4a1 1 0 011-1z"></path>
+                        </svg>
+                      </a>
+                    @endif
                   </div>
 
                   @if($blocked)
@@ -423,23 +428,19 @@
         @endif
       </div>
 
-      {{-- Google Drive Access panel --}}
+      {{-- Google Drive Access panel (tanpa status global) --}}
       <div class="p-4 bg-white border rounded-lg">
         <div class="font-semibold mb-2">Google Drive Access</div>
         <dl class="text-sm space-y-1.5">
           <div class="flex justify-between gap-3">
             <dt class="text-gray-600">Link</dt>
             <dd class="text-right">
-              @if($driveLink)
+              @if($driveLink && $myWlStatus === 'approved')
                 <a href="{{ $driveLink }}" class="text-blue-700 hover:underline" target="_blank" rel="noopener">Buka</a>
               @else
                 <span class="opacity-60">—</span>
               @endif
             </dd>
-          </div>
-          <div class="flex justify-between gap-3">
-            <dt class="text-gray-600">Status Global</dt>
-            <dd class="text-right">{{ $driveStatusGlobal ? ucfirst($driveStatusGlobal) : '—' }}</dd>
           </div>
           <div class="flex justify-between gap-3">
             <dt class="text-gray-600">Status Kamu</dt>

@@ -23,8 +23,6 @@ return new class extends Migration
             // === Tambahan whitelist Google Drive per email ===
             $table->json('drive_emails')->nullable(); // simpan max 4 email yg diijinkan
             $table->string('drive_link')->nullable(); // link Google Drive utama
-            $table->enum('drive_status', ['pending','approved','rejected'])
-                  ->default('pending');
 
             $table->timestamps();
         });

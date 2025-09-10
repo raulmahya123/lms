@@ -15,7 +15,7 @@ class LessonController extends Controller
             'module.course',
             'quiz.questions.options',
             'resources',
-            // penting untuk whitelist drive:
+            // whitelist drive (hanya field yang diperlukan)
             'driveWhitelists' => fn($q) => $q->select(['id','lesson_id','user_id','email','status','verified_at']),
         ]);
 
@@ -27,15 +27,16 @@ class LessonController extends Controller
         $links  = $this->toArray($lesson->content_url); // [{title,url,type}, ...]
 
         // --- satu link Google Drive (untuk panel akses) ---
-        $driveLink = collect($links)
+        $rawDriveLink = $lesson->drive_link ?: collect($links)
             ->pluck('url')
             ->filter()
             ->first(fn($u) => str_contains((string)$u, 'drive.google.com'));
 
-        // --- ringkasan whitelist drive ---
+        // --- whitelist drive (SINGLE SOURCE OF TRUTH) ---
         $wls  = $lesson->driveWhitelists;
         $myWl = $wls->firstWhere('user_id', $user->id)
              ?? $wls->firstWhere('email', $user->email);
+        $myStatus = $myWl->status ?? 'none';
 
         $summary = [
             'approved' => $wls->where('status','approved')->count(),
@@ -44,13 +45,14 @@ class LessonController extends Controller
             'total'    => $wls->count(),
         ];
 
-        $driveStatusGlobal = $lesson->drive_status ?? null;
+        // 🚫 Expose link only if approved
+        $driveLink = ($myStatus === 'approved') ? $rawDriveLink : null;
 
+        // Tidak ada global status; hanya info per-user & ringkasan
         $drive = [
             'link'         => $driveLink,
-            'status'       => $driveStatusGlobal, // pending/approved/rejected/null
             'my_whitelist' => [
-                'status'      => $myWl->status ?? 'none',
+                'status'      => $myStatus,            // approved|pending|rejected|none
                 'verified_at' => $myWl->verified_at ?? null,
             ],
             'summary'      => $summary,
@@ -65,7 +67,7 @@ class LessonController extends Controller
         $prev = ($idx !== false && $idx > 0) ? $siblings[$idx - 1] : null;
         $next = ($idx !== false && $idx < $siblings->count() - 1) ? $siblings[$idx + 1] : null;
 
-        // --- progress user saat ini (tanpa perlu helper di model) ---
+        // --- progress user saat ini ---
         $progress = LessonProgress::query()
             ->where('lesson_id', $lesson->id)
             ->where('user_id', Auth::id())
@@ -89,13 +91,11 @@ class LessonController extends Controller
             $payload['completed_at'] = now();
         }
 
-        // Tidak bergantung pada relasi; aman walau model Lesson belum punya progresses()
         LessonProgress::updateOrCreate(
             ['lesson_id' => $lesson->id, 'user_id' => Auth::id()],
             $payload + [
                 'lesson_id' => $lesson->id,
                 'user_id'   => Auth::id(),
-                // tambahkan default watched jika perlu
                 'watched'   => (bool)($r->input('progress.watched', true)),
             ]
         );
