@@ -15,7 +15,7 @@ class CourseController extends Controller
     {
         $courses = Course::query()
             ->withCount('modules')
-            ->when($r->filled('q'), fn($q) => $q->where('title', 'like', '%'.$r->q.'%'))
+            ->when($r->filled('q'), fn($q) => $q->where('title', 'like', '%' . $r->q . '%'))
             ->when($r->filled('published'), function ($q) use ($r) {
                 if ($r->published === '1') $q->where('is_published', 1);
                 if ($r->published === '0') $q->where('is_published', 0);
@@ -38,19 +38,27 @@ class CourseController extends Controller
             'title'        => 'required|string|max:255',
             'description'  => 'nullable|string',
             'cover'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048', // ≤2MB
-           'cover_url'   => [
-        'nullable',
-        'regex:/^(https?:\/\/.+|\/[A-Za-z0-9_\-\/\.]+)$/'
-    ],
-            'is_published' => 'nullable',     // dinormalkan di bawah
+            'cover_url'    => ['nullable', 'regex:/^(https?:\/\/.+|\/[A-Za-z0-9_\-\/\.]+)$/'],
+            'is_published' => 'nullable', // dinormalkan di bawah
+            // pricing
+            'is_free'      => 'nullable|boolean',
+            'price'        => 'nullable|numeric|min:0', // akan dicek lagi jika berbayar
         ]);
+
+        // Normalisasi flag gratis/berbayar
+        // Catatan: idealnya form mengirimkan hidden input is_free=0 + checkbox is_free=1
+        $isFree = $r->boolean('is_free'); // true jika dicentang
+
+        // Validasi tambahan: jika berbayar, harga wajib ada
+        if (!$isFree && !isset($data['price'])) {
+            return back()->withErrors(['price' => 'Harga wajib diisi untuk kursus berbayar.'])->withInput();
+        }
 
         // Tentukan sumber cover: file upload > url manual > null
         $finalCoverUrl = null;
-
         if ($r->hasFile('cover')) {
             $path = $r->file('cover')->store('covers', 'public');
-            $finalCoverUrl = Storage::disk('public')->url($path); // biasanya "/storage/covers/xxx.webp"
+            $finalCoverUrl = Storage::disk('public')->url($path);
         } elseif (!empty($data['cover_url'])) {
             $finalCoverUrl = $data['cover_url'];
         }
@@ -61,12 +69,15 @@ class CourseController extends Controller
             'cover_url'    => $finalCoverUrl,
             'is_published' => $r->boolean('is_published'),
             'created_by'   => Auth::id(),
+            'is_free'      => $isFree,
+            'price'        => $isFree ? null : ($data['price'] ?? null),
         ]);
 
         return redirect()
             ->route('admin.courses.index')
             ->with('ok', 'Course dibuat');
     }
+
 
     public function edit(Course $course)
     {
@@ -75,49 +86,63 @@ class CourseController extends Controller
     }
 
     public function update(Request $r, Course $course)
-    {
-        $data = $r->validate([
-            'title'        => 'required|string|max:255',
-            'description'  => 'nullable|string',
-            'cover'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'cover_url'    => 'nullable|url', // ends_with DIHAPUS
-            'is_published' => 'nullable',
-        ]);
+{
+    $data = $r->validate([
+        'title'        => 'required|string|max:255',
+        'description'  => 'nullable|string',
+        'cover'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+        'cover_url'    => 'nullable|url',
+        'is_published' => 'nullable',
+        'is_free'      => 'nullable|boolean',
+        'price'        => 'nullable|numeric|min:0',
+    ]);
 
-        $finalCoverUrl = $course->cover_url;
+    // Normalisasi flag gratis/berbayar
+    $isFree = $r->boolean('is_free');
 
-        // PRIORITAS 1: upload file -> timpa cover lama
-        if ($r->hasFile('cover')) {
-            $this->deleteOldLocalCoverIfAny($course->cover_url);
-
-            $path = $r->file('cover')->store('covers', 'public');
-            $finalCoverUrl = Storage::disk('public')->url($path);
-        }
-        // PRIORITAS 2: tidak upload file, tapi form mengirim cover_url (bisa kosong atau diisi)
-        elseif (array_key_exists('cover_url', $data)) {
-            if (empty($data['cover_url'])) {
-                // user mengosongkan -> hapus file lokal lama bila ada
-                $this->deleteOldLocalCoverIfAny($course->cover_url);
-                $finalCoverUrl = null;
-            } else {
-                // user ganti ke URL baru -> hapus file lokal lama bila ada
-                $this->deleteOldLocalCoverIfAny($course->cover_url);
-                $finalCoverUrl = $data['cover_url'];
-            }
-        }
-        // PRIORITAS 3: tidak upload file & tidak kirim cover_url -> biarkan yang lama
-
-        $course->update([
-            'title'        => $data['title'],
-            'description'  => $data['description'] ?? null,
-            'cover_url'    => $finalCoverUrl,
-            'is_published' => $r->boolean('is_published'),
-        ]);
-
-        return redirect()
-            ->route('admin.courses.index')
-            ->with('ok', 'Course berhasil diupdate');
+    // Jika berbayar, wajib ada harga
+    if (!$isFree && !isset($data['price'])) {
+        return back()->withErrors(['price' => 'Harga wajib diisi untuk kursus berbayar.'])->withInput();
     }
+
+    // Kelola cover
+    $finalCoverUrl = $course->cover_url;
+
+    // PRIORITAS 1: upload file -> timpa cover lama
+    if ($r->hasFile('cover')) {
+        $this->deleteOldLocalCoverIfAny($course->cover_url);
+
+        $path = $r->file('cover')->store('covers', 'public');
+        $finalCoverUrl = Storage::disk('public')->url($path);
+    }
+    // PRIORITAS 2: tidak upload file, tapi form mengirim cover_url (bisa kosong atau diisi)
+    elseif (array_key_exists('cover_url', $data)) {
+        if (empty($data['cover_url'])) {
+            // user mengosongkan -> hapus file lokal lama bila ada
+            $this->deleteOldLocalCoverIfAny($course->cover_url);
+            $finalCoverUrl = null;
+        } else {
+            // user ganti ke URL baru -> hapus file lokal lama bila ada
+            $this->deleteOldLocalCoverIfAny($course->cover_url);
+            $finalCoverUrl = $data['cover_url'];
+        }
+    }
+    // PRIORITAS 3: tidak upload file & tidak kirim cover_url -> biarkan yang lama
+
+    $course->update([
+        'title'        => $data['title'],
+        'description'  => $data['description'] ?? null,
+        'cover_url'    => $finalCoverUrl,
+        'is_published' => $r->boolean('is_published'),
+        'is_free'      => $isFree,
+        'price'        => $isFree ? null : ($data['price'] ?? null),
+    ]);
+
+    return redirect()
+        ->route('admin.courses.index')
+        ->with('ok', 'Course berhasil diupdate');
+}
+
 
     public function destroy(Course $course)
     {
@@ -136,7 +161,7 @@ class CourseController extends Controller
     {
         return response()->json(
             $course->modules()
-                ->select('id','title','ordering')
+                ->select('id', 'title', 'ordering')
                 ->orderBy('ordering')
                 ->get()
         );

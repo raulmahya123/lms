@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasManyThrough};
+use Illuminate\Support\Str;
 
 class Course extends Model
 {
@@ -13,7 +14,40 @@ class Course extends Model
         'cover_url',
         'is_published',
         'created_by',
+        'is_free',
+        'price',
     ];
+
+    protected $casts = [
+        'is_published' => 'boolean',
+        'is_free' => 'boolean',
+        'price' => 'decimal:2',
+    ];
+
+    // Helper opsional
+    public function getIsPaidAttribute(): bool
+    {
+        return !$this->is_free;
+    }
+
+    public function getCoverUrlResolvedAttribute(): ?string
+    {
+        $url = $this->cover_url;
+        if (!$url) return null;
+
+        // kalau sudah http/https -> langsung pakai
+        if (Str::startsWith($url, ['http://', 'https://'])) {
+            return $url;
+        }
+
+        // kalau /storage/... atau storage/... -> prefix dengan APP_URL
+        if (Str::startsWith($url, ['/storage/', 'storage/'])) {
+            return url(ltrim($url, '/')); // jadikan absolute
+        }
+
+        // fallback: kembalikan apa adanya
+        return $url;
+    }
 
     /** ================= Relations ================= */
 

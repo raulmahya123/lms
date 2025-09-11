@@ -55,6 +55,8 @@
       </div>
     </div>
 
+    
+
     <div class="col-span-1">
       <label class="block text-sm font-medium mb-1">Published</label>
       <div class="relative">
@@ -120,6 +122,7 @@
             <th class="p-3 text-left w-20">ID</th>
             <th class="p-3 text-left">Cover</th>
             <th class="p-3 text-left">Title</th>
+            <th class="p-3 text-left w-36">Pricing</th>
             <th class="p-3 text-left w-32">Modules</th>
             <th class="p-3 text-left w-32">Published</th>
             <th class="p-3 text-left w-44">Updated</th>
@@ -152,12 +155,31 @@
                 @endif
               </td>
 
+              {{-- ✅ Pricing: PASTIKAN potongan ini DI DALAM loop --}}
+    <td class="p-3">
+      @if($c->is_free)
+        <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-100 text-emerald-800">
+          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M3.75 7.5A2.25 2.25 0 0 1 6 5.25h12A2.25 2.25 0 0 1 20.25 7.5v2.25a1.5 1.5 0 0 0 0 3V15A2.25 2.25 0 0 1 18 17.25H6A2.25 2.25 0 0 1 3.75 15v-2.25a1.5 1.5 0 0 0 0-3V7.5Z"/></svg>
+          Gratis
+        </span>
+      @else
+        <div class="inline-flex items-center gap-2 rounded-xl border px-2 py-1 bg-white">
+          <svg class="w-4 h-4 opacity-60" viewBox="0 0 24 24" fill="currentColor"><path d="M12 3.75a8.25 8.25 0 1 0 8.25 8.25A8.26 8.26 0 0 0 12 3.75Zm.75 4.5a.75.75 0 0 0-1.5 0v.29a3 3 0 0 0-2.25 2.91.75.75 0 0 0 1.5 0 1.5 1.5 0 1 1 1.5 1.5 3 3 0 1 0 3 3 .75.75 0 0 0-1.5 0 1.5 1.5 0 1 1-1.5-1.5 3 3 0 0 0 0-6Z"/></svg>
+          <span class="tabular-nums">
+            Rp {{ number_format((float)($c->price ?? 0), 2, ',', '.') }}
+          </span>
+        </div>
+      @endif
+    </td>
+    {{-- ⬆⬆⬆ Pricing end --}}
+
               <td class="p-3">
                 <div class="inline-flex items-center gap-2 rounded-xl border px-2 py-1 bg-white">
                   <svg class="w-4 h-4 opacity-60" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.75 2.75 7.5 12 12.25 21.25 7.5 12 2.75Zm0 9.5L2.75 17l9.25 4.75L21.25 17 12 12.25Z"/></svg>
                   <span class="tabular-nums">{{ $c->modules_count }}</span>
                 </div>
               </td>
+              
 
               <td class="p-3">
                 @if($c->is_published)

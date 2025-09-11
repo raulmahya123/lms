@@ -53,6 +53,37 @@
       <label for="is_published" class="font-semibold">Published</label>
     </div>
 
+        {{-- Pricing --}}
+    <div x-data="{
+          isFree: {{ old('is_free', 1) ? 'true' : 'false' }},
+          toggle(){ this.isFree = !this.isFree; }
+        }">
+      <label class="block font-semibold mb-2">Pricing</label>
+
+      {{-- penting: hidden agar nilai 0 terkirim saat checkbox tidak dicentang --}}
+      <input type="hidden" name="is_free" value="0">
+
+      <label class="inline-flex items-center gap-2">
+        <input type="checkbox" name="is_free" value="1"
+               @change="toggle()"
+               :checked="isFree"
+               class="h-4 w-4">
+        <span>Gratis</span>
+      </label>
+      @error('is_free') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+
+      <div class="mt-3">
+        <label class="block text-sm font-medium mb-1">Harga (Rp)</label>
+        <input type="number" step="0.01" name="price"
+               value="{{ old('price') }}"
+               :disabled="isFree"
+               class="w-full border rounded p-2">
+        <p class="text-xs opacity-70 mt-1">Kosongkan jika kursus gratis. Jika berbayar, harga wajib diisi.</p>
+        @error('price') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+      </div>
+    </div>
+
+
     {{-- Actions --}}
     <div class="flex justify-end space-x-3">
       <a href="{{ route('admin.courses.index') }}" class="px-4 py-2 rounded border">Cancel</a>

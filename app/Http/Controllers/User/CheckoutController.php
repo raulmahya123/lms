@@ -9,86 +9,88 @@ use App\Models\{Plan, Course, Payment, Membership, Enrollment, Coupon, CouponRed
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
+use App\Services\MidtransService;
+use Illuminate\Support\Str;
+
+
 
 class CheckoutController extends Controller
 {
-    public function checkoutPlan(CheckoutPlanRequest $r, Plan $plan)
+    public function checkoutPlan(CheckoutPlanRequest $r, Plan $plan, MidtransService $midtrans)
     {
         $amount = (float) $plan->price;
-        $coupon = null; $discount = 0;
+        $coupon = null;
+        $discount = 0;
 
         if ($code = $r->input('coupon_code')) {
             $coupon = Coupon::whereRaw('LOWER(code)=?', [strtolower($code)])->first();
-            if ($coupon && $this->couponOk($coupon)) $discount = round($amount*($coupon->discount_percent/100),2);
+            if ($coupon && $this->couponOk($coupon)) {
+                $discount = round($amount * ($coupon->discount_percent / 100), 2);
+            }
         }
 
         $final = max(0, $amount - $discount);
 
-        $payment = DB::transaction(fn() =>
+        // buat payment
+        $payment = DB::transaction(
+            fn() =>
             Payment::create([
-                'user_id'=>Auth::id(),
-                'plan_id'=>$plan->id,
-                'course_id'=>null,
-                'amount'=>$final,
-                'status'=>$final==0?'paid':'pending',
-                'provider'=>'manual',
-                'reference'=>'PLN-'.now()->format('YmdHis').'-'.Auth::id(),
-                'paid_at'=>$final==0?now():null,
+                'user_id'   => Auth::id(),
+                'plan_id'   => $plan->id,
+                'course_id' => null,
+                'amount'    => $final,
+                'status'    => 'pending',
+                'provider'  => 'midtrans',
+                'reference' => 'PLN-' . now()->format('YmdHis') . '-' . Auth::id() . '-' . Str::random(6),
             ])
         );
 
-        if ($payment->status==='paid') {
-            $this->grantPlan($plan, $coupon);
-            return redirect()->route('app.memberships.index')->with('status','Membership aktif.');
-        }
-        return back()->with('status','Order dibuat. Ref: '.$payment->reference);
-    }
+        // build params untuk Snap
+        $params = [
+            'transaction_details' => [
+                'order_id'     => $payment->reference,
+                'gross_amount' => $payment->amount,
+            ],
+            'customer_details' => [
+                'first_name' => Auth::user()->name,
+                'email'      => Auth::user()->email,
+            ],
+            'item_details' => [[
+                'id'       => (string) $plan->id,
+                'price'    => $payment->amount,
+                'quantity' => 1,
+                'name'     => $plan->name,
+            ]],
+        ];
 
-    public function checkoutCourse(CheckoutCourseRequest $r, Course $course)
-    {
-        $amount = (float) $r->price;
-        $coupon = null; $discount = 0;
+        $snap = $midtrans->createSnap($params);
 
-        if ($code = $r->input('coupon_code')) {
-            $coupon = Coupon::whereRaw('LOWER(code)=?', [strtolower($code)])->first();
-            if ($coupon && $this->couponOk($coupon)) $discount = round($amount*($coupon->discount_percent/100),2);
-        }
+        $payment->update([
+            'snap_token'        => $snap['token'],
+            'snap_redirect_url' => $snap['redirect_url'],
+        ]);
 
-        $final = max(0, $amount - $discount);
-
-        $payment = DB::transaction(fn() =>
-            Payment::create([
-                'user_id'=>Auth::id(),
-                'plan_id'=>null,
-                'course_id'=>$course->id,
-                'amount'=>$final,
-                'status'=>$final==0?'paid':'pending',
-                'provider'=>'manual',
-                'reference'=>'CRS-'.now()->format('YmdHis').'-'.Auth::id(),
-                'paid_at'=>$final==0?now():null,
-            ])
-        );
-
-        if ($payment->status==='paid') {
-            $this->grantCourse($course, $coupon);
-            return redirect()->route('app.my.courses')->with('status','Enroll aktif.');
-        }
-        return back()->with('status','Order dibuat. Ref: '.$payment->reference);
+        return view('app.payments.snap', [
+            'payment'   => $payment,
+            'snapToken' => $payment->snap_token,
+            'clientKey' => config('services.midtrans.client_key'),
+            'isSandbox' => !config('services.midtrans.is_production'),
+        ]);
     }
 
     public function confirm(Request $r, Payment $payment)
     {
         abort_unless($payment->user_id === Auth::id(), 403);
 
-        DB::transaction(function() use ($payment, $r) {
+        DB::transaction(function () use ($payment, $r) {
             $payment->update([
-                'status'=>'paid',
-                'paid_at'=>now(),
-                'reference'=>$payment->reference.'-OK',
+                'status' => 'paid',
+                'paid_at' => now(),
+                'reference' => $payment->reference . '-OK',
             ]);
 
             $coupon = null;
-            if ($code=$r->input('coupon_code')) {
+            if ($code = $r->input('coupon_code')) {
                 $coupon = Coupon::whereRaw('LOWER(code)=?', [strtolower($code)])->first();
             }
 
@@ -96,63 +98,63 @@ class CheckoutController extends Controller
             if ($payment->course_id) $this->grantCourse(Course::find($payment->course_id), $coupon);
         });
 
-        return redirect()->route('app.dashboard')->with('status','Pembayaran dikonfirmasi.');
+        return redirect()->route('app.dashboard')->with('status', 'Pembayaran dikonfirmasi.');
     }
 
     // Helpers
     protected function couponOk(Coupon $coupon): bool
     {
-        $now=now();
+        $now = now();
         if ($coupon->valid_from && $coupon->valid_from->gt($now)) return false;
         if ($coupon->valid_until && $coupon->valid_until->lt($now)) return false;
         if ($coupon->usage_limit && $coupon->redemptions()->count() >= $coupon->usage_limit) return false;
         return true;
     }
 
-    protected function grantPlan(Plan $plan=null, ?Coupon $coupon=null): void
+    protected function grantPlan(Plan $plan = null, ?Coupon $coupon = null): void
     {
         if (!$plan) return;
         Membership::updateOrCreate(
-            ['user_id'=>Auth::id(),'plan_id'=>$plan->id],
-            ['status'=>'active','activated_at'=>now(),'expires_at'=>null]
+            ['user_id' => Auth::id(), 'plan_id' => $plan->id],
+            ['status' => 'active', 'activated_at' => now(), 'expires_at' => null]
         );
 
         $courseIds = $plan->planCourses()->pluck('course_id')->all();
         foreach ($courseIds as $cid) {
             Enrollment::firstOrCreate(
-                ['user_id'=>Auth::id(),'course_id'=>$cid],
-                ['status'=>'active','activated_at'=>now()]
+                ['user_id' => Auth::id(), 'course_id' => $cid],
+                ['status' => 'active', 'activated_at' => now()]
             );
         }
 
         if ($coupon) {
             CouponRedemption::create([
-                'coupon_id'=>$coupon->id,
-                'user_id'=>Auth::id(),
-                'plan_id'=>$plan->id,
-                'course_id'=>null,
-                'used_at'=>now(),
-                'amount_discounted'=>null,
+                'coupon_id' => $coupon->id,
+                'user_id' => Auth::id(),
+                'plan_id' => $plan->id,
+                'course_id' => null,
+                'used_at' => now(),
+                'amount_discounted' => null,
             ]);
         }
     }
 
-    protected function grantCourse(Course $course=null, ?Coupon $coupon=null): void
+    protected function grantCourse(Course $course = null, ?Coupon $coupon = null): void
     {
         if (!$course) return;
         Enrollment::firstOrCreate(
-            ['user_id'=>Auth::id(),'course_id'=>$course->id],
-            ['status'=>'active','activated_at'=>now()]
+            ['user_id' => Auth::id(), 'course_id' => $course->id],
+            ['status' => 'active', 'activated_at' => now()]
         );
 
         if ($coupon) {
             CouponRedemption::create([
-                'coupon_id'=>$coupon->id,
-                'user_id'=>Auth::id(),
-                'plan_id'=>null,
-                'course_id'=>$course->id,
-                'used_at'=>now(),
-                'amount_discounted'=>null,
+                'coupon_id' => $coupon->id,
+                'user_id' => Auth::id(),
+                'plan_id' => null,
+                'course_id' => $course->id,
+                'used_at' => now(),
+                'amount_discounted' => null,
             ]);
         }
     }

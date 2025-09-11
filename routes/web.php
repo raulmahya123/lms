@@ -61,6 +61,7 @@ use App\Http\Controllers\User\{
     CouponController         as UserCouponController,
     CheckoutController,
     MembershipController     as UserMembershipController,
+    CourseCheckoutController as UserCourseCheckoutController,
     PaymentController        as UserPaymentController,
     ResourceController       as UserResourceController,
     PlanController           as UserPlanController,
@@ -110,6 +111,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/memberships/{membership}', [UserMembershipController::class, 'update'])
         ->name('app.memberships.update');
 
+    Route::post(
+        '/memberships/{membership}/midtrans/snap',
+        [UserMembershipController::class, 'startSnap']
+    )->name('app.memberships.snap');
+
     // Katalog & detail kursus
     Route::get('/courses', [CourseBrowseController::class, 'index'])->name('app.courses.index');
     Route::get('/courses/{course}', [CourseBrowseController::class, 'show'])->name('app.courses.show');
@@ -135,7 +141,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/attempts/{attempt}', [UserQuizController::class, 'result'])
         ->middleware('ensure.attempt.owner')->name('app.quiz.result');
     Route::post('/lessons/{lesson}/drive/request', [UserLessonController::class, 'requestDriveAccess'])
-    ->name('lessons.drive.request');
+        ->name('lessons.drive.request');
     // Kupon
     Route::post('/coupons/validate', [UserCouponController::class, 'validateCode'])->name('app.coupons.validate');
 
@@ -143,6 +149,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/checkout/plan/{plan}', [CheckoutController::class, 'checkoutPlan'])->name('app.checkout.plan');
     Route::post('/checkout/course/{course}', [CheckoutController::class, 'checkoutCourse'])->name('app.checkout.course');
     Route::post('/checkout/{payment}/confirm', [CheckoutController::class, 'confirm'])->name('app.checkout.confirm');
+    
+    // Halaman checkout course
+    Route::get('/courses/{course}/checkout', [UserCourseCheckoutController::class, 'checkout'])
+        ->name('app.courses.checkout');
+
+    // Ambil Snap token (dipanggil dari tombol Bayar)
+    Route::post('/courses/{course}/midtrans/snap', [UserCourseCheckoutController::class, 'startSnap'])
+        ->name('app.courses.snap');
+
 
     // Sertifikat (PDF)
     Route::get('/courses/{course}/certificate', [CertificateController::class, 'course'])->name('app.certificate.course');
@@ -225,26 +240,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', fn() => view('profile.index'))->name('profile.edit');
+    Route::middleware('auth')->group(function () {
+        Route::get('/profile', fn() => view('profile.index'))->name('profile.edit');
 
-    Route::get('/profile/updateinformation', fn(\Illuminate\Http\Request $r) =>
-        view('profile.updateinformation', [
-            'user' => $r->user(),
-            'mustVerifyEmail' => $r->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail,
-            'status' => session('status'),
-        ])
-    )->name('profile.info.edit');
+        Route::get(
+            '/profile/updateinformation',
+            fn(\Illuminate\Http\Request $r) =>
+            view('profile.updateinformation', [
+                'user' => $r->user(),
+                'mustVerifyEmail' => $r->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail,
+                'status' => session('status'),
+            ])
+        )->name('profile.info.edit');
 
-    Route::get('/profile/updatepass', fn() => view('profile.updatepass', ['status'=>session('status')]))
-        ->name('profile.pass.edit');
+        Route::get('/profile/updatepass', fn() => view('profile.updatepass', ['status' => session('status')]))
+            ->name('profile.pass.edit');
 
-    Route::get('/profile/delacc', fn() => view('profile.delacc'))
-        ->name('profile.delete.confirm');
+        Route::get('/profile/delacc', fn() => view('profile.delacc'))
+            ->name('profile.delete.confirm');
 
-    Route::patch('/profile', [\App\Http\Controllers\ProfileController::class,'update'])->name('profile.update');
-    Route::delete('/profile', [\App\Http\Controllers\ProfileController::class,'destroy'])->name('profile.destroy');
-});
+        Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+    });
 });
 
 // =====================
