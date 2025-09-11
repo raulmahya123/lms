@@ -46,6 +46,7 @@ use App\Http\Controllers\Admin\{
     PsyTestController        as AdminPsyTestController, // optional if referenced directly
     PsyAttemptController     as AdminPsyAttemptController,
     TestIqController as AdminTestIqController,
+    PsyProfileController as AdminPsyProfileController,
 };
 
 // =====================
@@ -135,7 +136,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/attempts/{attempt}', [UserQuizController::class, 'result'])
         ->middleware('ensure.attempt.owner')->name('app.quiz.result');
     Route::post('/lessons/{lesson}/drive/request', [UserLessonController::class, 'requestDriveAccess'])
-    ->name('lessons.drive.request');
+        ->name('lessons.drive.request');
     // Kupon
     Route::post('/coupons/validate', [UserCouponController::class, 'validateCode'])->name('app.coupons.validate');
 
@@ -225,26 +226,28 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 
-Route::middleware('auth')->group(function () {
-    Route::get('/profile', fn() => view('profile.index'))->name('profile.edit');
+    Route::middleware('auth')->group(function () {
+        Route::get('/profile', fn() => view('profile.index'))->name('profile.edit');
 
-    Route::get('/profile/updateinformation', fn(\Illuminate\Http\Request $r) =>
-        view('profile.updateinformation', [
-            'user' => $r->user(),
-            'mustVerifyEmail' => $r->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail,
-            'status' => session('status'),
-        ])
-    )->name('profile.info.edit');
+        Route::get(
+            '/profile/updateinformation',
+            fn(\Illuminate\Http\Request $r) =>
+            view('profile.updateinformation', [
+                'user' => $r->user(),
+                'mustVerifyEmail' => $r->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail,
+                'status' => session('status'),
+            ])
+        )->name('profile.info.edit');
 
-    Route::get('/profile/updatepass', fn() => view('profile.updatepass', ['status'=>session('status')]))
-        ->name('profile.pass.edit');
+        Route::get('/profile/updatepass', fn() => view('profile.updatepass', ['status' => session('status')]))
+            ->name('profile.pass.edit');
 
-    Route::get('/profile/delacc', fn() => view('profile.delacc'))
-        ->name('profile.delete.confirm');
+        Route::get('/profile/delacc', fn() => view('profile.delacc'))
+            ->name('profile.delete.confirm');
 
-    Route::patch('/profile', [\App\Http\Controllers\ProfileController::class,'update'])->name('profile.update');
-    Route::delete('/profile', [\App\Http\Controllers\ProfileController::class,'destroy'])->name('profile.destroy');
-});
+        Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+    });
 });
 
 // =====================
@@ -264,7 +267,7 @@ Route::middleware(['auth', 'can:admin'])
         Route::get('test-iq/{testIq}/edit', [AdminTestIqController::class, 'edit'])->name('test-iq.edit');
         Route::put('test-iq/{testIq}',   [AdminTestIqController::class, 'update'])->name('test-iq.update');
         Route::delete('test-iq/{testIq}', [AdminTestIqController::class, 'destroy'])->name('test-iq.destroy');
-
+        Route::resource('psy-profiles', AdminPsyProfileController::class);
         // opsional toggle
         Route::post('test-iq/{testIq}/toggle', [AdminTestIqController::class, 'toggle'])->name('test-iq.toggle');
 
