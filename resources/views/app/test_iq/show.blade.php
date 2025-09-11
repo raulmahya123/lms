@@ -18,18 +18,22 @@
     <input type="hidden" name="duration_sec" :value="dur">
 
     @foreach($test->questions ?? [] as $q)
-      <div class="mb-6">
-        <div class="font-medium mb-2">{{ $loop->iteration }}. {{ $q['text'] ?? '' }}</div>
-        <div class="grid gap-2">
-          @foreach(($q['options'] ?? []) as $opt)
-            <label class="flex items-center gap-2">
-              <input type="radio" name="answers[{{ $q['id'] }}]" value="{{ $opt }}" class="accent-indigo-600">
-              <span>{{ $opt }}</span>
-            </label>
-          @endforeach
-        </div>
-      </div>
-    @endforeach
+  <div class="mb-6">
+    <div class="font-medium mb-2">{{ $loop->iteration }}. {{ $q['text'] ?? '' }}</div>
+    <div class="grid gap-2">
+      @foreach(($q['options'] ?? []) as $opt)
+        <label class="flex items-center gap-2">
+          <input type="radio" 
+                 name="answers[{{ $loop->parent->index }}]" 
+                 value="{{ $opt }}" 
+                 class="accent-indigo-600">
+          <span>{{ $opt }}</span>
+        </label>
+      @endforeach
+    </div>
+  </div>
+@endforeach
+
 
     <button type="submit" class="px-4 py-2 rounded bg-indigo-600 text-white">Kirim Jawaban</button>
   </form>

@@ -14,6 +14,15 @@ class TestIqController extends Controller
     {
         abort_unless($testIq->is_active, 404);
 
+        // (Opsional) Batasi 1 kali submit per user
+        $userId = Auth::id();
+        $alreadySubmitted = collect($testIq->submissions ?? [])
+            ->contains(fn($s) => ($s['user_id'] ?? null) === $userId);
+
+        if ($alreadySubmitted) {
+            return redirect()->route('user.test-iq.result', $testIq);
+        }
+
         return view('app.test_iq.show', [
             'test' => $testIq,
         ]);
@@ -71,7 +80,7 @@ class TestIqController extends Controller
         $last = $subs->isEmpty() ? null : $subs->last();
 
         return view('app.test_iq.result', [
-            'test' => $testIq,
+            'test'   => $testIq,
             'result' => $last,
         ]);
     }

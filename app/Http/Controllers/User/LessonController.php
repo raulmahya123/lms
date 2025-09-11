@@ -128,8 +128,6 @@ class LessonController extends Controller
         return back()->with('status', 'Progress tersimpan.');
     }
 
-
-
     // ====================== Helpers ======================
 
     protected function toArray($value): array
