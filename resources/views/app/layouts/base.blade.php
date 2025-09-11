@@ -103,9 +103,6 @@
           </a>
 
           @auth
-            <a href="{{ route('app.dashboard') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.dashboard') }}">
-              <i class="fa-solid fa-user nav-icon"></i><span>Dashboard User</span>
-            </a>
             @if($isAdmin)
               <a href="{{ route('admin.dashboard') }}"
                  class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 ring-1 ring-bluecamp-300 text-bluecamp-700 hover:bg-bluecamp-50 hover:text-bluecamp-800 {{ request()->routeIs('admin.*') ? 'bg-bluecamp-100 dark:bg-bluecamp-800/30 dark:text-bluecamp-200' : '' }} dark:ring-ink-600 dark:text-bluecamp-200 dark:hover:bg-ink-700">
