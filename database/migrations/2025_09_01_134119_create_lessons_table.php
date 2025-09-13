@@ -15,14 +15,29 @@ return new class extends Migration
             $table->id();
             $table->foreignId('module_id')->constrained()->cascadeOnDelete();
             $table->string('title');
+
+            // tambahan deskripsi lengkap
+            $table->text('about')->nullable();
+            $table->longText('syllabus')->nullable();
+            $table->json('reviews')->nullable();
+            $table->json('tools')->nullable();
+
+            // siapa pembuat lesson
+            $table->foreignId('created_by')
+                  ->nullable()
+                  ->constrained('users')
+                  ->nullOnDelete();
+
+            $table->longText('benefits')->nullable();
+
             $table->json('content')->nullable();
             $table->json('content_url')->nullable();
             $table->unsignedInteger('ordering')->default(1);
             $table->boolean('is_free')->default(false);
 
-            // === Tambahan whitelist Google Drive per email ===
-            $table->json('drive_emails')->nullable(); // simpan max 4 email yg diijinkan
-            $table->string('drive_link')->nullable(); // link Google Drive utama
+            // whitelist Google Drive
+            $table->json('drive_emails')->nullable(); 
+            $table->string('drive_link')->nullable(); 
 
             $table->timestamps();
         });
@@ -36,4 +51,3 @@ return new class extends Migration
         Schema::dropIfExists('lessons');
     }
 };
-

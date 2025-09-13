@@ -3,15 +3,16 @@
 
 @section('content')
 @php
-  // pastikan relasi whitelist tersedia
+  // Pastikan relasi whitelist ada
   $lesson->loadMissing('driveWhitelists.user');
 
-  // video aktif
+  // Normalisasi playlist
+  $videos = is_array($videos) ? $videos : [];
   $current = $videos[$active] ?? null;
   $url     = is_array($current) ? ($current['url'] ?? null) : null;
   $title   = is_array($current) ? ($current['title'] ?? 'Untitled') : 'Untitled';
 
-  // helper deteksi
+  // Deteksi embed
   $isYoutube = function (?string $u) {
       return $u && preg_match('~(youtube\.com/watch\?v=|youtu\.be/)~i', $u);
   };
@@ -35,13 +36,14 @@
       return $u;
   };
 
-  // ringkasan whitelist
+  // Ringkasan whitelist
   $wl = $lesson->driveWhitelists ?? collect();
   $total    = $wl->count();
   $approved = $wl->where('status','approved')->count();
   $pending  = $wl->where('status','pending')->count();
   $rejected = $wl->where('status','rejected')->count();
 
+  // Jika tak ada kolom drive_status, pakai null
   $driveStatus = $lesson->drive_status ?? null;
   $statusClass = match($driveStatus){
     'approved' => 'bg-green-100 text-green-700',
@@ -49,6 +51,19 @@
     'pending'  => 'bg-yellow-100 text-yellow-700',
     default    => 'bg-gray-100 text-gray-700',
   };
+
+  // Normalisasi tools & benefits (boleh JSON/CSV/array)
+  $normalizeList = function($val){
+      if (is_array($val)) return array_values(array_filter(array_map('trim',$val)));
+      if (is_string($val)) {
+          $dec = json_decode($val, true);
+          if (is_array($dec)) return array_values(array_filter(array_map('trim',$dec)));
+          return array_values(array_filter(array_map('trim', explode(',', $val))));
+      }
+      return [];
+  };
+  $tools    = $normalizeList($lesson->tools ?? []);
+  $benefits = $normalizeList($lesson->benefits ?? []);
 @endphp
 
 <div class="space-y-6">
@@ -59,6 +74,22 @@
       <p class="text-sm opacity-70">
         {{ $lesson->module?->course?->title ?? '—' }} — {{ $lesson->module?->title ?? '—' }}
       </p>
+
+      {{-- Tools & Benefits --}}
+      @if(!empty($tools) || !empty($benefits))
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          @foreach($tools as $t)
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-[11px]">
+              {{ $t }}
+            </span>
+          @endforeach
+          @foreach($benefits as $b)
+            <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px]">
+              {{ $b }}
+            </span>
+          @endforeach
+        </div>
+      @endif
     </div>
     <div class="flex items-center gap-2">
       <a href="{{ route('admin.lessons.index') }}"
@@ -77,24 +108,20 @@
           @if($isYoutube($url))
             @php $id = $ytId($url); @endphp
             @if($id)
-              <iframe
-                class="w-full aspect-video"
-                src="https://www.youtube.com/embed/{{ $id }}"
-                title="{{ $title }}"
-                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                allowfullscreen
-              ></iframe>
+              <iframe class="w-full aspect-video"
+                      src="https://www.youtube.com/embed/{{ $id }}"
+                      title="{{ $title }}"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                      allowfullscreen></iframe>
             @else
               <div class="p-6 text-white">Tidak bisa mendeteksi ID YouTube dari URL ini.</div>
             @endif
           @elseif($isDrive($url))
-            <iframe
-              class="w-full aspect-video"
-              src="{{ $drivePreview($url) }}"
-              title="{{ $title }}"
-              allow="autoplay"
-              allowfullscreen
-            ></iframe>
+            <iframe class="w-full aspect-video"
+                    src="{{ $drivePreview($url) }}"
+                    title="{{ $title }}"
+                    allow="autoplay"
+                    allowfullscreen></iframe>
           @else
             <div class="p-6 bg-white">
               <p class="mb-2 font-medium">Tidak ada embed untuk URL ini:</p>
@@ -108,7 +135,7 @@
         @endif
       </div>
 
-      {{-- Judul aktif + deskripsi kecil --}}
+      {{-- Judul aktif + status --}}
       <div class="rounded-2xl border bg-white p-4">
         <div class="flex items-center justify-between">
           <div>
@@ -125,7 +152,29 @@
         </div>
       </div>
 
-      {{-- Content (jika ada) --}}
+      {{-- About / Syllabus / Reviews --}}
+      @if(!empty($about))
+        <div class="rounded-2xl border bg-white p-4">
+          <div class="font-semibold mb-1">About</div>
+          <div class="text-sm text-gray-800">{!! nl2br(e($about)) !!}</div>
+        </div>
+      @endif
+
+      @if(!empty($syllabus))
+        <div class="rounded-2xl border bg-white p-4">
+          <div class="font-semibold mb-1">Syllabus</div>
+          <div class="text-sm text-gray-800">{!! nl2br(e($syllabus)) !!}</div>
+        </div>
+      @endif
+
+      @if(!empty($reviews))
+        <div class="rounded-2xl border bg-white p-4">
+          <div class="font-semibold mb-1">Reviews</div>
+          <div class="text-sm text-gray-800">{!! nl2br(e($reviews)) !!}</div>
+        </div>
+      @endif
+
+      {{-- Content --}}
       @if(!empty($lesson->content))
         <div class="rounded-2xl border bg-white p-4 prose max-w-none">
           @if(is_array($lesson->content))
@@ -137,7 +186,7 @@
       @endif
     </div>
 
-    {{-- Sidebar: playlist + Drive --}}
+    {{-- Sidebar --}}
     <div class="space-y-4">
       {{-- Playlist --}}
       <div class="rounded-2xl border bg-white">
@@ -146,8 +195,8 @@
           @forelse($videos as $i => $v)
             @php
               $isActive = $i === $active;
-              $vt = $v['title'] ?? 'Untitled';
-              $vu = $v['url']   ?? null;
+              $vt = is_array($v) ? ($v['title'] ?? 'Untitled') : 'Untitled';
+              $vu = is_array($v) ? ($v['url'] ?? null) : null;
             @endphp
             <a href="{{ route('admin.lessons.show', [$lesson, 'v' => $i]) }}"
                class="block px-4 py-3 hover:bg-gray-50 {{ $isActive ? 'bg-blue-50' : '' }}">
@@ -179,7 +228,10 @@
             @php $hasLink = !empty($lesson->drive_link ?? null); @endphp
             <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs"
                   title="{{ $hasLink ? $lesson->drive_link : 'No drive link' }}">
-              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M13.06 7.06a3 3 0 0 1 4.24 0l.64.64a3 3 0 0 1 0 4.24l-3.18 3.18a3 3 0 0 1-4.24 0l-.64-.64a.75.75 0 0 1 1.06-1.06l.64.64a1.5 1.5 0 0 0 2.12 0l3.18-3.18a1.5 1.5 0 0 0 0-2.12l-.64-.64a1.5 1.5 0 0 0-2.12 0.0.75.75 0 1 1-1.06-1.06Z"/></svg>
+              <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M7.03 12a3 3 0 0 1 0-4.24l2.12-2.12a3 3 0 0 1 4.24 0 .75.75 0 0 0 1.06-1.06 4.5 4.5 0 0 0-6.36 0L6.97 6.7a4.5 4.5 0 1 0 6.36 6.36l.64-.64a.75.75 0 0 0-1.06-1.06l-.64.64a3 3 0 0 1-4.24 0Z"/>
+                <path d="M10.97 12a3 3 0 0 1 0 4.24l-2.12 2.12a3 3 0 0 1-4.24 0 .75.75 0 0 0-1.06 1.06 4.5 4.5 0 0 0 6.36 0l2.12-2.12a4.5 4.5 0 1 0-6.36-6.36l-.64.64a.75.75 0 1 0 1.06 1.06l.64-.64a3 3 0 0 1 4.24 0Z"/>
+              </svg>
               {{ $hasLink ? 'Link' : 'No Link' }}
             </span>
 

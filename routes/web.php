@@ -267,7 +267,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // =====================
 // Admin Area (role admin)
 // =====================
-Route::middleware(['auth', 'can:admin'])
+Route::middleware(['auth', 'can:backoffice'])
     ->prefix('admin')
     ->as('admin.')
     ->group(function () {

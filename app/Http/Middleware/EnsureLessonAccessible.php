@@ -7,18 +7,13 @@ use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\Lesson;
 use App\Models\Enrollment;
-use Illuminate\Support\Facades\Auth;
 
 class EnsureLessonAccessible
 {
-    /**
-     * Handle an incoming request.
-     */
     public function handle(Request $request, Closure $next): Response
     {
         $lesson = $request->route('lesson');
 
-        // pastikan instance Lesson
         if (! $lesson instanceof Lesson) {
             $lesson = Lesson::where('id', $lesson)->orWhere('slug', $lesson)->first();
         }
@@ -27,7 +22,6 @@ class EnsureLessonAccessible
             abort(404, 'Lesson not found');
         }
 
-        // pastikan relasi module.course terload
         $lesson->loadMissing('module.course');
         $course = $lesson->module?->course;
 
@@ -37,8 +31,8 @@ class EnsureLessonAccessible
 
         $user = $request->user();
 
-        // Admin selalu boleh
-        if ($user->can('admin')) {
+        // Admin & Mentor selalu boleh
+        if ($user->can('admin') || $user->can('mentor')) {
             return $next($request);
         }
 
@@ -48,7 +42,6 @@ class EnsureLessonAccessible
             ->exists();
 
         if (! $enrolled) {
-            // sebaiknya pakai 403, biar beda sama "lesson tidak ada"
             abort(403, 'Anda belum terdaftar pada kursus ini');
         }
 

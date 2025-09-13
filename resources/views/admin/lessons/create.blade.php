@@ -49,6 +49,98 @@
         @error('title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
       </div>
 
+      {{-- ABOUT / SYLLABUS / REVIEWS --}}
+      <div class="grid md:grid-cols-2 gap-4">
+        <div class="md:col-span-2">
+          <label class="block text-sm font-medium mb-1">About</label>
+          <textarea name="about" rows="3" class="w-full border rounded-xl px-3 py-2" placeholder="Ringkasan singkat materi...">{{ old('about') }}</textarea>
+          @error('about') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Syllabus</label>
+          <textarea name="syllabus" rows="3" class="w-full border rounded-xl px-3 py-2" placeholder="Garis besar topik...">{{ old('syllabus') }}</textarea>
+          @error('syllabus') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        </div>
+        <div>
+          <label class="block text-sm font-medium mb-1">Reviews</label>
+          <textarea name="reviews" rows="3" class="w-full border rounded-xl px-3 py-2" placeholder="Testimoni / catatan review...">{{ old('reviews') }}</textarea>
+          @error('reviews') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        </div>
+      </div>
+
+      {{-- TOOLS / BENEFITS (chip input + CSV friendly) --}}
+      <div class="grid md:grid-cols-2 gap-4">
+        <div x-data="{
+              items: (()=>{
+                const raw = @js(old('tools'));
+                if (!raw) return [];
+                try { const j=JSON.parse(raw); return Array.isArray(j)?j:[]; } catch(e) {}
+                return String(raw).split(',').map(s=>s.trim()).filter(Boolean);
+              })(),
+              input:'',
+              add(){ const v=this.input.trim(); if(!v) return; if(!this.items.includes(v)) this.items.push(v); this.input=''; },
+              remove(i){ this.items.splice(i,1); }
+            }">
+          <label class="block text-sm font-medium mb-1">Tools</label>
+          <div class="flex gap-2">
+            <input x-model="input" type="text" class="w-full border rounded-xl px-3 py-2" placeholder="Tulis lalu Enter">
+            <button type="button" @click="add()" class="px-3 py-2 rounded-xl bg-blue-600 text-white">Add</button>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <template x-for="(t,i) in items" :key="i">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-xs">
+                <input type="hidden" :name="`tools[]`" :value="t">
+                <span x-text="t"></span>
+                <button type="button" @click="remove(i)" class="text-sky-700/70 hover:text-sky-900">×</button>
+              </span>
+            </template>
+            <template x-if="items.length===0">
+              <span class="text-xs opacity-60">Kosong (opsional)</span>
+            </template>
+          </div>
+          {{-- fallback CSV (kalau JS mati) --}}
+          <noscript>
+            <input type="text" name="tools" value="{{ old('tools') }}" class="mt-2 w-full border rounded-xl px-3 py-2" placeholder="Pisahkan dengan koma">
+          </noscript>
+          @error('tools') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        </div>
+
+        <div x-data="{
+              items: (()=>{
+                const raw = @js(old('benefits'));
+                if (!raw) return [];
+                try { const j=JSON.parse(raw); return Array.isArray(j)?j:[]; } catch(e) {}
+                return String(raw).split(',').map(s=>s.trim()).filter(Boolean);
+              })(),
+              input:'',
+              add(){ const v=this.input.trim(); if(!v) return; if(!this.items.includes(v)) this.items.push(v); this.input=''; },
+              remove(i){ this.items.splice(i,1); }
+            }">
+          <label class="block text-sm font-medium mb-1">Benefits</label>
+          <div class="flex gap-2">
+            <input x-model="input" type="text" class="w-full border rounded-xl px-3 py-2" placeholder="Tulis lalu Enter">
+            <button type="button" @click="add()" class="px-3 py-2 rounded-xl bg-blue-600 text-white">Add</button>
+          </div>
+          <div class="flex flex-wrap gap-2 mt-2">
+            <template x-for="(b,i) in items" :key="i">
+              <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs">
+                <input type="hidden" :name="`benefits[]`" :value="b">
+                <span x-text="b"></span>
+                <button type="button" @click="remove(i)" class="text-emerald-700/70 hover:text-emerald-900">×</button>
+              </span>
+            </template>
+            <template x-if="items.length===0">
+              <span class="text-xs opacity-60">Kosong (opsional)</span>
+            </template>
+          </div>
+          {{-- fallback CSV --}}
+          <noscript>
+            <input type="text" name="benefits" value="{{ old('benefits') }}" class="mt-2 w-full border rounded-xl px-3 py-2" placeholder="Pisahkan dengan koma">
+          </noscript>
+          @error('benefits') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        </div>
+      </div>
+
       {{-- Content --}}
       <div>
         <label class="block text-sm font-medium mb-1">Content (HTML / Markdown / text)</label>
@@ -116,9 +208,7 @@
         {{-- Whitelist picker (add/remove) --}}
         <div
           x-data="{
-            // list user lengkap utk dropdown
             users: @js($users->map(fn($u)=>['id'=>$u->id,'name'=>$u->name,'email'=>$u->email])->values()),
-            // id yang sudah dipilih (restore dari old input)
             selected: @js(collect(old('drive_user_ids', []))->map(fn($v)=> (int)$v)->values()),
             pick: '',
             add() {
@@ -130,10 +220,7 @@
               this.pick = '';
             },
             remove(i){ this.selected.splice(i,1); },
-            // users yang belum dipilih
-            available() {
-              return this.users.filter(u => !this.selected.includes(u.id));
-            },
+            available() { return this.users.filter(u => !this.selected.includes(u.id)); },
             label(u){ return `${u.name} — ${u.email}`; }
           }"
           class="space-y-2"

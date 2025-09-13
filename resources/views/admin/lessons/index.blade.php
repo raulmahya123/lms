@@ -1,5 +1,4 @@
 @extends('layouts.admin')
-
 @section('title','Lessons — BERKEMAH')
 
 @section('content')
@@ -103,9 +102,9 @@
             <th class="p-3 text-left w-16">#</th>
             <th class="p-3 text-left">Course</th>
             <th class="p-3 text-left">Module</th>
-            <th class="p-3 text-left">Title</th>
+            <th class="p-3 text-left">Title & Meta</th>
             <th class="p-3 text-left">Content URLs</th>
-            <th class="p-3 text-left w-56">Drive</th>
+            <th class="p-3 text-left w-64">Drive</th>
             <th class="p-3 text-left w-28">Ordering</th>
             <th class="p-3 text-left w-24">Free?</th>
             <th class="p-3 text-center w-44">Actions</th>
@@ -114,12 +113,50 @@
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse($lessons as $l)
             @php
+              // --- helper to string ---
+              $toText = function ($v): string {
+                  if (is_array($v)) {
+                      $flat = [];
+                      $it = function($x) use (&$flat, &$it) {
+                          if (is_array($x)) { foreach ($x as $y) $it($y); }
+                          else $flat[] = is_scalar($x) ? (string)$x : '';
+                      };
+                      $it($v);
+                      $s = trim(implode(' • ', array_filter($flat)));
+                      return $s;
+                  }
+                  if (is_object($v)) return '';
+                  return (string)($v ?? '');
+              };
+
+              // Normalisasi content_url
               $videos = $l->content_url;
               if (is_string($videos)) {
                   $decoded = json_decode($videos, true);
                   $videos = is_array($decoded) ? $decoded : [];
               }
 
+              // Normalisasi tools & benefits (boleh string CSV / JSON array / array)
+              $tools = $l->tools;
+              if (is_string($tools)) {
+                  $json = json_decode($tools, true);
+                  $tools = is_array($json) ? $json : array_filter(array_map('trim', explode(',', $tools)));
+              }
+              if (!is_array($tools)) $tools = [];
+
+              $benefits = $l->benefits;
+              if (is_string($benefits)) {
+                  $json = json_decode($benefits, true);
+                  $benefits = is_array($json) ? $json : array_filter(array_map('trim', explode(',', $benefits)));
+              }
+              if (!is_array($benefits)) $benefits = [];
+
+              // Normalisasi about/reviews/syllabus → string agar aman untuk strip_tags
+              $aboutStr    = $toText($l->about);
+              $reviewsStr  = $toText($l->reviews);
+              $syllabusStr = $toText($l->syllabus);
+
+              // Whitelist Drive
               $wl = $l->driveWhitelists ?? collect();
               $total = $wl->count();
               $approved = $wl->where('status','approved')->count();
@@ -134,12 +171,55 @@
                 default    => 'bg-gray-100 text-gray-700',
               };
             @endphp
-            <tr class="border-t">
+            <tr class="border-t align-top">
               <td class="p-3 font-semibold text-gray-700">#{{ $l->id }}</td>
               <td class="p-3">{{ $l->module?->course?->title ?? '-' }}</td>
               <td class="p-3">{{ $l->module?->title ?? '-' }}</td>
-              <td class="p-3 font-medium">{{ $l->title }}</td>
 
+              {{-- TITLE + META --}}
+              <td class="p-3">
+                <div class="font-medium">{{ $l->title }}</div>
+
+                {{-- about (ringkas) --}}
+                @if($aboutStr !== '')
+                  <div class="text-xs text-gray-600 mt-1">
+                    {{ \Illuminate\Support\Str::limit(strip_tags($aboutStr), 120) }}
+                  </div>
+                @endif
+
+                {{-- tools / benefits badges --}}
+                <div class="flex flex-wrap gap-1.5 mt-1">
+                  @foreach($tools as $t)
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-[11px]">
+                      {{ $t }}
+                    </span>
+                  @endforeach
+                  @foreach($benefits as $b)
+                    <span class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px]">
+                      {{ $b }}
+                    </span>
+                  @endforeach
+                </div>
+
+                {{-- reviews & syllabus (ringkas) --}}
+                @if($reviewsStr !== '' || $syllabusStr !== '')
+                  <div class="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-gray-600">
+                    @if($reviewsStr !== '')
+                      <span title="Reviews">
+                        <svg class="inline w-3.5 h-3.5 -mt-0.5" viewBox="0 0 24 24" fill="currentColor">
+                          <path d="m11.48 3.5.84 2.54c.2.61.76 1.02 1.4 1.02h2.67c1.43 0 2.02 1.83.87 2.66l-2.16 1.56c-.53.38-.75 1.07-.54 1.69l.83 2.53c.45 1.36-1.12 2.49-2.28 1.66l-2.16-1.56a1.5 1.5 0 0 0-1.76 0l-2.16 1.56c-1.16.83-2.73-.3-2.28-1.66l.83-2.53c.21-.62-.01-1.31-.54-1.69L3.74 9.72c-1.16-.83-.56-2.66.87-2.66h2.67c.64 0 1.21-.41 1.4-1.02l.84-2.54c.45-1.36 2.39-1.36 2.95 0Z"/>
+                        </svg>
+                        {{ \Illuminate\Support\Str::limit(strip_tags($reviewsStr), 80) }}
+                      </span>
+                    @endif
+                    @if($syllabusStr !== '')
+                      <span title="Syllabus">{{ \Illuminate\Support\Str::limit(strip_tags($syllabusStr), 80) }}</span>
+                    @endif
+                  </div>
+                @endif
+              </td>
+
+              {{-- Content URLs --}}
               <td class="p-3">
                 @if(!empty($videos))
                   <div class="flex flex-wrap gap-1.5 max-w-[420px]">
@@ -165,6 +245,13 @@
                         title="{{ $hasLink ? $l->drive_link : 'No drive link' }}">
                     {{ $hasLink ? 'Link' : 'No Link' }}
                   </span>
+
+                  @if($hasLink)
+                    <a href="{{ $l->drive_link }}" target="_blank" rel="noopener"
+                       class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs hover:bg-gray-50">
+                      Open
+                    </a>
+                  @endif
 
                   <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs {{ $statusClass }}">
                     {{ $driveStatus ? ucfirst($driveStatus) : '—' }}

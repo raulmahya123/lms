@@ -23,9 +23,14 @@ class EnsureAttemptOwner
         }
 
         // === 403: User bukan pemilik attempt dan bukan admin ===
-        if ($attempt->user_id !== $user->id && !$user->can('admin')) {
-            abort(403, 'Anda tidak berhak melihat hasil ini.');
-        }
+        // === 403: User bukan pemilik attempt dan bukan admin/mentor ===
+if (
+    $attempt->user_id !== $user->id &&
+    ! in_array($user->role->name, ['admin','mentor'])
+) {
+    abort(403, 'Anda tidak berhak melihat hasil ini.');
+}
+
 
         return $next($request);
     }
