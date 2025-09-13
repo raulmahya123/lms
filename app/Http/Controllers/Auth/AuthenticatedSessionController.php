@@ -29,12 +29,14 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        // Kalau admin
-        if ($user->role && $user->role->name === 'admin') {
-            return redirect()->route('admin.dashboard');
+        if ($user->role) {
+            if (in_array($user->role->name, ['admin', 'mentor'], true)) {
+                // Admin & mentor masuk ke dashboard admin
+                return redirect()->route('admin.dashboard');
+            }
         }
 
-        // Kalau user biasa
+        // default: user biasa
         return redirect()->route('home');
     }
 

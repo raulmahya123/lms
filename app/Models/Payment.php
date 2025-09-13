@@ -9,6 +9,7 @@ class Payment extends Model
 {
     protected $fillable = [
         'user_id',
+        'membership_id',
         'plan_id',
         'course_id',
         'amount',
@@ -16,7 +17,10 @@ class Payment extends Model
         'provider',
         'reference',
         'paid_at',
+        'snap_token',
+        'snap_redirect_url',
     ];
+
 
     protected $dates = ['paid_at'];
 

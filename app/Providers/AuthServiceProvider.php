@@ -27,5 +27,15 @@ class AuthServiceProvider extends ServiceProvider
         Gate::define('admin', function ($user) {
             return method_exists($user, 'isAdmin') && $user->isAdmin();
         });
+
+        // Gate mentor
+        Gate::define('mentor', function ($user) {
+            return method_exists($user, 'isMentor') && $user->isMentor();
+        });
+
+        // Gate gabungan: admin ATAU mentor (untuk dashboard/backoffice)
+        Gate::define('backoffice', function ($user) {
+            return ($user->isAdmin() ?? false) || ($user->isMentor() ?? false);
+        });
     }
 }

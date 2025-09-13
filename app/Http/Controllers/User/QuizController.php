@@ -11,20 +11,26 @@ use App\Models\{
     Answer,
     CertificateIssue,
     LessonProgress,
-    Enrollment
+    Enrollment,
+    QuizSeasonLock   // <= MODEL BARU
 };
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\View\View;
+use Carbon\Carbon;
 
 class QuizController extends Controller
 {
+    // === ATURAN ===
+    private const MAX_ATTEMPTS_PER_SEASON = 2;    // 2x per season
+    private const SEASON_SECONDS          = 86400; // contoh: harian (ganti sesuai kebutuhan)
+    private const PASS_MIN_PERCENT        = 80;   // minimal lulus
+    private const REMED_MAX_PERCENT       = 70;   // attempt-1 ≤70 => wajib remed
+
     /**
-     * Mulai / lanjut attempt untuk quiz dari sebuah lesson.
-     * - Wajib: user sudah menandai lesson sebagai selesai (completed_at != null)
-     * - Hormati max_attempts (hanya menghitung attempt yg sudah submitted)
+     * Mulai / lanjut attempt
      */
     public function start(Lesson $lesson): RedirectResponse|View
     {
@@ -32,45 +38,55 @@ class QuizController extends Controller
         $quiz = $lesson->quiz;
         abort_if(!$quiz, 404, 'Quiz tidak tersedia');
 
-        // --- Wajib lesson selesai dulu ---
-        if (! $this->isLessonCompleted($lesson, Auth::id())) {
-            return back()->withErrors([
-                'quiz' => 'Selesaikan pelajaran ini terlebih dahulu sebelum memulai kuis.',
-            ]);
+        // Wajib lesson selesai
+        if (!$this->isLessonCompleted($lesson, Auth::id())) {
+            return back()->withErrors(['quiz' => 'Selesaikan pelajaran ini terlebih dahulu sebelum memulai kuis.']);
         }
 
-        // (Opsional tapi baik): pastikan user memang punya akses ke course (enrolled jika kursus berbayar)
+        // (Opsional) cek enrollment utk course berbayar
         if (method_exists($lesson->module->course, 'isPaid') && $lesson->module->course->isPaid()) {
             $isEnrolled = Enrollment::query()
                 ->where('user_id', Auth::id())
                 ->where('course_id', $lesson->module->course->id)
                 ->exists();
-
-            if (! $isEnrolled) {
-                return back()->withErrors([
-                    'quiz' => 'Anda belum terdaftar pada kelas ini.',
-                ]);
+            if (!$isEnrolled) {
+                return back()->withErrors(['quiz' => 'Anda belum terdaftar pada kelas ini.']);
             }
         }
 
-        // hitung attempt yg sudah disubmit
-        $submittedCount = $quiz->attempts()
-            ->where('user_id', Auth::id())
-            ->whereNotNull('submitted_at')
-            ->count();
+        // === LIMIT 2x PER SEASON via quiz_season_locks ===
+        [$seasonStart, $seasonEnd, $seasonKey] = $this->currentSeason();
 
-        // batas attempt (null = unlimited)
-        if (!is_null($quiz->max_attempts) && $submittedCount >= $quiz->max_attempts) {
-            return back()->with('status', "Batas percobaan tercapai (maksimum {$quiz->max_attempts}x).");
+        /** @var QuizSeasonLock $lock */
+        $lock = QuizSeasonLock::firstOrCreate(
+            [
+                'user_id'    => Auth::id(),
+                'quiz_id'    => $quiz->id,
+                'season_key' => $seasonKey,
+            ],
+            [
+                'season_start'   => $seasonStart,
+                'season_end'     => $seasonEnd,
+                'attempt_count'  => 0,
+                'last_attempt_at'=> null,
+            ]
+        );
+
+        if ((int)$lock->attempt_count >= self::MAX_ATTEMPTS_PER_SEASON) {
+            $end  = $lock->season_end instanceof Carbon ? $lock->season_end : Carbon::parse($lock->season_end);
+            $remain = now()->lt($end) ? now()->diffInSeconds($end) : 0;
+            return back()->withErrors([
+                'quiz' => "Batas ".self::MAX_ATTEMPTS_PER_SEASON." percobaan per season tercapai. Musim baru dalam {$remain} detik.",
+            ]);
         }
 
-        // pakai attempt aktif jika ada; kalau tidak, buat baru
+        // Pakai attempt aktif jika ada; kalau tidak, buat baru
         $attempt = $quiz->attempts()
             ->where('user_id', Auth::id())
             ->whereNull('submitted_at')
             ->first();
 
-        if (! $attempt) {
+        if (!$attempt) {
             $attempt = QuizAttempt::create([
                 'quiz_id'      => $quiz->id,
                 'user_id'      => Auth::id(),
@@ -84,12 +100,7 @@ class QuizController extends Controller
     }
 
     /**
-     * Submit attempt kuis:
-     * - Validasi kepemilikan attempt
-     * - Simpan jawaban (idempotent: hapus/replace jawaban lama di attempt ini untuk pertanyaan yang sama)
-     * - Hitung skor & % benar MCQ
-     * - Tandai submitted
-     * - Upsert certificate issue (satu per user-course) jika >= 80%
+     * Submit attempt
      */
     public function submit(QuizSubmitRequest $r, Quiz $quiz): RedirectResponse
     {
@@ -106,15 +117,14 @@ class QuizController extends Controller
         $questions = $quiz->questions;
 
         $score = 0;
-        $correctCount = 0;   // jumlah MCQ benar
-        $totalGradable = 0;  // jumlah MCQ
+        $correctCount = 0;
+        $totalGradable = 0;
 
-        DB::transaction(function () use ($r, $questions, &$score, &$correctCount, &$totalGradable, $attempt) {
-            // Hapus jawaban lama untuk question_id yang dia kirim (idempotent)
-            $incomingQids = collect($questions)->map->id->intersect(
-                collect($r->input('answers', []))->keys()->map(fn($k) => (int)$k)
-            );
+        DB::transaction(function () use ($r, $questions, &$score, &$correctCount, &$totalGradable, $attempt, $quiz) {
 
+            // === Hitung skor & simpan jawaban (idempotent) ===
+            $incomingQids = $questions->pluck('id')
+                ->intersect(collect($r->input('answers', []))->keys()->map(fn($k) => (int)$k));
             if ($incomingQids->isNotEmpty()) {
                 Answer::where('attempt_id', $attempt->id)
                     ->whereIn('question_id', $incomingQids)
@@ -129,28 +139,20 @@ class QuizController extends Controller
 
                 if ($q->type === 'mcq') {
                     $totalGradable++;
-
-                    // Validasi: option harus milik pertanyaan ini
-                    $optionId = is_null($input) ? null : (int) $input;
-                    if ($optionId) {
-                        $belongs = $q->options()->where('id', $optionId)->exists();
-                        if (! $belongs) {
-                            // skip option asing (tidak menghitung apa pun)
-                            $optionId = null;
-                        }
+                    $optionId = is_null($input) ? null : (int)$input;
+                    if ($optionId && !$q->options->contains('id', $optionId)) {
+                        $optionId = null; // opsi asing
                     }
-
-                    $correct = $q->options->firstWhere('is_correct', 1);
+                    $correct   = $q->options->firstWhere('is_correct', 1);
                     $isCorrect = $correct && $correct->id === $optionId;
                 } else {
-                    // Essay/short answer
-                    $text = is_string($input) ? trim($input) : null;
-                    $isCorrect = false; // essay tidak dinilai otomatis
+                    $text = is_string($input) ? trim($input) : null; // essay
+                    $isCorrect = false;
                 }
 
                 if ($isCorrect) {
                     $correctCount++;
-                    $score += (int) ($q->points ?? 1); // fallback 1 poin jika null
+                    $score += (int)($q->points ?? 1);
                 }
 
                 Answer::create([
@@ -166,65 +168,129 @@ class QuizController extends Controller
                 'score'        => $score,
                 'submitted_at' => now(),
             ]);
+
+            // === INCREMENT COUNTER di quiz_season_locks (satu-satunya tempat hitung attempt per season) ===
+            [$seasonStart, $seasonEnd, $seasonKey] = $this->currentSeason();
+
+            /** @var QuizSeasonLock $lock */
+            $lock = QuizSeasonLock::lockForUpdate()->firstOrCreate(
+                [
+                    'user_id'    => $attempt->user_id,
+                    'quiz_id'    => $quiz->id,
+                    'season_key' => $seasonKey,
+                ],
+                [
+                    'season_start'   => $seasonStart,
+                    'season_end'     => $seasonEnd,
+                    'attempt_count'  => 0,
+                    'last_attempt_at'=> null,
+                ]
+            );
+
+            // Guard: bila sudah penuh (race), jangan lebih dari 2
+            if ((int)$lock->attempt_count >= self::MAX_ATTEMPTS_PER_SEASON) {
+                // Batalkan submit? Atau biarkan submit tapi tanpa menaikkan counter?
+                // Kita tolak dengan exception agar konsisten.
+                abort(422, 'Batas percobaan per season tercapai.');
+            }
+
+            $lock->increment('attempt_count');
+            $lock->update([
+                'last_attempt_at' => now(),
+            ]);
         });
 
-        // % benar MCQ utk attempt ini
-        $percent = $totalGradable > 0 ? ($correctCount / $totalGradable) * 100 : 0;
+        // Persentase berbasis poin
+        $maxPointsMcq = $quiz->questions->where('type', 'mcq')->sum(fn($q) => $q->points ?? 1);
+        $percent = $maxPointsMcq > 0 ? ($score / $maxPointsMcq) * 100 : 0;
 
-        // === Upsert certificate issue (satu per user-course) bila >= 80% ===
-        if ($percent >= 80) {
+        // Ambil nomor attempt dalam season (berdasarkan lock terkini)
+        [$seasonStart, $seasonEnd, $seasonKey] = $this->currentSeason();
+        $lock = QuizSeasonLock::where([
+            'user_id'    => Auth::id(),
+            'quiz_id'    => $quiz->id,
+            'season_key' => $seasonKey,
+        ])->first();
+        $attemptNo = $lock ? (int)$lock->attempt_count : 1;
+
+        // Lulus?
+        $passed = $percent >= self::PASS_MIN_PERCENT;
+
+        if ($passed) {
             $course = $quiz->lesson->module->course;
-
-            // kunci unik: user_id + course_id + assessment_type
             $templateId = $course->certificate_template_id ?? 1;
 
-            // buat serial unik (cek tabrakan singkat)
-            $serial = null;
-            do {
-                $serialTry = Str::upper(Str::random(12));
-                $exists = CertificateIssue::where('serial', $serialTry)->exists();
-                if (! $exists) $serial = $serialTry;
-            } while (is_null($serial));
-
-            CertificateIssue::updateOrCreate(
+            $issue = CertificateIssue::firstOrCreate(
                 [
                     'user_id'         => Auth::id(),
                     'course_id'       => $course->id ?? null,
                     'assessment_type' => 'course',
                 ],
                 [
-                    'assessment_id' => $attempt->id, // simpan attempt pelulus TERBARU
-                    'template_id'   => $templateId,
-                    'serial'        => $serial,
-                    'score'         => $score,
-                    'issued_at'     => now(),
+                    'template_id' => $templateId,
+                    'serial'      => $this->generateUniqueSerial(),
+                    'issued_at'   => now(),
                 ]
             );
+
+            $issue->update([
+                'assessment_id' => $attempt->id,
+                'score'         => $score,
+                'issued_at'     => now(),
+            ]);
+
+            return redirect()
+                ->route('app.quiz.result', $attempt)
+                ->with('quiz_status', "Lulus — Nilai: ".number_format($percent,1)."%. Sertifikat tersedia.");
+        }
+
+        // Tidak lulus
+        if ($attemptNo === 1) {
+            $msg = "Belum lulus (".number_format($percent,1)."%). ";
+            if ($percent <= self::REMED_MAX_PERCENT) {
+                $msg .= "Nilai ≤".self::REMED_MAX_PERCENT." — wajib remed (kesempatan terakhir season ini).";
+            } else {
+                $msg .= "Minimal lulus ".self::PASS_MIN_PERCENT."%. Masih ada 1 kesempatan di season ini.";
+            }
+            return redirect()->route('app.quiz.result', $attempt)->with('quiz_status', $msg);
         }
 
         return redirect()
             ->route('app.quiz.result', $attempt)
-            ->with('status', 'Jawaban terkirim.');
+            ->with('quiz_status', "Tidak lulus (percobaan ke-{$attemptNo} dalam season ini) — Nilai: ".number_format($percent,1)."%. Minimal ".self::PASS_MIN_PERCENT."%.");
     }
 
     /**
-     * Halaman hasil attempt:
-     * - Tampilkan % benar attempt ini (eligible_current)
-     * - Hitung juga attempt TERBAIK user di course yang sama (eligible_best)
+     * Halaman hasil
      */
     public function result(QuizAttempt $attempt): View
     {
+        abort_if($attempt->user_id !== Auth::id(), 403, 'Anda tidak berhak melihat hasil ini.');
+
         $attempt->load(['quiz.lesson.module.course', 'answers.question.options']);
         $course = $attempt->quiz->lesson->module->course;
 
-        // % untuk attempt ini
+        // % untuk attempt ini (by points)
         [$percentCurrent, $correctCurrent, $totalCurrent] = $this->percentForAttempt($attempt);
 
-        // cari attempt TERBAIK user pada course yang sama
+        // Attempt terbaik (count-based)
         [$bestAttempt, $bestPercent, $bestCorrect, $bestTotal] = $this->bestAttemptOnCourse(
             userId: $attempt->user_id,
             courseId: $course->id
         );
+
+        // === Data per-season dari quiz_season_locks ===
+        [$seasonStart, $seasonEnd, $seasonKey] = $this->currentSeason();
+        $lock = QuizSeasonLock::where([
+            'user_id'    => $attempt->user_id,
+            'quiz_id'    => $attempt->quiz_id,
+            'season_key' => $seasonKey,
+        ])->first();
+
+        $submittedInSeason = $lock ? (int)$lock->attempt_count : 0;
+        $remainAttempts    = max(0, self::MAX_ATTEMPTS_PER_SEASON - $submittedInSeason);
+        $end               = $lock && $lock->season_end ? Carbon::parse($lock->season_end) : $seasonEnd;
+        $seasonRemain      = now()->lt($end) ? now()->diffInSeconds($end) : 0;
 
         return view('app.quizzes.result', [
             'attempt'         => $attempt,
@@ -234,33 +300,47 @@ class QuizController extends Controller
             'percent'         => $percentCurrent,
             'correct'         => $correctCurrent,
             'total'           => $totalCurrent,
-            'eligible'        => $percentCurrent >= 80, // kompatibel dgn view lama
+            'eligible'        => $percentCurrent >= self::PASS_MIN_PERCENT,
 
-            // attempt terbaik (pakai ini utk tombol “Unduh Sertifikat” agar konsisten dgn download)
+            // attempt terbaik
             'bestAttempt'     => $bestAttempt,
             'best_percent'    => $bestPercent,
             'best_correct'    => $bestCorrect,
             'best_total'      => $bestTotal,
-            'eligible_best'   => $bestPercent >= 80,
+            'eligible_best'   => $bestPercent >= self::PASS_MIN_PERCENT,
+
+            // banner / per-season
+            'maxAttempts'     => self::MAX_ATTEMPTS_PER_SEASON,
+            'submittedCount'  => $submittedInSeason,
+            'remainAttempts'  => $remainAttempts,
+            'seasonRemain'    => $seasonRemain, // detik sampai season berakhir
         ]);
     }
 
     /**
-     * Hitung % benar MCQ untuk satu attempt.
-     * @return array [percent, correct, total]
+     * Hitung % benar MCQ (by points)
      */
     private function percentForAttempt(QuizAttempt $attempt): array
     {
         $mcq = $attempt->answers->filter(fn($a) => $a->question && $a->question->type === 'mcq');
         $total   = $mcq->count();
         $correct = $mcq->where('is_correct', true)->count();
-        $percent = $total > 0 ? ($correct / $total) * 100 : 0;
+
+        $maxPoints = $attempt->quiz->questions->where('type','mcq')->sum(fn($q) => $q->points ?? 1);
+
+        $scorePoints = 0;
+        foreach ($mcq as $ans) {
+            if ($ans->is_correct && $ans->question) {
+                $scorePoints += ($ans->question->points ?? 1);
+            }
+        }
+
+        $percent = $maxPoints > 0 ? ($scorePoints / $maxPoints) * 100 : 0;
         return [$percent, $correct, $total];
     }
 
     /**
-     * Ambil attempt TERBAIK (persentase MCQ tertinggi) milik user pada course.
-     * @return array [QuizAttempt|null $bestAttempt, float $percent, int $correct, int $total]
+     * Attempt terbaik (count-based)
      */
     private function bestAttemptOnCourse(int $userId, int $courseId): array
     {
@@ -270,10 +350,7 @@ class QuizController extends Controller
             ->whereHas('quiz.lesson.module.course', fn($q) => $q->where('id', $courseId))
             ->get();
 
-        $bestAttempt = null;
-        $bestPercent = 0.0;
-        $bestCorrect = 0;
-        $bestTotal   = 0;
+        $bestAttempt = null; $bestPercent = 0.0; $bestCorrect = 0; $bestTotal = 0;
 
         foreach ($attempts as $att) {
             $mcq = $att->answers->filter(fn($a) => $a->question && $a->question->type === 'mcq');
@@ -282,19 +359,25 @@ class QuizController extends Controller
             $pct     = $total > 0 ? ($correct / $total) * 100 : 0;
 
             if ($pct > $bestPercent) {
-                $bestAttempt = $att;
-                $bestPercent = $pct;
-                $bestCorrect = $correct;
-                $bestTotal   = $total;
+                $bestAttempt = $att; $bestPercent = $pct; $bestCorrect = $correct; $bestTotal = $total;
             }
         }
-
         return [$bestAttempt, $bestPercent, $bestCorrect, $bestTotal];
     }
 
     /**
-     * Cek apakah lesson sudah ditandai selesai oleh user.
+     * Dapatkan [season_start, season_end, season_key]
      */
+    private function currentSeason(): array
+    {
+        $nowTs = now()->timestamp;
+        $startTs = intdiv($nowTs, self::SEASON_SECONDS) * self::SEASON_SECONDS;
+        $seasonStart = Carbon::createFromTimestamp($startTs, now()->timezoneName);
+        $seasonEnd   = $seasonStart->copy()->addSeconds(self::SEASON_SECONDS);
+        $seasonKey   = (string)$seasonStart->timestamp; // kunci stabil per durasi
+        return [$seasonStart, $seasonEnd, $seasonKey];
+    }
+
     private function isLessonCompleted(Lesson $lesson, int $userId): bool
     {
         return LessonProgress::query()
@@ -302,5 +385,11 @@ class QuizController extends Controller
             ->where('user_id', $userId)
             ->whereNotNull('completed_at')
             ->exists();
+    }
+
+    private function generateUniqueSerial(): string
+    {
+        do { $s = Str::upper(Str::random(12)); } while (CertificateIssue::where('serial', $s)->exists());
+        return $s;
     }
 }

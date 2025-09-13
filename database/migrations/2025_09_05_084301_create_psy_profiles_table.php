@@ -14,6 +14,7 @@ return new class extends Migration
        Schema::create('psy_profiles', function (Blueprint $t) {
     $t->id();
     $t->foreignId('test_id')->constrained('psy_tests')->cascadeOnDelete();
+    $t->foreignId('user_id')->constrained()->cascadeOnDelete();
     $t->string('key');   // e.g. "backend_fit_high"
     $t->string('name');  // e.g. "Strong Backend Fit"
     $t->integer('min_total')->default(0);

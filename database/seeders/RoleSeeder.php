@@ -14,6 +14,7 @@ class RoleSeeder extends Seeder
 {
     \App\Models\Role::firstOrCreate(['name' => 'admin']);
     \App\Models\Role::firstOrCreate(['name' => 'user']);
+    \App\Models\Role::firstOrCreate(['name'=> 'mentor']);
 }
 
 }

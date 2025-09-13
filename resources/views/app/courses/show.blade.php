@@ -27,16 +27,26 @@
   </div>
 
   <div class="w-72">
-    <div class="p-4 bg-white border rounded">
-      @if($isEnrolled)
-        <div class="text-emerald-700 font-medium">Kamu sudah terdaftar</div>
+  <div class="p-4 bg-white border rounded">
+    @if($isEnrolled)
+      <div class="text-emerald-700 font-medium">Kamu sudah terdaftar</div>
+    @else
+      @if($course->price > 0)
+        {{-- tombol checkout --}}
+        <a href="{{ route('app.courses.checkout', $course) }}"
+           class="w-full block text-center px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
+          Beli Sekarang - Rp {{ number_format($course->price,0,',','.') }}
+        </a>
       @else
+        {{-- enroll gratis --}}
         <form method="POST" action="{{ route('app.courses.enroll',$course) }}">
           @csrf
           <button class="w-full px-4 py-2 bg-blue-600 text-white rounded">Enroll Gratis</button>
         </form>
       @endif
-    </div>
+    @endif
   </div>
+</div>
+
 </div>
 @endsection

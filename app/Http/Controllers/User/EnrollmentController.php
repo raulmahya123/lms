@@ -20,22 +20,22 @@ class EnrollmentController extends Controller
             ->select('enrollments.*')
 
             // ===== total lessons per course (join lessons -> modules -> courses) =====
-            ->selectSub(function($q) {
+            ->selectSub(function ($q) {
                 $q->from('lessons as l')
-                  ->join('modules as m', 'm.id', '=', 'l.module_id')
-                  ->whereColumn('m.course_id', 'enrollments.course_id')
-                  ->selectRaw('COUNT(*)');
+                    ->join('modules as m', 'm.id', '=', 'l.module_id')
+                    ->whereColumn('m.course_id', 'enrollments.course_id')
+                    ->selectRaw('COUNT(*)');
             }, 'total_lessons')
 
             // ===== lessons selesai oleh user ini (completed_at not null) =====
-            ->selectSub(function($q) use ($uid) {
+            ->selectSub(function ($q) use ($uid) {
                 $q->from('lesson_progresses as lp')
-                  ->join('lessons as l', 'l.id', '=', 'lp.lesson_id')
-                  ->join('modules as m', 'm.id', '=', 'l.module_id')
-                  ->where('lp.user_id', $uid)
-                  ->whereNotNull('lp.completed_at')
-                  ->whereColumn('m.course_id', 'enrollments.course_id')
-                  ->selectRaw('COUNT(DISTINCT lp.lesson_id)');
+                    ->join('lessons as l', 'l.id', '=', 'lp.lesson_id')
+                    ->join('modules as m', 'm.id', '=', 'l.module_id')
+                    ->where('lp.user_id', $uid)
+                    ->whereNotNull('lp.completed_at')
+                    ->whereColumn('m.course_id', 'enrollments.course_id')
+                    ->selectRaw('COUNT(DISTINCT lp.lesson_id)');
             }, 'done_lessons')
 
             ->latest('activated_at')
@@ -55,18 +55,29 @@ class EnrollmentController extends Controller
     public function store(Request $r, Course $course)
     {
         abort_unless($course->is_published, 404);
-        $exists = Enrollment::where('user_id',Auth::id())->where('course_id',$course->id)->first();
-        if ($exists) return back()->with('status','Kamu sudah terdaftar di kursus ini.');
 
-        DB::transaction(function() use ($course) {
+        // sudah punya? keluar
+        $exists = Enrollment::where('user_id', Auth::id())
+            ->where('course_id', $course->id)->first();
+        if ($exists) {
+            return back()->with('status', 'Kamu sudah terdaftar di kursus ini.');
+        }
+
+        // 🔹 kalau HARGA > 0 → ke checkout dulu
+        if ((int)($course->price ?? 0) > 0) {
+            return redirect()->route('app.courses.checkout', $course);
+        }
+
+        // 🔹 gratis → langsung enroll
+        DB::transaction(function () use ($course) {
             Enrollment::create([
-                'user_id'=>Auth::id(),
-                'course_id'=>$course->id,
-                'status'=>'active',
-                'activated_at'=>now(),
+                'user_id' => Auth::id(),
+                'course_id' => $course->id,
+                'status' => 'active',
+                'activated_at' => now(),
             ]);
         });
 
-        return redirect()->route('app.courses.show',$course)->with('status','Enroll berhasil.');
+        return redirect()->route('app.courses.show', $course)->with('status', 'Enroll berhasil.');
     }
 }

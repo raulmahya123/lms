@@ -62,7 +62,7 @@
         <form method="POST" action="{{ route('app.memberships.activate', $membership) }}" class="flex items-center gap-2">
           @csrf
           <input type="text" name="reference" placeholder="Nomor referensi (opsional)"
-                 class="w-full rounded border-gray-300 focus:border-gray-400 focus:ring-0" />
+                class="w-full rounded border-gray-300 focus:border-gray-400 focus:ring-0" />
           <button class="px-3 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">
             Tandai Sudah Bayar
           </button>
@@ -82,10 +82,9 @@
       </div>
 
       {{-- CTA contoh ke gateway --}}
-      <button type="button"
-              class="mt-5 w-full px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700"
-              onclick="alert('Integrasikan tombol ini dengan payment gateway (Midtrans, Xendit, dsb).')">
-        Bayar Sekarang
+      <button id="btnPay"
+          class="mt-5 w-full px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700">
+          Bayar Sekarang
       </button>
 
       <p class="mt-3 text-xs text-gray-500">
@@ -94,4 +93,40 @@
     </aside>
   </div>
 </div>
+
+@php
+  $clientKey = config('services.midtrans.client_key');
+  $isSandbox = !config('services.midtrans.is_production');
+@endphp
+<script type="text/javascript"
+  src="https://app{{ $isSandbox ? '.sandbox' : '' }}.midtrans.com/snap/snap.js"
+  data-client-key="{{ $clientKey }}"></script>
+
+  <script>
+document.getElementById('btnPay').addEventListener('click', async function () {
+  try {
+    const url = "{{ route('app.memberships.snap', $membership) }}";
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } // penting: hindari 419
+    });
+    if (!res.ok) throw new Error('Gagal membuat transaksi');
+    const { snap_token } = await res.json();
+
+    window.snap.pay(snap_token, {
+      onSuccess: function(){ window.location = "{{ route('app.memberships.index') }}"; },
+      onPending: function(){ window.location = "{{ route('app.memberships.index') }}"; },
+      onError:   function(err){ console.error(err); alert('Pembayaran gagal'); },
+      onClose:   function(){ alert('Popup ditutup sebelum bayar'); }
+    });
+  } catch (e) {
+    alert(e.message || 'Error memulai pembayaran');
+    console.error(e);
+  }
+});
+</script>
+
 @endsection
+
+
+

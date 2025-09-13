@@ -22,15 +22,24 @@ class LessonController extends Controller
         $user   = Auth::user();
         $course = $lesson->module->course;
 
-        // --- konten & link ---
-        $blocks = $this->toArray($lesson->content);
-        $links  = $this->toArray($lesson->content_url); // [{title,url,type}, ...]
+        // --- konten & link (selalu array) ---
+        $blocks = $this->toArray($lesson->content);        // array blok konten
+        $links  = $this->toArray($lesson->content_url);    // [{title,url,type?}, ...]
+
+        // --- normalisasi meta baru untuk tampilan ---
+        $aboutStr    = $this->stringifyForDisplay($lesson->about ?? null);
+        $syllabusStr = $this->stringifyForDisplay($lesson->syllabus ?? null);
+        $reviewsStr  = $this->stringifyForDisplay($lesson->reviews ?? null);
+
+        // tools/benefits bisa string CSV, JSON array, atau array → pakai list ter-normalisasi
+        $toolsList    = $this->toList($lesson->tools ?? null);
+        $benefitsList = $this->toList($lesson->benefits ?? null);
 
         // --- satu link Google Drive (untuk panel akses) ---
         $rawDriveLink = $lesson->drive_link ?: collect($links)
             ->pluck('url')
             ->filter()
-            ->first(fn($u) => str_contains((string)$u, 'drive.google.com'));
+            ->first(fn($u) => $this->isDrive((string) $u));
 
         // --- whitelist drive (SINGLE SOURCE OF TRUTH) ---
         $wls  = $lesson->driveWhitelists;
@@ -45,10 +54,9 @@ class LessonController extends Controller
             'total'    => $wls->count(),
         ];
 
-        // 🚫 Expose link only if approved
+        // Tampilkan link hanya jika user Approved
         $driveLink = ($myStatus === 'approved') ? $rawDriveLink : null;
 
-        // Tidak ada global status; hanya info per-user & ringkasan
         $drive = [
             'link'         => $driveLink,
             'my_whitelist' => [
@@ -85,7 +93,14 @@ class LessonController extends Controller
             'prev',
             'next',
             'progress',
-            'drive'
+            'drive',
+            // meta baru untuk view (sudah aman string)
+            'aboutStr',
+            'syllabusStr',
+            'reviewsStr',
+            // list untuk badges/ul
+            'toolsList',
+            'benefitsList',
         ));
     }
 
@@ -96,7 +111,7 @@ class LessonController extends Controller
             ->where('user_id', $userId)
             ->first();
 
-        $old = $existing?->progress ?? [];
+        $old      = $existing?->progress ?? [];
         $oldItems = (array) data_get($old, 'items', []);
 
         // Daftar semua key item yang ada di form (dibuat di Blade)
@@ -128,22 +143,6 @@ class LessonController extends Controller
         return back()->with('status', 'Progress tersimpan.');
     }
 
-    // ====================== Helpers ======================
-
-    protected function toArray($value): array
-    {
-        if (is_array($value)) return $value;
-        if (is_string($value) && $value !== '') {
-            $decoded = json_decode($value, true);
-            return is_array($decoded) ? $decoded : [];
-        }
-        return [];
-    }
-
-    protected function isDrive(?string $url): bool
-    {
-        return $url && str_contains($url, 'drive.google.com');
-    }
     public function requestDriveAccess(Lesson $lesson)
     {
         $user  = Auth::user();
@@ -175,5 +174,66 @@ class LessonController extends Controller
         );
 
         return back()->with('status', 'Permintaan akses dikirim. Status: pending.');
+    }
+
+    // ====================== Helpers ======================
+
+    /**
+     * Paksa menjadi array.
+     * - array -> tetap
+     * - string JSON valid -> decode
+     * - lainnya / kosong -> []
+     */
+    protected function toArray($value): array
+    {
+        if (is_array($value)) return $value;
+        if (is_string($value) && $value !== '') {
+            $decoded = json_decode($value, true);
+            return is_array($decoded) ? $decoded : [];
+        }
+        return [];
+    }
+
+    /**
+     * Konversi field tools/benefits yang bisa berupa:
+     * - array
+     * - string JSON array
+     * - string CSV "a, b, c"
+     * menjadi array string bersih (tanpa duplikat & kosong).
+     */
+    protected function toList($value): array
+    {
+        if (is_array($value)) {
+            return array_values(array_unique(array_filter(array_map(fn($v) => trim((string) $v), $value))));
+        }
+
+        if (is_string($value) && $value !== '') {
+            $json = json_decode($value, true);
+            if (is_array($json)) {
+                return array_values(array_unique(array_filter(array_map(fn($v) => trim((string) $v), $json))));
+            }
+            // fallback CSV
+            return array_values(array_unique(array_filter(array_map('trim', explode(',', $value)))));
+        }
+
+        return [];
+    }
+
+    /**
+     * Ubah nilai (array/object/string/null) menjadi string aman untuk ditampilkan di Blade
+     * agar tidak memicu htmlspecialchars()/e() error.
+     */
+    protected function stringifyForDisplay($value): string
+    {
+        if (is_null($value)) return '';
+        if (is_string($value)) return $value;
+
+        // Array/object -> JSON pretty supaya terbaca dan aman
+        return json_encode($value, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    }
+
+    protected function isDrive(?string $url): bool
+    {
+        return $url && str_contains($url, 'drive.google.com');
     }
 }
