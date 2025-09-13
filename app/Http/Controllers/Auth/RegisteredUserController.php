@@ -50,11 +50,11 @@ class RegisteredUserController extends Controller
 
         if ($test) {
             return redirect()
-                ->route('app.test-iq.show', $test) // route model binding {testIq}
+                ->route('user.test-iq.show', $test) // route model binding {testIq}
                 ->with('status', 'Akun berhasil dibuat. Silakan mulai Tes IQ Anda.');
         }
 
         // Fallback bila belum ada test aktif
-        return redirect()->route('app.test-iq.show')->with('status', 'Akun berhasil dibuat.');
+        return redirect()->route('user.test-iq.show')->with('status', 'Akun berhasil dibuat.');
     }
 }

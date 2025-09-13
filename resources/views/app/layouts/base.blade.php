@@ -89,6 +89,9 @@
           <a href="{{ route('home') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('home') }}">
             <i class="fa-solid fa-house nav-icon"></i><span>Home</span>
           </a>
+          <a href="{{ route('app.psychology') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('psychology') }}">
+            <i class="fa-solid fa-graduation-cap nav-icon"></i><span>Psikologi</span>
+          </a>
           <a href="{{ route('app.courses.index') }}" class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.courses.index') }}">
             <i class="fa-solid fa-graduation-cap nav-icon"></i><span>Courses</span>
           </a>

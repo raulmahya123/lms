@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Http\Controllers\App\PsyDashboardController;
 
 // =====================
 // Public
@@ -335,3 +336,10 @@ Route::middleware(['auth', 'can:admin'])
         Route::resource('psy-attempts', AdminPsyAttemptController::class)
             ->only(['index', 'show', 'destroy']);
     });
+
+/* ================== USER AREA ================== */
+Route::middleware(['auth'])
+    ->prefix('app')->name('app.')->group(function () {
+    // Dashboard Psikologi (USER)
+    Route::get('psychology', PsyDashboardController::class)->name('psychology');
+});

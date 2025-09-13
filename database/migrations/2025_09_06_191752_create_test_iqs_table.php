@@ -11,19 +11,25 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('test_iq', function (Blueprint $table) {
+        Schema::create('test_iqs', function (Blueprint $table) {
             $table->id();
             $table->string('title');
             $table->text('description')->nullable();
-            $table->json('questions')->nullable();     // admin bisa isi belakangan
+            $table->json('questions')->nullable();
             $table->boolean('is_active')->default(false);
             $table->integer('duration_minutes')->default(0);
-            $table->json('submissions')->nullable();   // hasil user (opsional)
+
+            // === cool-down ===
+            $table->unsignedSmallInteger('cooldown_value')->default(1); // 1,2,3 dst
+            $table->string('cooldown_unit', 10)->default('month');      // day|week|month
+
+            $table->json('submissions')->nullable();
             $table->timestamps();
         });
     }
+
     public function down(): void
     {
-        Schema::dropIfExists('test_iq');
+        Schema::dropIfExists('test_iqs');
     }
 };
