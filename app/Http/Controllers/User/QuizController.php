@@ -21,10 +21,14 @@ use Illuminate\View\View;
 
 class QuizController extends Controller
 {
+    // === KONSTANTA ATURAN LULUS/REMED & LIMIT ===
+    private const MAX_ATTEMPTS      = 2;   // 1x normal + 1x remed
+    private const COOLDOWN_SECONDS  = 10;  // 10 detik (aktif jika gagal setelah 2 attempt)
+    private const PASS_MIN_PERCENT  = 80;  // minimal lulus
+    private const REMED_MAX_PERCENT = 70;  // attempt-1 ≤75 => wajib remed
+
     /**
      * Mulai / lanjut attempt untuk quiz dari sebuah lesson.
-     * - Wajib: user sudah menandai lesson sebagai selesai (completed_at != null)
-     * - Hormati max_attempts (hanya menghitung attempt yg sudah submitted)
      */
     public function start(Lesson $lesson): RedirectResponse|View
     {
@@ -39,7 +43,7 @@ class QuizController extends Controller
             ]);
         }
 
-        // (Opsional tapi baik): pastikan user memang punya akses ke course (enrolled jika kursus berbayar)
+        // (Opsional) cek enrollment utk course berbayar
         if (method_exists($lesson->module->course, 'isPaid') && $lesson->module->course->isPaid()) {
             $isEnrolled = Enrollment::query()
                 ->where('user_id', Auth::id())
@@ -53,18 +57,44 @@ class QuizController extends Controller
             }
         }
 
-        // hitung attempt yg sudah disubmit
+        // === Batas attempt 2 total (submitted) ===
         $submittedCount = $quiz->attempts()
             ->where('user_id', Auth::id())
             ->whereNotNull('submitted_at')
             ->count();
 
-        // batas attempt (null = unlimited)
-        if (!is_null($quiz->max_attempts) && $submittedCount >= $quiz->max_attempts) {
-            return back()->with('status', "Batas percobaan tercapai (maksimum {$quiz->max_attempts}x).");
+        if ($submittedCount >= self::MAX_ATTEMPTS) {
+            // Cek apakah SUDAH LULUS (untuk menentukan apakah perlu cooldown)
+            $bestPctOnQuiz = $this->bestPercentByPointsOnQuiz(Auth::id(), $quiz->id);
+            $hasPassed = $bestPctOnQuiz >= self::PASS_MIN_PERCENT;
+
+            if (! $hasPassed) {
+                // Kunci hanya jika GAGAL setelah 2 attempt
+                $lastSubmittedAt = $quiz->attempts()
+                    ->where('user_id', Auth::id())
+                    ->whereNotNull('submitted_at')
+                    ->latest('submitted_at')
+                    ->value('submitted_at');
+
+                if ($lastSubmittedAt) {
+                    $elapsed = now()->diffInSeconds($lastSubmittedAt); // int
+                    $remain  = max(0, self::COOLDOWN_SECONDS - $elapsed);
+                    if ($remain > 0) {
+                        return back()->withErrors([
+                            'quiz' => "Batas 2 percobaan tercapai. Terkunci {$remain} detik.",
+                        ]);
+                    }
+                }
+            }
+
+            // >>> Di sini logika/teks "Anda sudah lulus..." DIHAPUS <<< //
+            // Pesan generik saja setelah 2 attempt, tanpa menyebut lulus tidak perlu mengulang
+            return back()->withErrors([
+                'quiz' => 'Batas 2 percobaan tercapai. Anda tidak dapat mencoba lagi.',
+            ]);
         }
 
-        // pakai attempt aktif jika ada; kalau tidak, buat baru
+        // Pakai attempt aktif jika ada; kalau tidak, buat baru
         $attempt = $quiz->attempts()
             ->where('user_id', Auth::id())
             ->whereNull('submitted_at')
@@ -84,12 +114,7 @@ class QuizController extends Controller
     }
 
     /**
-     * Submit attempt kuis:
-     * - Validasi kepemilikan attempt
-     * - Simpan jawaban (idempotent: hapus/replace jawaban lama di attempt ini untuk pertanyaan yang sama)
-     * - Hitung skor & % benar MCQ
-     * - Tandai submitted
-     * - Upsert certificate issue (satu per user-course) jika >= 80%
+     * Submit attempt kuis.
      */
     public function submit(QuizSubmitRequest $r, Quiz $quiz): RedirectResponse
     {
@@ -110,10 +135,9 @@ class QuizController extends Controller
         $totalGradable = 0;  // jumlah MCQ
 
         DB::transaction(function () use ($r, $questions, &$score, &$correctCount, &$totalGradable, $attempt) {
-            // Hapus jawaban lama untuk question_id yang dia kirim (idempotent)
-            $incomingQids = collect($questions)->map->id->intersect(
-                collect($r->input('answers', []))->keys()->map(fn($k) => (int)$k)
-            );
+            // Hapus jawaban lama untuk question_id yang dikirim (idempotent)
+            $incomingQids = $questions->pluck('id')
+                ->intersect(collect($r->input('answers', []))->keys()->map(fn($k) => (int)$k));
 
             if ($incomingQids->isNotEmpty()) {
                 Answer::where('attempt_id', $attempt->id)
@@ -133,19 +157,18 @@ class QuizController extends Controller
                     // Validasi: option harus milik pertanyaan ini
                     $optionId = is_null($input) ? null : (int) $input;
                     if ($optionId) {
-                        $belongs = $q->options()->where('id', $optionId)->exists();
+                        $belongs = $q->options->contains('id', $optionId);
                         if (! $belongs) {
-                            // skip option asing (tidak menghitung apa pun)
-                            $optionId = null;
+                            $optionId = null; // skip option asing
                         }
                     }
 
                     $correct = $q->options->firstWhere('is_correct', 1);
                     $isCorrect = $correct && $correct->id === $optionId;
                 } else {
-                    // Essay/short answer
+                    // Essay/short answer (tidak auto-grade)
                     $text = is_string($input) ? trim($input) : null;
-                    $isCorrect = false; // essay tidak dinilai otomatis
+                    $isCorrect = false;
                 }
 
                 if ($isCorrect) {
@@ -168,63 +191,118 @@ class QuizController extends Controller
             ]);
         });
 
-        // % benar MCQ utk attempt ini
-        $percent = $totalGradable > 0 ? ($correctCount / $totalGradable) * 100 : 0;
+        // === Persentase lulus berbasis poin MCQ ===
+        $maxPointsMcq = $quiz->questions
+            ->where('type', 'mcq')
+            ->sum(fn($q) => $q->points ?? 1);
 
-        // === Upsert certificate issue (satu per user-course) bila >= 80% ===
-        if ($percent >= 80) {
+        $percent = $maxPointsMcq > 0 ? ($score / $maxPointsMcq) * 100 : 0;
+
+        // Tentukan nomor attempt (1 = pertama, 2 = remed)
+        $priorSubmitted = $quiz->attempts()
+            ->where('user_id', Auth::id())
+            ->whereNotNull('submitted_at')
+            ->where('id', '!=', $attempt->id)
+            ->count();
+
+        $attemptNo = $priorSubmitted + 1;
+
+        // === Keputusan kelulusan ===
+        $passed = $percent >= self::PASS_MIN_PERCENT;
+
+        // === Upsert certificate issue bila lulus ===
+        if ($passed) {
             $course = $quiz->lesson->module->course;
-
-            // kunci unik: user_id + course_id + assessment_type
             $templateId = $course->certificate_template_id ?? 1;
 
-            // buat serial unik (cek tabrakan singkat)
-            $serial = null;
-            do {
-                $serialTry = Str::upper(Str::random(12));
-                $exists = CertificateIssue::where('serial', $serialTry)->exists();
-                if (! $exists) $serial = $serialTry;
-            } while (is_null($serial));
-
-            CertificateIssue::updateOrCreate(
+            $issue = CertificateIssue::firstOrCreate(
                 [
                     'user_id'         => Auth::id(),
                     'course_id'       => $course->id ?? null,
                     'assessment_type' => 'course',
                 ],
                 [
-                    'assessment_id' => $attempt->id, // simpan attempt pelulus TERBARU
-                    'template_id'   => $templateId,
-                    'serial'        => $serial,
-                    'score'         => $score,
-                    'issued_at'     => now(),
+                    'template_id' => $templateId,
+                    'serial'      => $this->generateUniqueSerial(),
+                    'issued_at'   => now(),
                 ]
             );
+
+            $issue->update([
+                'assessment_id' => $attempt->id,
+                'score'         => $score,
+                'issued_at'     => now(),
+            ]);
+
+            return redirect()
+                ->route('app.quiz.result', $attempt)
+                ->with('status', "Lulus — Nilai: ".number_format($percent,1)."%. Sertifikat tersedia.");
         }
 
+        // Tidak lulus (<80)
+        if ($attemptNo === 1) {
+            // Attempt pertama: info remed
+            $msg = "Belum lulus (".number_format($percent,1)."%). ";
+            if ($percent <= self::REMED_MAX_PERCENT) {
+                $msg .= "Nilai ≤".self::REMED_MAX_PERCENT." — wajib remed (kesempatan terakhir).";
+            } else {
+                $msg .= "Minimal lulus ".self::PASS_MIN_PERCENT."%. Anda masih punya 1 kesempatan remed.";
+            }
+            return redirect()
+                ->route('app.quiz.result', $attempt)
+                ->with('status', $msg);
+        }
+
+        // Attempt ke-2 (remed): final — tetap tidak lulus bila <80
         return redirect()
             ->route('app.quiz.result', $attempt)
-            ->with('status', 'Jawaban terkirim.');
+            ->with('status', "Tidak lulus (percobaan ke-2) — Nilai: ".number_format($percent,1)."%. Minimal ".self::PASS_MIN_PERCENT."%.");
     }
 
     /**
-     * Halaman hasil attempt:
-     * - Tampilkan % benar attempt ini (eligible_current)
-     * - Hitung juga attempt TERBAIK user di course yang sama (eligible_best)
+     * Halaman hasil attempt.
      */
     public function result(QuizAttempt $attempt): View
     {
+        abort_if($attempt->user_id !== Auth::id(), 403, 'Anda tidak berhak melihat hasil ini.');
+
         $attempt->load(['quiz.lesson.module.course', 'answers.question.options']);
         $course = $attempt->quiz->lesson->module->course;
 
-        // % untuk attempt ini
+        // % untuk attempt ini (by points)
         [$percentCurrent, $correctCurrent, $totalCurrent] = $this->percentForAttempt($attempt);
 
-        // cari attempt TERBAIK user pada course yang sama
+        // attempt terbaik (masih count-based)
         [$bestAttempt, $bestPercent, $bestCorrect, $bestTotal] = $this->bestAttemptOnCourse(
             userId: $attempt->user_id,
             courseId: $course->id
         );
+
+        // Banner data (tanpa logika "sudah lulus tidak perlu mengulang")
+        $submittedCount = $attempt->quiz->attempts()
+            ->where('user_id', $attempt->user_id)
+            ->whereNotNull('submitted_at')
+            ->count();
+
+        $remainAttempts = max(0, self::MAX_ATTEMPTS - $submittedCount);
+
+        // Cooldown hanya bila sudah 2 attempt & BELUM lulus (aturan awal tetap dipertahankan)
+        $bestPctOnQuiz = $this->bestPercentByPointsOnQuiz($attempt->user_id, $attempt->quiz_id);
+        $hasPassed = $bestPctOnQuiz >= self::PASS_MIN_PERCENT;
+
+        $cooldownRemain = 0;
+        if ($submittedCount >= self::MAX_ATTEMPTS && ! $hasPassed) {
+            $lastSubmittedAt = $attempt->quiz->attempts()
+                ->where('user_id', $attempt->user_id)
+                ->whereNotNull('submitted_at')
+                ->latest('submitted_at')
+                ->value('submitted_at');
+
+            if ($lastSubmittedAt) {
+                $elapsed = now()->diffInSeconds($lastSubmittedAt);
+                $cooldownRemain = max(0, self::COOLDOWN_SECONDS - $elapsed);
+            }
+        }
 
         return view('app.quizzes.result', [
             'attempt'         => $attempt,
@@ -234,33 +312,53 @@ class QuizController extends Controller
             'percent'         => $percentCurrent,
             'correct'         => $correctCurrent,
             'total'           => $totalCurrent,
-            'eligible'        => $percentCurrent >= 80, // kompatibel dgn view lama
+            'eligible'        => $percentCurrent >= self::PASS_MIN_PERCENT,
 
-            // attempt terbaik (pakai ini utk tombol “Unduh Sertifikat” agar konsisten dgn download)
+            // attempt terbaik
             'bestAttempt'     => $bestAttempt,
             'best_percent'    => $bestPercent,
             'best_correct'    => $bestCorrect,
             'best_total'      => $bestTotal,
-            'eligible_best'   => $bestPercent >= 80,
+            'eligible_best'   => $bestPercent >= self::PASS_MIN_PERCENT,
+
+            // banner
+            'maxAttempts'     => self::MAX_ATTEMPTS,
+            'cooldownSeconds' => self::COOLDOWN_SECONDS,
+            'submittedCount'  => $submittedCount,
+            'remainAttempts'  => $remainAttempts,
+            'cooldownRemain'  => $cooldownRemain,
+            // NOTE: variabel $hasPassed tetap dipass jika view kamu masih memerlukannya
+            'hasPassed'       => $hasPassed,
         ]);
     }
 
     /**
-     * Hitung % benar MCQ untuk satu attempt.
-     * @return array [percent, correct, total]
+     * Hitung % benar MCQ (berbasis poin) untuk satu attempt.
+     * @return array [percent, correctCountMCQ, totalMcq]
      */
     private function percentForAttempt(QuizAttempt $attempt): array
     {
         $mcq = $attempt->answers->filter(fn($a) => $a->question && $a->question->type === 'mcq');
         $total   = $mcq->count();
         $correct = $mcq->where('is_correct', true)->count();
-        $percent = $total > 0 ? ($correct / $total) * 100 : 0;
+
+        $maxPoints = $attempt->quiz->questions
+            ->where('type','mcq')
+            ->sum(fn($q) => $q->points ?? 1);
+
+        $scorePoints = 0;
+        foreach ($mcq as $ans) {
+            if ($ans->is_correct && $ans->question) {
+                $scorePoints += ($ans->question->points ?? 1);
+            }
+        }
+
+        $percent = $maxPoints > 0 ? ($scorePoints / $maxPoints) * 100 : 0;
         return [$percent, $correct, $total];
     }
 
     /**
-     * Ambil attempt TERBAIK (persentase MCQ tertinggi) milik user pada course.
-     * @return array [QuizAttempt|null $bestAttempt, float $percent, int $correct, int $total]
+     * Ambil attempt TERBAIK (berdasar persentase MCQ benar).
      */
     private function bestAttemptOnCourse(int $userId, int $courseId): array
     {
@@ -293,6 +391,41 @@ class QuizController extends Controller
     }
 
     /**
+     * Persentase terbaik (by points) milik user pada kuis tertentu.
+     */
+    private function bestPercentByPointsOnQuiz(int $userId, int $quizId): float
+    {
+        $attempts = QuizAttempt::with(['answers.question', 'quiz'])
+            ->where('user_id', $userId)
+            ->where('quiz_id', $quizId)
+            ->whereNotNull('submitted_at')
+            ->get();
+
+        $best = 0.0;
+        foreach ($attempts as $att) {
+            $mcq = $att->answers->filter(fn($a) => $a->question && $a->question->type === 'mcq');
+
+            $maxPoints = $att->quiz->questions()
+                ->where('type', 'mcq')
+                ->get()
+                ->sum(fn($q) => $q->points ?? 1);
+
+            $scorePoints = 0;
+            foreach ($mcq as $ans) {
+                if ($ans->is_correct && $ans->question) {
+                    $scorePoints += ($ans->question->points ?? 1);
+                }
+            }
+
+            $pct = $maxPoints > 0 ? ($scorePoints / $maxPoints) * 100 : 0;
+            if ($pct > $best) {
+                $best = $pct;
+            }
+        }
+        return $best;
+    }
+
+    /**
      * Cek apakah lesson sudah ditandai selesai oleh user.
      */
     private function isLessonCompleted(Lesson $lesson, int $userId): bool
@@ -302,5 +435,16 @@ class QuizController extends Controller
             ->where('user_id', $userId)
             ->whereNotNull('completed_at')
             ->exists();
+    }
+
+    /**
+     * Buat serial unik untuk sertifikat (sekali saja).
+     */
+    private function generateUniqueSerial(): string
+    {
+        do {
+            $s = Str::upper(Str::random(12));
+        } while (CertificateIssue::where('serial', $s)->exists());
+        return $s;
     }
 }
