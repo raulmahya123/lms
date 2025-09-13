@@ -45,7 +45,7 @@ use App\Http\Controllers\Admin\{
     DashboardController      as AdminDashboardController,
     PsyTestController        as AdminPsyTestController, // optional if referenced directly
     PsyAttemptController     as AdminPsyAttemptController,
-    TestIqController as AdminTestIqController,
+    TestIqController         as AdminTestIqController,
 };
 
 // =====================
@@ -72,7 +72,7 @@ use App\Http\Controllers\User\{
     PsyAttemptController     as UserPsyAttemptController,
     QaThreadController       as UserQaThreadController,
     QaReplyController        as UserQaReplyController,
-    TestIqController as UserTestIqController,
+    TestIqController         as UserTestIqController,
 };
 
 // =====================
@@ -140,8 +140,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('throttle:quiz')->name('app.quiz.submit');
     Route::get('/attempts/{attempt}', [UserQuizController::class, 'result'])
         ->middleware('ensure.attempt.owner')->name('app.quiz.result');
+
     Route::post('/lessons/{lesson}/drive/request', [UserLessonController::class, 'requestDriveAccess'])
         ->name('lessons.drive.request');
+
     // Kupon
     Route::post('/coupons/validate', [UserCouponController::class, 'validateCode'])->name('app.coupons.validate');
 
@@ -158,12 +160,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/courses/{course}/midtrans/snap', [UserCourseCheckoutController::class, 'startSnap'])
         ->name('app.courses.snap');
 
-
     // Sertifikat (PDF)
     Route::get('/courses/{course}/certificate', [CertificateController::class, 'course'])->name('app.certificate.course');
     Route::get('/certificates', [CertificateController::class, 'index'])
         ->name('app.certificates.index');
-    // Membership & Plan (USER)
+    // (DUPLIKASI DIPERTAHANKAN SESUAI PUNYAMU)
     Route::get('/memberships', [UserMembershipController::class, 'index'])->name('app.memberships.index');
     Route::get('/plans', [UserPlanController::class, 'index'])->name('app.plans.index');
 
@@ -171,6 +172,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/payments', [UserPaymentController::class, 'index'])->name('app.payments.index');
     Route::get('/payments/{payment}', [UserPaymentController::class, 'show'])->name('app.payments.show');
 
+    // =====================
+    // Psy Tests (USER)
+    // =====================
     Route::prefix('psy-tests')->group(function () {
         // List
         Route::get('/', [UserPsyTestController::class, 'index'])
@@ -204,7 +208,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{slugOrId}/result/{attempt}', [UserPsyAttemptController::class, 'result'])
             ->name('app.psy.attempts.result');
     });
-    // ⬇️ Tambahan ini yang bikin app.certificates.show (dan preview/download) ada
+
+    // ⬇️ Sudah ada sebelumnya, dipertahankan
     Route::get('/certificates/{issue}', [CertificateController::class, 'show'])
         ->name('app.certificates.show');
 
@@ -213,6 +218,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/certificates/{issue}/download', [CertificateController::class, 'download'])
         ->name('app.certificates.download');
+
     // Q&A (USER)
     Route::resource('qa-threads', UserQaThreadController::class)
         ->names('app.qa-threads')
@@ -230,16 +236,68 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::delete('qa-replies/{reply}', [UserQaReplyController::class, 'destroy'])
         ->name('app.qa-replies.destroy');
 
+    // =====================
+    // IQ Test (USER) — EXISTING milikmu (biarin)
+    // =====================
     Route::get('/iq/{testIq}', [UserTestIqController::class, 'show'])->name('user.test-iq.show');
     Route::post('/iq/{testIq}/submit', [UserTestIqController::class, 'submit'])->name('user.test-iq.submit');
     Route::get('/iq/{testIq}/result', [UserTestIqController::class, 'result'])->name('user.test-iq.result');
 
+    // =====================
+    // IQ Test (USER) — TAMBAHAN: versi app.* (URI berbeda biar gak tabrakan)
+    // =====================
+    Route::get('/app/iq/{testIq}', [UserTestIqController::class, 'show'])->name('app.test-iq.show');
+    Route::post('/app/iq/{testIq}/submit', [UserTestIqController::class, 'submit'])->name('app.test-iq.submit');
+    Route::get('/app/iq/{testIq}/result', [UserTestIqController::class, 'result'])->name('app.test-iq.result');
+
+    // =====================
+    // IQ Test (USER) — STEP ROUTES (yang kamu minta tampil 1-per-1)
+    // =====================
+    // Start (opsional) -> redirect ke step 1
+    Route::get('/iq/{testIq}/start', [UserTestIqController::class, 'start'])
+        ->name('user.test-iq.start');
+    Route::get('/app/iq/{testIq}/start', [UserTestIqController::class, 'start'])
+        ->name('app.test-iq.start');
+
+    // Versi user.* (tanpa /app)
+    Route::get('/iq/{testIq}/q/{step}', [UserTestIqController::class, 'showStep'])
+        ->whereNumber('step')
+        ->name('user.test-iq.question');
+    Route::post('/iq/{testIq}/q/{step}', [UserTestIqController::class, 'answer'])
+        ->whereNumber('step')
+        ->name('user.test-iq.answer');
+
+    // Versi app.* (dengan /app prefix di path)
+    Route::get('/app/iq/{testIq}/q/{step}', [UserTestIqController::class, 'showStep'])
+        ->whereNumber('step')
+        ->name('app.test-iq.question');
+    Route::post('/app/iq/{testIq}/q/{step}', [UserTestIqController::class, 'answer'])
+        ->whereNumber('step')
+        ->name('app.test-iq.answer');
+
+    // =====================
+    // IQ Test (USER) — ROUTES custom kamu (dipertahankan)
+    // =====================
+    Route::get('/test-iq/{testIq}', [UserTestIqController::class, 'start'])
+        ->name('test-iq.start');
+
+    // Tampilkan 1 soal (step)
+    Route::get('/test-iq/{testIq}/q/{step}', [UserTestIqController::class, 'showStep'])
+        ->whereNumber('step')
+        ->name('test-iq.show');
+
+    // Submit 1 jawaban (lanjut step berikutnya / finish)
+    Route::post('/test-iq/{testIq}/q/{step}', [UserTestIqController::class, 'answer'])
+        ->whereNumber('step')
+        ->name('test-iq.answer');
+
+    // Hasil
+    Route::get('/test-iq/{testIq}/result', [UserTestIqController::class, 'result'])
+        ->name('test-iq.result');
+
+    // =====================
     // Profile
-
-    // Route::get('/profile',  [ProfileController::class, 'edit'])->name('profile.edit');
-    // Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
-    // Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-
+    // =====================
     Route::middleware('auth')->group(function () {
         Route::get('/profile', fn() => view('profile.index'))->name('profile.edit');
 
@@ -275,16 +333,14 @@ Route::middleware(['auth', 'can:backoffice'])
         // Admin Dashboard (/admin/dashboard)
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-        Route::get('test-iq',            [AdminTestIqController::class, 'index'])->name('test-iq.index');
-        Route::get('test-iq/create',     [AdminTestIqController::class, 'create'])->name('test-iq.create');
-        Route::post('test-iq',           [AdminTestIqController::class, 'store'])->name('test-iq.store');
-        Route::get('test-iq/{testIq}/edit', [AdminTestIqController::class, 'edit'])->name('test-iq.edit');
-        Route::put('test-iq/{testIq}',   [AdminTestIqController::class, 'update'])->name('test-iq.update');
-        Route::delete('test-iq/{testIq}', [AdminTestIqController::class, 'destroy'])->name('test-iq.destroy');
-
-        // opsional toggle
-        Route::post('test-iq/{testIq}/toggle', [AdminTestIqController::class, 'toggle'])->name('test-iq.toggle');
-
+        // ✅ perbaiki pemetaan ke AdminTestIqController
+        Route::get('test-iq',                 [AdminTestIqController::class, 'index'])->name('test-iq.index');
+        Route::get('test-iq/create',          [AdminTestIqController::class, 'create'])->name('test-iq.create');
+        Route::post('test-iq',                [AdminTestIqController::class, 'store'])->name('test-iq.store');
+        Route::get('test-iq/{testIq}/edit',   [AdminTestIqController::class, 'edit'])->name('test-iq.edit');
+        Route::put('test-iq/{testIq}',        [AdminTestIqController::class, 'update'])->name('test-iq.update');
+        Route::delete('test-iq/{testIq}',     [AdminTestIqController::class, 'destroy'])->name('test-iq.destroy');
+        Route::post('test-iq/{testIq}/toggle',[AdminTestIqController::class, 'toggle'])->name('test-iq.toggle');
 
         // Resource khusus
         Route::resource('dashboard_admin', AdminDashboardController::class);
