@@ -14,38 +14,38 @@ class PsyAttemptController extends Controller
      */
     public function index(Request $r)
     {
-        // filter dropdown: pakai kolom 'name'
+        // dropdown filter: pakai kolom 'name'
         $tests = PsyTest::orderBy('name')->get(['id','name']);
 
         $attempts = PsyAttempt::query()
             ->with([
-                'test:id,name',        // <-- pakai name, bukan title
+                'test:id,name',        // pakai name, bukan title
                 'user:id,name,email',
             ])
             ->when($r->filled('test_id'), fn (Builder $q) =>
-                $q->where('test_id', (int)$r->input('test_id'))
+                $q->where('test_id', (int) $r->input('test_id'))
             )
             ->when($r->filled('status') && in_array($r->status, ['submitted','in-progress'], true), function (Builder $q) use ($r) {
-                $r->status === 'submitted'
+                return $r->status === 'submitted'
                     ? $q->whereNotNull('submitted_at')
                     : $q->whereNull('submitted_at');
             })
             ->when($r->filled('q'), function (Builder $q) use ($r) {
-                $term = trim((string)$r->q);
+                $term = trim((string) $r->q);
                 $q->where(function (Builder $sub) use ($term) {
                     $sub->whereHas('user', function (Builder $u) use ($term) {
                             $u->where('name','like',"%{$term}%")
                               ->orWhere('email','like',"%{$term}%");
                         })
-                        ->orWhere('id', $term)
+                        ->when(is_numeric($term), fn ($qq) => $qq->orWhere('id', (int) $term))
                         ->orWhere('result_key','like',"%{$term}%");
                 });
             })
-            ->when($r->filled('date_from'), fn (Builder $q) =>
-                $q->whereDate('started_at','>=', $r->date('date_from'))
+            ->when($r->filled('date_from'), fn (Builder $q) => 
+                $q->whereDate('started_at','>=', $r->input('date_from'))
             )
             ->when($r->filled('date_to'), fn (Builder $q) =>
-                $q->whereDate('started_at','<=', $r->date('date_to'))
+                $q->whereDate('started_at','<=', $r->input('date_to'))
             )
             ->latest('id')
             ->paginate(20)
@@ -60,11 +60,13 @@ class PsyAttemptController extends Controller
     public function show(PsyAttempt $psy_attempt)
     {
         $psy_attempt->load([
-            'test:id,name',          // <-- pakai name
+            'test:id,name',
             'user:id,name,email',
             'answers' => fn ($q) => $q->orderBy('id'),
-            'answers.question:id,test_id,ordering,text',
-            'answers.option:id,question_id,label,value,weight',
+            // ⬇️ ganti 'text' -> 'prompt'; pilih kolom yang memang ada
+            'answers.question:id,test_id,ordering,prompt',
+            // kalau tabel psy_options tidak ada 'weight', jangan dipilih
+            'answers.option:id,question_id,label,value,ordering',
         ]);
 
         $durationSeconds = null;
@@ -89,6 +91,6 @@ class PsyAttemptController extends Controller
 
         return redirect()
             ->route('admin.psy-attempts.index')
-            ->with('ok','Attempt dihapus.');
+            ->with('ok', 'Attempt dihapus.');
     }
 }

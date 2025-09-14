@@ -1,11 +1,11 @@
 <?php
 
+use App\Http\Controllers\User\PsyDashboardController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Http\Controllers\App\PsyDashboardController;
 
 // =====================
 // Public
@@ -74,6 +74,7 @@ use App\Http\Controllers\User\{
     QaThreadController       as UserQaThreadController,
     QaReplyController        as UserQaReplyController,
     TestIqController         as UserTestIqController,
+    PsyDashboardController as UserPysDashController,
 };
 
 // =====================
@@ -333,7 +334,7 @@ Route::middleware(['auth', 'can:backoffice'])
 
         // Admin Dashboard (/admin/dashboard)
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-
+        
         // ✅ perbaiki pemetaan ke AdminTestIqController
         Route::get('test-iq',                 [AdminTestIqController::class, 'index'])->name('test-iq.index');
         Route::get('test-iq/create',          [AdminTestIqController::class, 'create'])->name('test-iq.create');
@@ -414,5 +415,5 @@ Route::middleware(['auth', 'can:backoffice'])
 Route::middleware(['auth'])
     ->prefix('app')->name('app.')->group(function () {
     // Dashboard Psikologi (USER)
-    Route::get('psychology', PsyDashboardController::class)->name('psychology');
+    Route::get('psychology', UserPysDashController::class)->name('psychology');
 });

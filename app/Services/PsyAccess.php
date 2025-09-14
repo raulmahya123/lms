@@ -17,12 +17,16 @@ class PsyAccess
         $m = $user->memberships()->active()->first();
         return (bool) $m;
     }
+    
 
-    public static function findProfile(int $testId, int $totalScore): ?PsyProfile
+   public static function findProfile(int $testId, int $total): ?PsyProfile
     {
         return PsyProfile::where('test_id', $testId)
-            ->where('min_total', '<=', $totalScore)
-            ->where('max_total', '>=', $totalScore)
+            ->where('min_total', '<=', $total)
+            ->where(function ($q) use ($total) {
+                $q->whereNull('max_total')->orWhere('max_total', '>=', $total);
+            })
+            ->orderByDesc('min_total')
             ->first();
     }
 }

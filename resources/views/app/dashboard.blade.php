@@ -1,334 +1,368 @@
+{{-- resources/views/app/dashboard.blade.php --}}
 @extends('app.layouts.base')
 @section('title','Dashboard')
 
 @push('styles')
 <style>
-  .hover-lift{transition:transform .2s ease, box-shadow .2s ease}
-  .hover-lift:hover{transform:translateY(-2px); box-shadow:0 14px 40px rgba(2,6,23,.12)}
-  .soft-card{background:#fff; border:1px solid rgba(2,6,23,.08); border-radius:16px}
-  .progress-wrap{height:10px; background:#eef2ff; border-radius:999px; overflow:hidden}
-  .progress-bar{height:100%; background:linear-gradient(90deg,#6366f1,#22d3ee)}
-  .card-head{display:flex; align-items:center; justify-content:space-between; gap:.75rem}
-  .btn{display:inline-flex; align-items:center; gap:.4rem; padding:.4rem .7rem; border-radius:10px; font-size:.78rem; border:1px solid rgba(2,6,23,.08); background:#f8fafc}
-  .btn:hover{background:#eef2ff}
+  :root{
+    --card-bg: rgba(255,255,255,.75);
+    --card-brd: rgba(2,6,23,.08);
+    --ink: #0f172a;
+    --muted: #64748b;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --card-bg: rgba(15,23,42,.6);
+      --card-brd: rgba(148,163,184,.12);
+      --ink: #e2e8f0;
+      --muted: #94a3b8;
+    }
+  }
+
+  .glass {background: var(--card-bg); border:1px solid var(--card-brd); backdrop-filter: blur(12px); border-radius: 18px}
+  .hover-lift{transition:transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s;}
+  .hover-lift:hover{transform:translateY(-3px); box-shadow:0 18px 60px rgba(2,6,23,.14)}
+  .chip{display:inline-flex;align-items:center;gap:.4rem;font-size:.72rem;padding:.3rem .55rem;border-radius:999px;background:#eef2ff;border:1px solid rgba(2,6,23,.05)}
+  .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.55rem .9rem;border-radius:12px;font-weight:600;background:linear-gradient(135deg,#6366f1,#22d3ee);color:#fff;border:0}
+  .btn.secondary{background:transparent;color:var(--ink);border:1px solid var(--card-brd)}
+  .stat-num{font-size:2rem;font-weight:800;letter-spacing:-.02em}
+  .subtle{color:var(--muted)}
+  .progress-wrap{height:10px;background:rgba(99,102,241,.12);border-radius:999px;overflow:hidden}
+  .progress-bar{height:100%;background:linear-gradient(90deg,#6366f1,#22d3ee)}
+  .shine{position:relative;overflow:hidden}
+  .shine:after{content:"";position:absolute;inset:-150% -50% auto;transform:rotate(12deg);height:60%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:shine 6s linear infinite}
+  @keyframes shine{0%{left:-120%}100%{left:140%}}
+  .blob{position:absolute;filter:blur(60px);opacity:.5;z-index:-1}
+  .blob.b1{background:#a78bfa;width:320px;height:320px;left:-80px;top:-60px;border-radius:50%}
+  .blob.b2{background:#22d3ee;width:280px;height:280px;right:-60px;top:120px;border-radius:50%}
 </style>
 @endpush
 
 @section('content')
-<h1 class="text-xl font-semibold mb-1">Halo, {{ $user->name }}</h1>
-<p class="text-sm text-gray-500 mb-6">Ringkasan pembelajaran dan aktivitasmu 🎯</p>
+<div class="relative">
+  <div class="blob b1"></div>
+  <div class="blob b2"></div>
+</div>
 
-{{-- === Stat box === --}}
+<h1 class="text-2xl md:text-3xl font-extrabold mb-1">Hey, {{ $user->name }} ✨</h1>
+<p class="subtle mb-6">Ringkasan pembelajaran & vibes harian kamu.</p>
+
+{{-- === Stat Cards === --}}
 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-  <div class="p-4 soft-card">
-    <div class="text-sm text-gray-500">Courses Saya</div>
-    <div class="text-3xl font-bold">{{ $stats['courses_count'] ?? 0 }}</div>
+  <div class="glass p-5 hover-lift shine">
+    <div class="subtle text-sm">Courses Saya</div>
+    <div class="stat-num">{{ (int)($stats['courses_count'] ?? 0) }}</div>
   </div>
-  <div class="p-4 soft-card">
-    <div class="text-sm text-gray-500">Membership Aktif</div>
-    <div class="text-lg">
+  <div class="glass p-5 hover-lift">
+    <div class="subtle text-sm">Membership Aktif</div>
+    <div class="text-xl font-semibold">
       {{ optional(optional($stats['active_membership'] ?? null)->plan)->name ?? '—' }}
     </div>
   </div>
-  <div class="p-4 soft-card">
-    <div class="text-sm text-gray-500">Attempt Terakhir</div>
-    <div class="text-lg">
+  <div class="glass p-5 hover-lift">
+    <div class="subtle text-sm">Attempt Terakhir</div>
+    <div class="text-xl font-semibold">
       {{ optional($stats['last_attempt'] ?? null)->score !== null ? optional($stats['last_attempt'])->score : '—' }}
     </div>
   </div>
 </div>
 
-{{-- === Grafik === --}}
+{{-- === Grafik Utama === --}}
 @php
+  // Default struktur charts agar view tidak error jika controller belum mengirim semua kunci (tanpa trailing comma)
   $CH = $charts ?? [
-    'progress'=>['labels'=>[],'percent'=>[],'done'=>[],'total'=>[]],
-    'enroll'=>['labels'=>[],'counts'=>[]],
-    'distribution'=>['labels'=>[],'counts'=>[]],
-    'quiz'=>[],
-    'completion_monthly'=>['labels'=>[],'counts'=>[]],
-    'attempts_monthly'=>['labels'=>[],'counts'=>[]],
+    'progress'           => ['labels'=>[], 'percent'=>[], 'done'=>[], 'total'=>[]],
+    'enroll'             => ['labels'=>[], 'counts'=>[]],
+    'distribution'       => ['labels'=>[], 'counts'=>[]],
+    'quiz'               => [],
+    'completion_monthly' => ['labels'=>[], 'counts'=>[]],
+    'attempts_monthly'   => ['labels'=>[], 'counts'=>[]],
+
+    // tambahan agar semua section ada chart
+    'my_courses'     => ['labels'=>[], 'percent'=>[]],
+    'recommended'    => ['labels'=>[], 'counts'=>[]],
+    'coupons'        => ['labels'=>[], 'counts'=>[]],
+    'psy_tests'      => ['labels'=>[], 'questions'=>[]],
+    'iq_tests'       => ['labels'=>[], 'duration'=>[]],
+    'threads_latest' => ['labels'=>[], 'replies'=>[]],
+    'threads_mine'   => ['labels'=>[], 'replies'=>[]]
   ];
 @endphp
 
 <div class="flex items-center justify-between mt-8 mb-2">
-  <h2 class="text-lg font-semibold">Insight Grafik</h2>
-  {{-- contoh filter (dummy, bisa kamu sambungkan nanti) --}}
+  <h2 class="text-lg md:text-xl font-bold">Insight Grafik 📈</h2>
   <div class="flex items-center gap-2">
-    <select class="btn">
-      <option>Semua Course</option>
-      <option>Course Terbaru</option>
-      <option>Course Populer</option>
-    </select>
-    <select class="btn">
-      <option>6 Bulan</option>
-      <option>12 Bulan</option>
-    </select>
+    <button class="btn secondary" data-dl="all">Download Semua</button>
   </div>
 </div>
 
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-  <div class="p-4 soft-card hover-lift">
-    <div class="card-head mb-3">
+  {{-- Progress per Course --}}
+  <div class="glass p-4 hover-lift">
+    <div class="flex items-center justify-between mb-3">
       <h3 class="font-semibold">Progress per Course</h3>
-      <button class="btn" data-dl="chartProgress">Download PNG</button>
+      <button class="btn secondary" data-dl="chartProgress">PNG</button>
     </div>
     <div style="height:320px"><canvas id="chartProgress"></canvas></div>
   </div>
 
-  <div class="p-4 soft-card hover-lift">
-    <div class="card-head mb-3">
+  {{-- Distribusi Progress --}}
+  <div class="glass p-4 hover-lift">
+    <div class="flex items-center justify-between mb-3">
       <h3 class="font-semibold">Distribusi Progress</h3>
-      <button class="btn" data-dl="chartDist">Download PNG</button>
+      <span class="chip">🔥 fokus area</span>
     </div>
     <div style="height:320px"><canvas id="chartDist"></canvas></div>
   </div>
 
-  <div class="p-4 soft-card hover-lift">
-    <div class="card-head mb-3">
-      <h3 class="font-semibold">Enrollments (Courses Saya)</h3>
-      <button class="btn" data-dl="chartEnroll">Download PNG</button>
+  {{-- Enrollments --}}
+  <div class="glass p-4 hover-lift">
+    <div class="flex items-center justify-between mb-3">
+      <h3 class="font-semibold">Enrollments</h3>
+      <button class="btn secondary" data-dl="chartEnroll">PNG</button>
     </div>
     <div style="height:320px"><canvas id="chartEnroll"></canvas></div>
   </div>
 
-  @if(!empty($CH['quiz']))
-  <div class="p-4 soft-card hover-lift">
-    <div class="card-head mb-3">
+  {{-- Riwayat Skor Quiz --}}
+  <div class="glass p-4 hover-lift">
+    <div class="flex items-center justify-between mb-3">
       <h3 class="font-semibold">Riwayat Skor Quiz</h3>
-      <button class="btn" data-dl="chartQuiz">Download PNG</button>
+      <button class="btn secondary" data-dl="chartQuiz">PNG</button>
     </div>
     <div style="height:320px"><canvas id="chartQuiz"></canvas></div>
   </div>
-  @endif
 
-  <div class="p-4 soft-card hover-lift">
-    <div class="card-head mb-3">
+  {{-- Lesson Completion / Bulan --}}
+  <div class="glass p-4 hover-lift">
+    <div class="flex items-center justify-between mb-3">
       <h3 class="font-semibold">Lesson Completion / Bulan</h3>
-      <button class="btn" data-dl="chartCompleteMonthly">Download PNG</button>
+      <button class="btn secondary" data-dl="chartCompleteMonthly">PNG</button>
     </div>
     <div style="height:320px"><canvas id="chartCompleteMonthly"></canvas></div>
   </div>
 
-  <div class="p-4 soft-card hover-lift">
-    <div class="card-head mb-3">
+  {{-- Quiz Attempts / Bulan --}}
+  <div class="glass p-4 hover-lift">
+    <div class="flex items-center justify-between mb-3">
       <h3 class="font-semibold">Quiz Attempts / Bulan</h3>
-      <button class="btn" data-dl="chartAttemptsMonthly">Download PNG</button>
+      <button class="btn secondary" data-dl="chartAttemptsMonthly">PNG</button>
     </div>
     <div style="height:320px"><canvas id="chartAttemptsMonthly"></canvas></div>
   </div>
 </div>
 
-{{-- === My Courses (dengan progress bar) === --}}
-<div class="mt-10">
+{{-- === My Courses (Grafik) === --}}
+<div class="mt-10 glass p-4 hover-lift">
   <div class="flex items-center justify-between mb-3">
-    <h2 class="text-lg font-semibold">Courses Saya</h2>
-    <a href="{{ route('app.courses.index') }}" class="text-indigo-600 text-sm hover:underline">Lihat semua</a>
+    <h2 class="text-lg md:text-xl font-bold">Courses Saya 🎒 (Grafik)</h2>
+    <a href="{{ route('app.courses.index') }}" class="subtle hover:underline">Lihat semua →</a>
   </div>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    @forelse(($myCourses ?? collect()) as $c)
-      <div class="p-4 soft-card hover-lift">
-        <div class="font-medium">{{ \Illuminate\Support\Str::limit($c->title, 48) }}</div>
-        <div class="text-xs text-gray-500 mt-1">
-          {{ $c->modules_count ?? 0 }} modul • {{ $c->lessons_count ?? 0 }} lessons
-        </div>
-        <div class="mt-3 progress-wrap">
-          <div class="progress-bar" style="width: {{ (int)($c->progress_percent ?? 0) }}%"></div>
-        </div>
-        <div class="mt-1 text-xs text-gray-600">
-          {{ (int)($c->progress_done ?? 0) }} / {{ (int)($c->progress_total ?? 0) }} selesai ({{ (int)($c->progress_percent ?? 0) }}%)
-        </div>
-      </div>
-    @empty
-      <div class="col-span-full p-6 soft-card text-center text-gray-500">
-        Kamu belum mengambil course apa pun.
-      </div>
-    @endforelse
-  </div>
+  <div style="height:360px"><canvas id="chartMyCourses"></canvas></div>
 </div>
 
-{{-- === Recommended Courses === --}}
-<div class="mt-10">
-  <h2 class="text-lg font-semibold mb-3">Rekomendasi Buat Kamu</h2>
-  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-    @forelse(($recommendedCourses ?? collect()) as $c)
-      <div class="p-4 soft-card hover-lift">
-        <div class="font-medium">{{ \Illuminate\Support\Str::limit($c->title, 48) }}</div>
-        <div class="text-xs text-gray-500 mt-1">
-          {{ $c->modules_count ?? 0 }} modul • {{ $c->lessons_count ?? 0 }} lessons
-        </div>
-        <div class="mt-3 text-sm text-indigo-600">
-          {{ number_format($c->enrollments_count ?? 0) }} siswa
-        </div>
-      </div>
-    @empty
-      <div class="col-span-full p-6 soft-card text-center text-gray-500">
-        Rekomendasi belum tersedia.
-      </div>
-    @endforelse
+{{-- === Active Coupons (Grafik) === --}}
+<div class="mt-10 glass p-4 hover-lift">
+  <div class="flex items-center justify-between mb-3">
+    <h2 class="text-lg md:text-xl font-bold">Kupon Aktif 🎁 (Grafik)</h2>
   </div>
+  <div style="height:360px"><canvas id="chartCoupons"></canvas></div>
 </div>
 
-{{-- === Active Coupons === --}}
-<div class="mt-10">
-  <h2 class="text-lg font-semibold mb-3">Kupon Aktif</h2>
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-    @forelse(($activeCoupons ?? collect()) as $cp)
-      <div class="p-4 soft-card hover-lift">
-        <div class="text-sm text-gray-500">Kode</div>
-        <div class="text-lg font-semibold">{{ $cp->code }}</div>
-        <div class="mt-2 text-sm">
-          Diskon: {{ $cp->discount_label ?? ($cp->percent ? $cp->percent.'%' : '—') }}
-        </div>
-        <div class="text-xs text-gray-500">
-          Berlaku s/d: {{ optional($cp->valid_until)->format('d M Y') ?? 'Tanpa batas' }}
-        </div>
-      </div>
-    @empty
-      <div class="col-span-full p-6 soft-card text-center text-gray-500">
-        Tidak ada kupon aktif hari ini.
-      </div>
-    @endforelse
-  </div>
-</div>
-
-{{-- === Psy Tests & IQ Tests === --}}
+{{-- === Psy & IQ Tests (Grafik) === --}}
 <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-  <div>
-    <h2 class="text-lg font-semibold mb-3">Tes Psikologi</h2>
-    <div class="grid grid-cols-1 gap-4">
-      @forelse(($psyTests ?? collect()) as $t)
-        <div class="p-4 soft-card hover-lift">
-          <div class="font-medium">{{ \Illuminate\Support\Str::limit($t->title, 48) }}</div>
-          <div class="text-xs text-gray-500">{{ $t->questions_count ?? 0 }} pertanyaan</div>
-        </div>
-      @empty
-        <div class="p-6 soft-card text-center text-gray-500">Belum ada tes.</div>
-      @endforelse
+  <div class="glass p-4 hover-lift">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-semibold">Tes Psikologi 🧠 — Jumlah Pertanyaan</h2>
     </div>
+    <div style="height:320px"><canvas id="chartPsyTests"></canvas></div>
   </div>
-  <div>
-    <h2 class="text-lg font-semibold mb-3">Tes IQ</h2>
-    <div class="grid grid-cols-1 gap-4">
-      @forelse(($iqTests ?? collect()) as $t)
-        <div class="p-4 soft-card hover-lift">
-          <div class="font-medium">{{ \Illuminate\Support\Str::limit($t->title, 48) }}</div>
-          <div class="text-xs text-gray-500">{{ $t->duration_minutes ?? 0 }} menit</div>
-        </div>
-      @empty
-        <div class="p-6 soft-card text-center text-gray-500">Belum ada tes IQ.</div>
-      @endforelse
+  <div class="glass p-4 hover-lift">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-semibold">Tes IQ ⚡️ — Durasi (menit)</h2>
     </div>
+    <div style="height:320px"><canvas id="chartIqTests"></canvas></div>
   </div>
 </div>
 
-{{-- === Threads === --}}
+{{-- === Threads (Grafik) === --}}
 <div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-  <div>
-    <h2 class="text-lg font-semibold mb-3">Thread Terbaru</h2>
-    <div class="space-y-3">
-      @forelse(($latestThreads ?? collect()) as $th)
-        <div class="p-4 soft-card hover-lift">
-          <div class="font-medium">{{ \Illuminate\Support\Str::limit($th->title ?? '(Tanpa judul)', 64) }}</div>
-          <div class="text-xs text-gray-500 mt-1">
-            oleh {{ optional($th->user)->name ?? 'Anon' }} • {{ $th->replies_count ?? 0 }} balasan
-          </div>
-        </div>
-      @empty
-        <div class="p-6 soft-card text-center text-gray-500">Belum ada thread.</div>
-      @endforelse
+  <div class="glass p-4 hover-lift">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-semibold">Thread Terbaru 💬 — Jumlah Balasan</h2>
     </div>
+    <div style="height:320px"><canvas id="chartThreadsLatest"></canvas></div>
   </div>
-  <div>
-    <h2 class="text-lg font-semibold mb-3">Thread Saya</h2>
-    <div class="space-y-3">
-      @forelse(($myThreads ?? collect()) as $th)
-        <div class="p-4 soft-card hover-lift">
-          <div class="font-medium">{{ \Illuminate\Support\Str::limit($th->title ?? '(Tanpa judul)', 64) }}</div>
-          <div class="text-xs text-gray-500 mt-1">
-            {{ optional($th->course)->title ?? '—' }} • {{ optional($th->lesson)->title ?? '—' }} • {{ $th->replies_count ?? 0 }} balasan
-          </div>
-        </div>
-      @empty
-        <div class="p-6 soft-card text-center text-gray-500">Kamu belum membuat thread.</div>
-      @endforelse
+  <div class="glass p-4 hover-lift">
+    <div class="flex items-center justify-between mb-3">
+      <h2 class="font-semibold">Thread Saya ✍️ — Jumlah Balasan</h2>
     </div>
+    <div style="height:320px"><canvas id="chartThreadsMine"></canvas></div>
   </div>
 </div>
 @endsection
 
 @push('scripts')
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+{{-- CDN Chart.js (tanpa SRI kosong). Untuk security maksimal, pertimbangkan self-host via Vite. --}}
+<script src="https://cdn.jsdelivr.net/npm/chart.js" referrerpolicy="no-referrer"></script>
+
 <script>
-const CHARTS = {!! json_encode($CH, JSON_UNESCAPED_UNICODE) !!};
+const CHARTS = @json($CH, JSON_UNESCAPED_UNICODE);
 
-// Helper warna
-function pastel(n){ const a=[]; for(let i=0;i<n;i++){a.push(`hsl(${Math.floor(360*Math.random())} 70% 65%)`);} return a; }
-function hasData(arr){ return Array.isArray(arr) && arr.length > 0; }
-
-// Download PNG
+// utils
+function has(arr){ return Array.isArray(arr) && arr.length>0; }
+function dl(id){
+  const cvs = document.getElementById(id);
+  if(!cvs) return;
+  const link=document.createElement('a');
+  link.download = id+'.png';
+  link.href = cvs.toDataURL('image/png');
+  link.click();
+}
 document.querySelectorAll('[data-dl]').forEach(btn=>{
   btn.addEventListener('click', ()=>{
-    const id = btn.getAttribute('data-dl');
-    const canvas = document.getElementById(id);
-    if(!canvas) return;
-    const link = document.createElement('a');
-    link.download = id + '.png';
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+    const key=btn.getAttribute('data-dl');
+    const all = ['chartProgress','chartDist','chartEnroll','chartQuiz','chartCompleteMonthly','chartAttemptsMonthly','chartMyCourses','chartRecommended','chartCoupons','chartPsyTests','chartIqTests','chartThreadsLatest','chartThreadsMine'];
+    if(key==='all'){ all.forEach(id=>dl(id)); }
+    else dl(key);
   });
 });
 
-// Progress
-if(document.getElementById('chartProgress') && hasData(CHARTS.progress.percent)){
-  new Chart(document.getElementById('chartProgress'), {
-    type: 'bar',
-    data: { labels: CHARTS.progress.labels, datasets:[{label:'Progress (%)', data: CHARTS.progress.percent, backgroundColor: pastel(CHARTS.progress.percent.length)}]},
-    options:{responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true,max:100, ticks:{stepSize:20}}}}
+const ctxGrad = (ctx) => {
+  const g = ctx.createLinearGradient(0,0,0,300);
+  g.addColorStop(0,'rgba(99,102,241,.35)');
+  g.addColorStop(1,'rgba(34,211,238,.05)');
+  return g;
+};
+
+// global chart style
+Chart.defaults.elements.bar.borderRadius = 8;
+Chart.defaults.plugins.legend.labels.usePointStyle = true;
+
+/* === Progress per Course === */
+if(document.getElementById('chartProgress') && CHARTS.progress && has(CHARTS.progress.percent)){
+  const c = document.getElementById('chartProgress').getContext('2d');
+  new Chart(c,{
+    type:'bar',
+    data:{ labels: CHARTS.progress.labels, datasets:[{label:'Progress (%)', data: CHARTS.progress.percent, backgroundColor: ctxGrad(c)}]},
+    options:{responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true,max:100,ticks:{stepSize:20}}}, plugins:{tooltip:{callbacks:{label:ctx=>(ctx.parsed.y||0)+'%'}}}}
   });
 }
 
-// Distribusi
-if(document.getElementById('chartDist') && hasData(CHARTS.distribution.counts)){
-  new Chart(document.getElementById('chartDist'), {
-    type: 'doughnut',
-    data: { labels: CHARTS.distribution.labels, datasets:[{data: CHARTS.distribution.counts, backgroundColor: pastel(CHARTS.distribution.counts.length)}]},
+/* === Distribusi === */
+if(document.getElementById('chartDist') && CHARTS.distribution && has(CHARTS.distribution.counts)){
+  new Chart(document.getElementById('chartDist'),{
+    type:'doughnut',
+    data:{ labels:CHARTS.distribution.labels, datasets:[{data:CHARTS.distribution.counts}]},
     options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
   });
 }
 
-// Enrollments
-if(document.getElementById('chartEnroll') && hasData(CHARTS.enroll.counts)){
-  new Chart(document.getElementById('chartEnroll'), {
-    type: 'bar',
-    data: { labels: CHARTS.enroll.labels, datasets:[{label:'Enrollments', data: CHARTS.enroll.counts, backgroundColor: pastel(CHARTS.enroll.counts.length)}]},
+/* === Enrollments === */
+if(document.getElementById('chartEnroll') && CHARTS.enroll && has(CHARTS.enroll.counts)){
+  const c=document.getElementById('chartEnroll').getContext('2d');
+  new Chart(c,{
+    type:'bar',
+    data:{ labels:CHARTS.enroll.labels, datasets:[{label:'Enrollments', data:CHARTS.enroll.counts, backgroundColor: ctxGrad(c)}]},
     options:{responsive:true, maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}}
   });
 }
 
-// Quiz
+/* === Quiz === */
 if(document.getElementById('chartQuiz') && Array.isArray(CHARTS.quiz) && CHARTS.quiz.length){
-  new Chart(document.getElementById('chartQuiz'), {
-    type: 'line',
-    data: { labels: CHARTS.quiz.map(p=>p.t), datasets:[{label:'Score %', data:CHARTS.quiz.map(p=>p.y), fill:false, tension:0.25, pointRadius:3}]},
+  const c=document.getElementById('chartQuiz').getContext('2d');
+  new Chart(c,{
+    type:'line',
+    data:{ labels: CHARTS.quiz.map(function(p){return p.t;}), datasets:[{label:'Score %', data:CHARTS.quiz.map(function(p){return p.y;}), backgroundColor: ctxGrad(c), borderColor:'#6366f1', fill:true, tension:.3, pointRadius:3}]},
     options:{responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true,max:100}}}
   });
 }
 
-// Completion / month
-if(document.getElementById('chartCompleteMonthly') && CHARTS.completion_monthly && hasData(CHARTS.completion_monthly.labels)){
-  new Chart(document.getElementById('chartCompleteMonthly'), {
-    type: 'line',
-    data: { labels: CHARTS.completion_monthly.labels, datasets:[{label:'Lessons selesai', data: CHARTS.completion_monthly.counts, fill:false, tension:0.25, pointRadius:3}]},
-    options:{responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true}}}
+/* === Completion / month === */
+if(document.getElementById('chartCompleteMonthly') && CHARTS.completion_monthly && has(CHARTS.completion_monthly.labels)){
+  const c=document.getElementById('chartCompleteMonthly').getContext('2d');
+  new Chart(c,{
+    type:'line',
+    data:{labels:CHARTS.completion_monthly.labels, datasets:[{label:'Lessons selesai',data:CHARTS.completion_monthly.counts, backgroundColor:ctxGrad(c), borderColor:'#22d3ee', fill:true, tension:.3, pointRadius:3}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}}}
   });
 }
 
-// Attempts / month
-if(document.getElementById('chartAttemptsMonthly') && CHARTS.attempts_monthly && hasData(CHARTS.attempts_monthly.labels)){
-  new Chart(document.getElementById('chartAttemptsMonthly'), {
-    type: 'bar',
-    data: { labels: CHARTS.attempts_monthly.labels, datasets:[{label:'Quiz attempts', data: CHARTS.attempts_monthly.counts}]},
-    options:{responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true}}}
+/* === Attempts / month === */
+if(document.getElementById('chartAttemptsMonthly') && CHARTS.attempts_monthly && has(CHARTS.attempts_monthly.labels)){
+  const c=document.getElementById('chartAttemptsMonthly').getContext('2d');
+  new Chart(c,{
+    type:'bar',
+    data:{labels:CHARTS.attempts_monthly.labels, datasets:[{label:'Quiz attempts',data:CHARTS.attempts_monthly.counts, backgroundColor:ctxGrad(c)}]},
+    options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}}}
+  });
+}
+
+/* === My Courses (progress per course %) === */
+if(document.getElementById('chartMyCourses') && CHARTS.my_courses && has(CHARTS.my_courses.percent)){
+  const c=document.getElementById('chartMyCourses').getContext('2d');
+  new Chart(c,{
+    type:'bar',
+    data:{labels:CHARTS.my_courses.labels, datasets:[{label:'Progress (%)', data:CHARTS.my_courses.percent, backgroundColor:ctxGrad(c)}]},
+    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true,max:100}}}
+  });
+}
+
+/* === Recommended Courses (jumlah siswa) === */
+if(document.getElementById('chartRecommended') && CHARTS.recommended && has(CHARTS.recommended.counts)){
+  const c=document.getElementById('chartRecommended').getContext('2d');
+  new Chart(c,{
+    type:'bar',
+    data:{labels:CHARTS.recommended.labels, datasets:[{label:'Siswa', data:CHARTS.recommended.counts, backgroundColor:ctxGrad(c)}]},
+    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}}
+  });
+}
+
+/* === Coupons timeline === */
+if(document.getElementById('chartCoupons') && CHARTS.coupons && has(CHARTS.coupons.counts)){
+  const c=document.getElementById('chartCoupons').getContext('2d');
+  new Chart(c,{
+    type:'line',
+    data:{labels:CHARTS.coupons.labels, datasets:[{label:'Kupon aktif', data:CHARTS.coupons.counts, backgroundColor:ctxGrad(c), borderColor:'#10b981', fill:true, tension:.3}]},
+    options:{responsive:true,maintainAspectRatio:false, scales:{y:{beginAtZero:true}}}
+  });
+}
+
+/* === Psy Tests: jumlah pertanyaan === */
+if(document.getElementById('chartPsyTests') && CHARTS.psy_tests && has(CHARTS.psy_tests.questions)){
+  const c=document.getElementById('chartPsyTests').getContext('2d');
+  new Chart(c,{
+    type:'bar',
+    data:{labels:CHARTS.psy_tests.labels, datasets:[{label:'Pertanyaan', data:CHARTS.psy_tests.questions, backgroundColor:ctxGrad(c)}]},
+    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}}
+  });
+}
+
+/* === IQ Tests: durasi menit === */
+if(document.getElementById('chartIqTests') && CHARTS.iq_tests && has(CHARTS.iq_tests.duration)){
+  const c=document.getElementById('chartIqTests').getContext('2d');
+  new Chart(c,{
+    type:'bar',
+    data:{labels:CHARTS.iq_tests.labels, datasets:[{label:'Durasi (menit)', data:CHARTS.iq_tests.duration, backgroundColor:ctxGrad(c)}]},
+    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}}
+  });
+}
+
+/* === Threads: latest & mine (jumlah balasan) === */
+if(document.getElementById('chartThreadsLatest') && CHARTS.threads_latest && has(CHARTS.threads_latest.replies)){
+  const c=document.getElementById('chartThreadsLatest').getContext('2d');
+  new Chart(c,{
+    type:'bar',
+    data:{labels:CHARTS.threads_latest.labels, datasets:[{label:'Balasan', data:CHARTS.threads_latest.replies, backgroundColor:ctxGrad(c)}]},
+    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}}
+  });
+}
+if(document.getElementById('chartThreadsMine') && CHARTS.threads_mine && has(CHARTS.threads_mine.replies)){
+  const c=document.getElementById('chartThreadsMine').getContext('2d');
+  new Chart(c,{
+    type:'bar',
+    data:{labels:CHARTS.threads_mine.labels, datasets:[{label:'Balasan', data:CHARTS.threads_mine.replies, backgroundColor:ctxGrad(c)}]},
+    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}}
   });
 }
 </script>

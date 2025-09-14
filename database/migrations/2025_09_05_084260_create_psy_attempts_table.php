@@ -11,17 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('psy_attempts', function (Blueprint $t) {
-    $t->id();
-    $t->foreignId('test_id')->constrained('psy_tests')->cascadeOnDelete();
-    $t->foreignId('user_id')->constrained()->cascadeOnDelete();
-    $t->timestamp('started_at')->nullable();
-    $t->timestamp('submitted_at')->nullable();
-    $t->json('score_json')->nullable();   // per trait: {logic:12, openness:8}
-    $t->string('result_key')->nullable(); // mapping ke profile
-    $t->text('recommendation_text')->nullable();
-    $t->timestamps();
-});
+        Schema::create('psy_attempts', function (Blueprint $t) {
+            $t->id();
+            $t->foreignId('test_id')->constrained('psy_tests')->cascadeOnDelete();
+            $t->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $t->timestamp('started_at')->nullable();
+            $t->timestamp('submitted_at')->nullable();
+            $t->json('score_json')->nullable();   // per trait
+            $t->integer('total_score')->nullable(); // JANGAN pakai ->after() saat create
+            $t->string('result_key')->nullable();
+            $t->text('recommendation_text')->nullable();
+            $t->timestamps();
+        });
     }
 
     /**

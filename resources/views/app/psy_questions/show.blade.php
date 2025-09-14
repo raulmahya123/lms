@@ -25,7 +25,7 @@
     <div class="text-xs text-gray-500 mt-1">{{ $pct }}% selesai</div>
   </div>
 
-  <div class="bg-white border rounded-xl p-5">
+<div class="bg-white border rounded-xl p-5">
     <h2 class="text-xl font-semibold">{{ $question->text }}</h2>
 
     <form method="POST" action="{{ route('app.psy.attempts.answer', [$test, $question]) }}" class="mt-5 space-y-4">
