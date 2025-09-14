@@ -153,7 +153,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/checkout/plan/{plan}', [CheckoutController::class, 'checkoutPlan'])->name('app.checkout.plan');
     Route::post('/checkout/course/{course}', [CheckoutController::class, 'checkoutCourse'])->name('app.checkout.course');
     Route::post('/checkout/{payment}/confirm', [CheckoutController::class, 'confirm'])->name('app.checkout.confirm');
-    
+
     // Halaman checkout course
     Route::get('/courses/{course}/checkout', [UserCourseCheckoutController::class, 'checkout'])
         ->name('app.courses.checkout');
@@ -191,8 +191,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->whereNumber('question')
             ->name('app.psytests.questions.show');
 
-        // Mulai / lanjut attempt
-        Route::post('/{slugOrId}/start', [UserPsyAttemptController::class, 'start'])
+        // ⬇️ Mulai / lanjut attempt — terima GET & POST
+        Route::match(['GET', 'POST'], '/{slugOrId}/start', [UserPsyAttemptController::class, 'start'])
             ->middleware('throttle:quiz')
             ->name('app.psy.attempts.start');
 
@@ -210,6 +210,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/{slugOrId}/result/{attempt}', [UserPsyAttemptController::class, 'result'])
             ->name('app.psy.attempts.result');
     });
+
 
     // ⬇️ Sudah ada sebelumnya, dipertahankan
     Route::get('/certificates/{issue}', [CertificateController::class, 'show'])
@@ -334,7 +335,7 @@ Route::middleware(['auth', 'can:backoffice'])
 
         // Admin Dashboard (/admin/dashboard)
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
-        
+
         // ✅ perbaiki pemetaan ke AdminTestIqController
         Route::get('test-iq',                 [AdminTestIqController::class, 'index'])->name('test-iq.index');
         Route::get('test-iq/create',          [AdminTestIqController::class, 'create'])->name('test-iq.create');
@@ -342,7 +343,7 @@ Route::middleware(['auth', 'can:backoffice'])
         Route::get('test-iq/{testIq}/edit',   [AdminTestIqController::class, 'edit'])->name('test-iq.edit');
         Route::put('test-iq/{testIq}',        [AdminTestIqController::class, 'update'])->name('test-iq.update');
         Route::delete('test-iq/{testIq}',     [AdminTestIqController::class, 'destroy'])->name('test-iq.destroy');
-        Route::post('test-iq/{testIq}/toggle',[AdminTestIqController::class, 'toggle'])->name('test-iq.toggle');
+        Route::post('test-iq/{testIq}/toggle', [AdminTestIqController::class, 'toggle'])->name('test-iq.toggle');
 
         // Resource khusus
         Route::resource('dashboard_admin', AdminDashboardController::class);
@@ -414,6 +415,6 @@ Route::middleware(['auth', 'can:backoffice'])
 /* ================== USER AREA ================== */
 Route::middleware(['auth'])
     ->prefix('app')->name('app.')->group(function () {
-    // Dashboard Psikologi (USER)
-    Route::get('psychology', UserPysDashController::class)->name('psychology');
-});
+        // Dashboard Psikologi (USER)
+        Route::get('psychology', UserPysDashController::class)->name('psychology');
+    });
