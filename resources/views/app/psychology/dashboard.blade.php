@@ -271,7 +271,6 @@
               <th class="text-left px-4 py-2 font-medium text-slate-600">Tes</th>
               <th class="text-left px-4 py-2 font-medium text-slate-600">Skor</th>
               <th class="text-left px-4 py-2 font-medium text-slate-600">Hasil</th>
-              <th class="px-4 py-2"></th>
             </tr>
           </thead>
           <tbody>
@@ -299,13 +298,6 @@
                     </span>
                   @else
                     <span class="chip badge-amber">Belum terklasifikasi</span>
-                  @endif
-                </td>
-                <td class="px-4 py-2 text-right">
-                  @if(!empty($routeNames['attempt_show']))
-                    <a href="{{ route($routeNames['attempt_show'], $a) }}" class="text-sky-600 hover:underline">Detail</a>
-                  @else
-                    <span class="text-slate-400">—</span>
                   @endif
                 </td>
               </tr>
