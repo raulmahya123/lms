@@ -10,18 +10,25 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::create('memberships', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-        $table->foreignId('plan_id')->constrained()->cascadeOnDelete();
-        $table->enum('status', ['pending','active','inactive'])->default('pending');
-        $table->timestamp('activated_at')->nullable();
-        $table->timestamp('expires_at')->nullable();
-        $table->timestamps();
-    });
-}
+    {
+        Schema::create('memberships', function (Blueprint $table) {
+            $table->uuid('id')->primary();   // ✅ PK pakai UUID
 
+            // FK ke users & plans (dua-duanya UUID)
+            $table->foreignUuid('user_id')
+                  ->constrained('users')
+                  ->cascadeOnDelete();
+
+            $table->foreignUuid('plan_id')
+                  ->constrained('plans')
+                  ->cascadeOnDelete();
+
+            $table->enum('status', ['pending','active','inactive'])->default('pending');
+            $table->timestamp('activated_at')->nullable();
+            $table->timestamp('expires_at')->nullable();
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

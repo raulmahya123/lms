@@ -3,11 +3,23 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasManyThrough};
 use Illuminate\Support\Str;
 
 class Course extends Model
 {
+    use HasUuids;
+
+    /**
+     * PK UUID (string).
+     */
+    public $incrementing = false;
+    protected $keyType   = 'string';
+
+    /**
+     * Mass assignable fields.
+     */
     protected $fillable = [
         'title',
         'description',
@@ -18,34 +30,39 @@ class Course extends Model
         'price',
     ];
 
+    /**
+     * Casts.
+     */
     protected $casts = [
         'is_published' => 'boolean',
-        'is_free' => 'boolean',
-        'price' => 'decimal:2',
+        'is_free'      => 'boolean',
+        'price'        => 'decimal:2',
     ];
 
-    // Helper opsional
+    /**
+     * Helper: apakah course berbayar.
+     */
     public function getIsPaidAttribute(): bool
     {
         return !$this->is_free;
     }
 
+    /**
+     * Helper: resolve cover URL jadi absolute.
+     */
     public function getCoverUrlResolvedAttribute(): ?string
     {
         $url = $this->cover_url;
         if (!$url) return null;
 
-        // kalau sudah http/https -> langsung pakai
         if (Str::startsWith($url, ['http://', 'https://'])) {
             return $url;
         }
 
-        // kalau /storage/... atau storage/... -> prefix dengan APP_URL
         if (Str::startsWith($url, ['/storage/', 'storage/'])) {
-            return url(ltrim($url, '/')); // jadikan absolute
+            return url(ltrim($url, '/'));
         }
 
-        // fallback: kembalikan apa adanya
         return $url;
     }
 
@@ -72,18 +89,17 @@ class Course extends Model
     }
 
     /**
-     * Total lessons lewat modules (courses -> modules -> lessons)
-     * Dipakai agar withCount('lessons as lessons_count') bisa jalan.
+     * Total lessons lewat modules (courses -> modules -> lessons).
      */
     public function lessons(): HasManyThrough
     {
         return $this->hasManyThrough(
-            Lesson::class,   // model tujuan
-            Module::class,   // model perantara
-            'course_id',     // FK di modules yang mengarah ke courses
-            'module_id',     // FK di lessons yang mengarah ke modules
-            'id',            // PK di courses
-            'id'             // PK di modules
+            Lesson::class,  // model tujuan
+            Module::class,  // model perantara
+            'course_id',    // FK di modules -> courses
+            'module_id',    // FK di lessons -> modules
+            'id',           // PK di courses
+            'id'            // PK di modules
         );
     }
 }

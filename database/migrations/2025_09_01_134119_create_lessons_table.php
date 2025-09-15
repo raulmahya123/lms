@@ -12,35 +12,43 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('lessons', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('module_id')->constrained()->cascadeOnDelete();
-            $table->string('title');
+    $table->uuid('id')->primary();   // ✅ pakai UUID sebagai PK
 
-            // tambahan deskripsi lengkap
-            $table->text('about')->nullable();
-            $table->longText('syllabus')->nullable();
-            $table->json('reviews')->nullable();
-            $table->json('tools')->nullable();
+    // module_id sekarang FK UUID → modules.id
+    $table->foreignUuid('module_id')
+          ->constrained('modules')
+          ->cascadeOnDelete();
 
-            // siapa pembuat lesson
-            $table->foreignId('created_by')
-                  ->nullable()
-                  ->constrained('users')
-                  ->nullOnDelete();
+    $table->string('title');
 
-            $table->longText('benefits')->nullable();
+    // tambahan deskripsi lengkap
+    $table->text('about')->nullable();
+    $table->longText('syllabus')->nullable();
+    $table->json('reviews')->nullable();
+    $table->json('tools')->nullable();
 
-            $table->json('content')->nullable();
-            $table->json('content_url')->nullable();
-            $table->unsignedInteger('ordering')->default(1);
-            $table->boolean('is_free')->default(false);
+    // siapa pembuat lesson
+    // kalau users.id masih bigint → ganti ke foreignId()
+    // kalau users.id sudah uuid → biarkan foreignUuid()
+    $table->foreignUuid('created_by')
+          ->nullable()
+          ->constrained('users')
+          ->nullOnDelete();
 
-            // whitelist Google Drive
-            $table->json('drive_emails')->nullable(); 
-            $table->string('drive_link')->nullable(); 
+    $table->longText('benefits')->nullable();
 
-            $table->timestamps();
-        });
+    $table->json('content')->nullable();
+    $table->json('content_url')->nullable();
+    $table->unsignedInteger('ordering')->default(1);
+    $table->boolean('is_free')->default(false);
+
+    // whitelist Google Drive
+    $table->json('drive_emails')->nullable(); 
+    $table->string('drive_link')->nullable(); 
+
+    $table->timestamps();
+});
+
     }
 
     /**

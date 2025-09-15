@@ -10,18 +10,17 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::create('coupons', function (Blueprint $table) {
-        $table->id();
-        $table->string('code')->unique();
-        $table->unsignedTinyInteger('discount_percent'); // 0..100
-        $table->timestamp('valid_from')->nullable();
-        $table->timestamp('valid_until')->nullable();
-        $table->unsignedInteger('usage_limit')->nullable(); // null = unlimited
-        $table->timestamps();
-    });
-}
-
+    {
+        Schema::create('coupons', function (Blueprint $table) {
+            $table->uuid('id')->primary();   // ✅ UUID PK
+            $table->string('code')->unique();
+            $table->unsignedTinyInteger('discount_percent'); // 0..100
+            $table->timestamp('valid_from')->nullable();
+            $table->timestamp('valid_until')->nullable();
+            $table->unsignedInteger('usage_limit')->nullable(); // null = unlimited
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

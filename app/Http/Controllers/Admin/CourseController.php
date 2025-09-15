@@ -35,7 +35,7 @@ class CourseController extends Controller
             //            ->orWhereHas('mentors', fn($qm) => $qm->whereKey($user->id));
             //     });
             // })
-            ->latest('id')
+            ->latest()
             ->paginate(12)
             ->withQueryString();
 

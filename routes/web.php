@@ -27,6 +27,30 @@ Route::get('/', [HomeController::class, 'index'])->name('home');
 require __DIR__ . '/auth.php';
 
 // =====================
+// Global Route Param Patterns (UUID untuk berbagai resource)
+// =====================
+$uuidRegex = '[0-9a-fA-F-]{36}';
+Route::pattern('course', $uuidRegex);
+Route::pattern('module', $uuidRegex);
+Route::pattern('lesson', $uuidRegex);
+Route::pattern('resource', $uuidRegex);
+Route::pattern('quiz', $uuidRegex);
+Route::pattern('question', $uuidRegex);
+Route::pattern('option', $uuidRegex);
+Route::pattern('attempt', $uuidRegex);
+Route::pattern('payment', $uuidRegex);
+Route::pattern('plan', $uuidRegex);
+Route::pattern('membership', $uuidRegex);
+Route::pattern('issue', $uuidRegex);
+Route::pattern('certificate', $uuidRegex);
+Route::pattern('psy_test', $uuidRegex);
+Route::pattern('psy_question', $uuidRegex);
+Route::pattern('psy_attempt', $uuidRegex);
+Route::pattern('qa_thread', $uuidRegex);
+Route::pattern('qa_reply', $uuidRegex);
+Route::pattern('testIq', $uuidRegex);
+
+// =====================
 // Admin Controllers (alias agar tak tabrakan)
 // =====================
 use App\Http\Controllers\Admin\{
@@ -44,7 +68,7 @@ use App\Http\Controllers\Admin\{
     QuizController           as AdminQuizController,
     ResourceController       as AdminResourceController,
     DashboardController      as AdminDashboardController,
-    PsyTestController        as AdminPsyTestController, // optional if referenced directly
+    PsyTestController        as AdminPsyTestController,
     PsyAttemptController     as AdminPsyAttemptController,
     TestIqController         as AdminTestIqController,
 };
@@ -74,7 +98,7 @@ use App\Http\Controllers\User\{
     QaThreadController       as UserQaThreadController,
     QaReplyController        as UserQaReplyController,
     TestIqController         as UserTestIqController,
-    PsyDashboardController as UserPysDashController,
+    PsyDashboardController   as UserPysDashController,
 };
 
 // =====================
@@ -95,84 +119,104 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // mulai subscribe (buat membership status "pending" untuk plan terpilih)
     Route::post('/memberships/subscribe/{plan}', [UserMembershipController::class, 'subscribe'])
-        ->name('app.memberships.subscribe');
+        ->whereUuid('plan')->name('app.memberships.subscribe');
 
     // halaman checkout membership pending
     Route::get('/memberships/checkout/{membership}', [UserMembershipController::class, 'checkout'])
-        ->name('app.memberships.checkout');
+        ->whereUuid('membership')->name('app.memberships.checkout');
 
     // aktivasi membership (dipanggil setelah pembayaran sukses / simulasi dev)
     Route::post('/memberships/activate/{membership}', [UserMembershipController::class, 'activate'])
-        ->name('app.memberships.activate');
+        ->whereUuid('membership')->name('app.memberships.activate');
 
     // batalkan/nonaktifkan membership user
     Route::post('/memberships/cancel/{membership}', [UserMembershipController::class, 'cancel'])
-        ->name('app.memberships.cancel');
+        ->whereUuid('membership')->name('app.memberships.cancel');
 
     // update membership oleh user (opsional)
     Route::patch('/memberships/{membership}', [UserMembershipController::class, 'update'])
-        ->name('app.memberships.update');
+        ->whereUuid('membership')->name('app.memberships.update');
 
     Route::post(
         '/memberships/{membership}/midtrans/snap',
         [UserMembershipController::class, 'startSnap']
-    )->name('app.memberships.snap');
+    )->whereUuid('membership')->name('app.memberships.snap');
 
     // Katalog & detail kursus
     Route::get('/courses', [CourseBrowseController::class, 'index'])->name('app.courses.index');
-    Route::get('/courses/{course}', [CourseBrowseController::class, 'show'])->name('app.courses.show');
+    Route::get('/courses/{course}', [CourseBrowseController::class, 'show'])
+        ->whereUuid('course')->name('app.courses.show');
 
     // Kursus saya & enroll
     Route::get('/my/courses', [UserEnrollmentController::class, 'index'])->name('app.my.courses');
-    Route::post('/courses/{course}/enroll', [UserEnrollmentController::class, 'store'])->name('app.courses.enroll');
+    Route::post('/courses/{course}/enroll', [UserEnrollmentController::class, 'store'])
+        ->whereUuid('course')->name('app.courses.enroll');
 
     // Pelajaran & progress
     Route::get('/lessons/{lesson}', [UserLessonController::class, 'show'])
+        ->whereUuid('lesson')
         ->middleware('app.ensure.lesson.accessible')->name('app.lessons.show');
+
     Route::post('/lessons/{lesson}/progress', [UserLessonController::class, 'updateProgress'])
+        ->whereUuid('lesson')
         ->middleware('app.ensure.lesson.accessible')->name('app.lessons.progress');
 
     // Resource per lesson
-    Route::get('/resources/{resource}', [UserResourceController::class, 'show'])->name('app.resources.show');
+    Route::get('/resources/{resource}', [UserResourceController::class, 'show'])
+        ->whereUuid('resource')->name('app.resources.show');
 
     // Quiz (rate-limit submit)
     Route::post('/lessons/{lesson}/quiz/start', [UserQuizController::class, 'start'])
+        ->whereUuid('lesson')
         ->middleware('app.ensure.lesson.accessible')->name('app.quiz.start');
+
     Route::post('/quizzes/{quiz}/submit', [UserQuizController::class, 'submit'])
+        ->whereUuid('quiz')
         ->middleware('throttle:quiz')->name('app.quiz.submit');
+
     Route::get('/attempts/{attempt}', [UserQuizController::class, 'result'])
+        ->whereUuid('attempt')
         ->middleware('ensure.attempt.owner')->name('app.quiz.result');
 
     Route::post('/lessons/{lesson}/drive/request', [UserLessonController::class, 'requestDriveAccess'])
-        ->name('lessons.drive.request');
+        ->whereUuid('lesson')->name('lessons.drive.request');
 
     // Kupon
     Route::post('/coupons/validate', [UserCouponController::class, 'validateCode'])->name('app.coupons.validate');
 
     // Checkout plan & course + confirm
-    Route::post('/checkout/plan/{plan}', [CheckoutController::class, 'checkoutPlan'])->name('app.checkout.plan');
-    Route::post('/checkout/course/{course}', [CheckoutController::class, 'checkoutCourse'])->name('app.checkout.course');
-    Route::post('/checkout/{payment}/confirm', [CheckoutController::class, 'confirm'])->name('app.checkout.confirm');
+    Route::post('/checkout/plan/{plan}', [CheckoutController::class, 'checkoutPlan'])
+        ->whereUuid('plan')->name('app.checkout.plan');
+
+    Route::post('/checkout/course/{course}', [CheckoutController::class, 'checkoutCourse'])
+        ->whereUuid('course')->name('app.checkout.course');
+
+    Route::post('/checkout/{payment}/confirm', [CheckoutController::class, 'confirm'])
+        ->whereUuid('payment')->name('app.checkout.confirm');
 
     // Halaman checkout course
     Route::get('/courses/{course}/checkout', [UserCourseCheckoutController::class, 'checkout'])
-        ->name('app.courses.checkout');
+        ->whereUuid('course')->name('app.courses.checkout');
 
     // Ambil Snap token (dipanggil dari tombol Bayar)
     Route::post('/courses/{course}/midtrans/snap', [UserCourseCheckoutController::class, 'startSnap'])
-        ->name('app.courses.snap');
+        ->whereUuid('course')->name('app.courses.snap');
 
     // Sertifikat (PDF)
-    Route::get('/courses/{course}/certificate', [CertificateController::class, 'course'])->name('app.certificate.course');
+    Route::get('/courses/{course}/certificate', [CertificateController::class, 'course'])
+        ->whereUuid('course')->name('app.certificate.course');
+
     Route::get('/certificates', [CertificateController::class, 'index'])
         ->name('app.certificates.index');
+
     // (DUPLIKASI DIPERTAHANKAN SESUAI PUNYAMU)
     Route::get('/memberships', [UserMembershipController::class, 'index'])->name('app.memberships.index');
     Route::get('/plans', [UserPlanController::class, 'index'])->name('app.plans.index');
 
     // Payments (USER)
     Route::get('/payments', [UserPaymentController::class, 'index'])->name('app.payments.index');
-    Route::get('/payments/{payment}', [UserPaymentController::class, 'show'])->name('app.payments.show');
+    Route::get('/payments/{payment}', [UserPaymentController::class, 'show'])
+        ->whereUuid('payment')->name('app.payments.show');
 
     // =====================
     // Psy Tests (USER)
@@ -208,95 +252,100 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         // Lihat hasil attempt
         Route::get('/{slugOrId}/result/{attempt}', [UserPsyAttemptController::class, 'result'])
-            ->name('app.psy.attempts.result');
+            ->whereUuid('attempt')->name('app.psy.attempts.result');
     });
-
 
     // ⬇️ Sudah ada sebelumnya, dipertahankan
     Route::get('/certificates/{issue}', [CertificateController::class, 'show'])
-        ->name('app.certificates.show');
+        ->whereUuid('issue')->name('app.certificates.show');
 
     Route::get('/certificates/{issue}/preview', [CertificateController::class, 'preview'])
-        ->name('app.certificates.preview');
+        ->whereUuid('issue')->name('app.certificates.preview');
 
     Route::get('/certificates/{issue}/download', [CertificateController::class, 'download'])
-        ->name('app.certificates.download');
+        ->whereUuid('issue')->name('app.certificates.download');
 
     // Q&A (USER)
     Route::resource('qa-threads', UserQaThreadController::class)
         ->names('app.qa-threads')
-        // kalau pakai edit, WAJIB sertakan update juga
         ->only(['index', 'create', 'store', 'show', 'edit', 'update', 'destroy']);
 
     Route::post('qa-threads/{thread}/replies', [UserQaReplyController::class, 'store'])
-        ->name('app.qa-threads.replies.store');
+        ->whereUuid('thread')->name('app.qa-threads.replies.store');
 
     // Tandai sebagai jawaban (PATCH)
     Route::patch('qa-replies/{reply}/answer', [UserQaReplyController::class, 'markAnswer'])
-        ->name('app.qa-replies.answer');
+        ->whereUuid('reply')->name('app.qa-replies.answer');
 
     // Hapus reply (DELETE), JANGAN pakai PATCH
     Route::delete('qa-replies/{reply}', [UserQaReplyController::class, 'destroy'])
-        ->name('app.qa-replies.destroy');
+        ->whereUuid('reply')->name('app.qa-replies.destroy');
 
     // =====================
     // IQ Test (USER) — EXISTING milikmu (biarin)
     // =====================
-    Route::get('/iq/{testIq}', [UserTestIqController::class, 'show'])->name('user.test-iq.show');
-    Route::post('/iq/{testIq}/submit', [UserTestIqController::class, 'submit'])->name('user.test-iq.submit');
-    Route::get('/iq/{testIq}/result', [UserTestIqController::class, 'result'])->name('user.test-iq.result');
+    Route::get('/iq/{testIq}', [UserTestIqController::class, 'show'])
+        ->whereUuid('testIq')->name('user.test-iq.show');
+
+    Route::post('/iq/{testIq}/submit', [UserTestIqController::class, 'submit'])
+        ->whereUuid('testIq')->name('user.test-iq.submit');
+
+    Route::get('/iq/{testIq}/result', [UserTestIqController::class, 'result'])
+        ->whereUuid('testIq')->name('user.test-iq.result');
 
     // =====================
     // IQ Test (USER) — TAMBAHAN: versi app.* (URI berbeda biar gak tabrakan)
     // =====================
-    Route::get('/app/iq/{testIq}', [UserTestIqController::class, 'show'])->name('app.test-iq.show');
-    Route::post('/app/iq/{testIq}/submit', [UserTestIqController::class, 'submit'])->name('app.test-iq.submit');
-    Route::get('/app/iq/{testIq}/result', [UserTestIqController::class, 'result'])->name('app.test-iq.result');
+    Route::get('/app/iq/{testIq}', [UserTestIqController::class, 'show'])
+        ->whereUuid('testIq')->name('app.test-iq.show');
+
+    Route::post('/app/iq/{testIq}/submit', [UserTestIqController::class, 'submit'])
+        ->whereUuid('testIq')->name('app.test-iq.submit');
+
+    Route::get('/app/iq/{testIq}/result', [UserTestIqController::class, 'result'])
+        ->whereUuid('testIq')->name('app.test-iq.result');
 
     // =====================
     // IQ Test (USER) — STEP ROUTES (yang kamu minta tampil 1-per-1)
     // =====================
     // Start (opsional) -> redirect ke step 1
     Route::get('/iq/{testIq}/start', [UserTestIqController::class, 'start'])
-        ->name('user.test-iq.start');
+        ->whereUuid('testIq')->name('user.test-iq.start');
+
     Route::get('/app/iq/{testIq}/start', [UserTestIqController::class, 'start'])
-        ->name('app.test-iq.start');
+        ->whereUuid('testIq')->name('app.test-iq.start');
 
     // Versi user.* (tanpa /app)
     Route::get('/iq/{testIq}/q/{step}', [UserTestIqController::class, 'showStep'])
-        ->whereNumber('step')
-        ->name('user.test-iq.question');
+        ->whereUuid('testIq')->whereNumber('step')->name('user.test-iq.question');
+
     Route::post('/iq/{testIq}/q/{step}', [UserTestIqController::class, 'answer'])
-        ->whereNumber('step')
-        ->name('user.test-iq.answer');
+        ->whereUuid('testIq')->whereNumber('step')->name('user.test-iq.answer');
 
     // Versi app.* (dengan /app prefix di path)
     Route::get('/app/iq/{testIq}/q/{step}', [UserTestIqController::class, 'showStep'])
-        ->whereNumber('step')
-        ->name('app.test-iq.question');
+        ->whereUuid('testIq')->whereNumber('step')->name('app.test-iq.question');
+
     Route::post('/app/iq/{testIq}/q/{step}', [UserTestIqController::class, 'answer'])
-        ->whereNumber('step')
-        ->name('app.test-iq.answer');
+        ->whereUuid('testIq')->whereNumber('step')->name('app.test-iq.answer');
 
     // =====================
     // IQ Test (USER) — ROUTES custom kamu (dipertahankan)
     // =====================
     Route::get('/test-iq/{testIq}', [UserTestIqController::class, 'start'])
-        ->name('test-iq.start');
+        ->whereUuid('testIq')->name('test-iq.start');
 
     // Tampilkan 1 soal (step)
     Route::get('/test-iq/{testIq}/q/{step}', [UserTestIqController::class, 'showStep'])
-        ->whereNumber('step')
-        ->name('test-iq.show');
+        ->whereUuid('testIq')->whereNumber('step')->name('test-iq.show');
 
     // Submit 1 jawaban (lanjut step berikutnya / finish)
     Route::post('/test-iq/{testIq}/q/{step}', [UserTestIqController::class, 'answer'])
-        ->whereNumber('step')
-        ->name('test-iq.answer');
+        ->whereUuid('testIq')->whereNumber('step')->name('test-iq.answer');
 
     // Hasil
     Route::get('/test-iq/{testIq}/result', [UserTestIqController::class, 'result'])
-        ->name('test-iq.result');
+        ->whereUuid('testIq')->name('test-iq.result');
 
     // =====================
     // Profile
@@ -340,21 +389,25 @@ Route::middleware(['auth', 'can:backoffice'])
         Route::get('test-iq',                 [AdminTestIqController::class, 'index'])->name('test-iq.index');
         Route::get('test-iq/create',          [AdminTestIqController::class, 'create'])->name('test-iq.create');
         Route::post('test-iq',                [AdminTestIqController::class, 'store'])->name('test-iq.store');
-        Route::get('test-iq/{testIq}/edit',   [AdminTestIqController::class, 'edit'])->name('test-iq.edit');
-        Route::put('test-iq/{testIq}',        [AdminTestIqController::class, 'update'])->name('test-iq.update');
-        Route::delete('test-iq/{testIq}',     [AdminTestIqController::class, 'destroy'])->name('test-iq.destroy');
-        Route::post('test-iq/{testIq}/toggle', [AdminTestIqController::class, 'toggle'])->name('test-iq.toggle');
+        Route::get('test-iq/{testIq}/edit',   [AdminTestIqController::class, 'edit'])
+            ->whereUuid('testIq')->name('test-iq.edit');
+        Route::put('test-iq/{testIq}',        [AdminTestIqController::class, 'update'])
+            ->whereUuid('testIq')->name('test-iq.update');
+        Route::delete('test-iq/{testIq}',     [AdminTestIqController::class, 'destroy'])
+            ->whereUuid('testIq')->name('test-iq.destroy');
+        Route::post('test-iq/{testIq}/toggle', [AdminTestIqController::class, 'toggle'])
+            ->whereUuid('testIq')->name('test-iq.toggle');
 
         // Resource khusus
         Route::resource('dashboard_admin', AdminDashboardController::class);
 
         // === Courses ===
         Route::resource('courses', AdminCourseController::class);
-        Route::get('courses/{course}/modules', [AdminCourseController::class, 'modules'])->name('courses.modules');
+        Route::get('courses/{course}/modules', [AdminCourseController::class, 'modules'])
+            ->whereUuid('course')->name('courses.modules');
 
         // === Modules ===
         Route::resource('modules', AdminModuleController::class);
-        Route::get('modules/{module}/lessons', [AdminModuleController::class, 'lessons'])->name('modules.lessons');
 
         // === Lessons ===
         Route::resource('lessons', AdminLessonController::class);
@@ -386,8 +439,10 @@ Route::middleware(['auth', 'can:backoffice'])
 
         // === Q&A ===
         Route::resource('qa-threads', \App\Http\Controllers\Admin\QaThreadController::class);
-        Route::post('qa-threads/{thread}/replies', [\App\Http\Controllers\Admin\QaReplyController::class, 'store'])->name('qa-threads.replies.store');
-        Route::patch('qa-replies/{reply}/answer', [\App\Http\Controllers\Admin\QaReplyController::class, 'markAnswer'])->name('qa-replies.answer');
+        Route::post('qa-threads/{thread}/replies', [\App\Http\Controllers\Admin\QaReplyController::class, 'store'])
+            ->whereUuid('thread')->name('qa-threads.replies.store');
+        Route::patch('qa-replies/{reply}/answer', [\App\Http\Controllers\Admin\QaReplyController::class, 'markAnswer'])
+            ->whereUuid('reply')->name('qa-replies.answer');
 
         // === Certificates ===
         Route::resource('certificate-templates', \App\Http\Controllers\Admin\CertificateTemplateController::class);
@@ -408,6 +463,7 @@ Route::middleware(['auth', 'can:backoffice'])
             ->name('psy-questions.create');
         Route::post('psy-questions', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalStore'])
             ->name('psy-questions.store');
+
         Route::resource('psy-attempts', AdminPsyAttemptController::class)
             ->only(['index', 'show', 'destroy']);
     });

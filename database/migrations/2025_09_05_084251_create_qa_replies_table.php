@@ -12,9 +12,18 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('qa_replies', function (Blueprint $t) {
-            $t->id();
-            $t->foreignId('thread_id')->constrained('qa_threads')->cascadeOnDelete();
-            $t->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $t->uuid('id')->primary();   // ✅ PK pakai UUID
+
+            // FK ke qa_threads (UUID)
+            $t->foreignUuid('thread_id')
+              ->constrained('qa_threads')
+              ->cascadeOnDelete();
+
+            // FK ke users (UUID)
+            $t->foreignUuid('user_id')
+              ->constrained('users')
+              ->cascadeOnDelete();
+
             $t->longText('body');
             $t->boolean('is_answer')->default(false);
             $t->unsignedInteger('upvotes')->default(0);

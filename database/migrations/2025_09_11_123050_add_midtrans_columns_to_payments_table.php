@@ -9,9 +9,13 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('payments', function (Blueprint $table) {
-            // kalau mau relasi langsung ke memberships
+            // relasi ke memberships (UUID)
             if (!Schema::hasColumn('payments', 'membership_id')) {
-                $table->foreignId('membership_id')->nullable()->after('user_id')->constrained()->nullOnDelete();
+                $table->foreignUuid('membership_id')
+                      ->nullable()
+                      ->after('user_id')
+                      ->constrained('memberships')
+                      ->nullOnDelete();
             }
 
             if (!Schema::hasColumn('payments', 'snap_token')) {

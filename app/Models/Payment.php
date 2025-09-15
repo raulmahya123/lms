@@ -3,10 +3,22 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Payment extends Model
 {
+    use HasUuids;
+
+    /**
+     * PK UUID (string).
+     */
+    public $incrementing = false;
+    protected $keyType   = 'string';
+
+    /**
+     * Mass assignable fields.
+     */
     protected $fillable = [
         'user_id',
         'membership_id',
@@ -21,8 +33,15 @@ class Payment extends Model
         'snap_redirect_url',
     ];
 
+    /**
+     * Casts.
+     */
+    protected $casts = [
+        'paid_at' => 'datetime',
+        'amount'  => 'decimal:2',
+    ];
 
-    protected $dates = ['paid_at'];
+    /** ================= Relations ================= */
 
     public function user(): BelongsTo
     {
@@ -37,5 +56,10 @@ class Payment extends Model
     public function course(): BelongsTo
     {
         return $this->belongsTo(Course::class);
+    }
+
+    public function membership(): BelongsTo
+    {
+        return $this->belongsTo(Membership::class);
     }
 }

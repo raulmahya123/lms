@@ -11,17 +11,17 @@ class UsersTableSeeder extends Seeder
 {
     public function run(): void
     {
-        $adminRole  = Role::where('name','admin')->first();
-        $userRole   = Role::where('name','user')->first();
-        $mentorRole = Role::where('name','mentor')->first();
+        $adminRole  = Role::where('name', 'admin')->first();
+        $userRole   = Role::where('name', 'user')->first();
+        $mentorRole = Role::where('name', 'mentor')->first();
 
         // Admin
         User::firstOrCreate(
             ['email' => 'admin@example.com'],
             [
                 'name'     => 'Administrator',
-                'password' => Hash::make('password'), // ganti password sesuai kebutuhan
-                'role_id'  => $adminRole?->id,
+                'password' => Hash::make('password'),
+                'role_id'  => $adminRole?->id, // Role juga harus disesuaikan: kalau roles.id sudah UUID, pastikan migrationnya pakai uuid
             ]
         );
 

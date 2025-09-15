@@ -9,20 +9,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('quiz_season_locks', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();   // ✅ PK pakai UUID
 
-            // Relasi
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('quiz_id')->constrained('quizzes')->cascadeOnDelete();
+            // Relasi (UUID)
+            $table->foreignUuid('user_id')
+                  ->constrained('users')
+                  ->cascadeOnDelete();
+
+            $table->foreignUuid('quiz_id')
+                  ->constrained('quizzes')
+                  ->cascadeOnDelete();
 
             // Season identity
             $table->string('season_key', 32);      // mis. "2025W37" / epoch start / dsb
-            $table->dateTime('season_start');      // <- ganti dari timestamp()
-            $table->dateTime('season_end');        // <- ganti dari timestamp()
+            $table->dateTime('season_start');      
+            $table->dateTime('season_end');        
 
             // Counter attempt
             $table->unsignedInteger('attempt_count')->default(0);
-            $table->dateTime('last_attempt_at')->nullable(); // <- ganti dari timestamp()->nullable()
+            $table->dateTime('last_attempt_at')->nullable(); 
 
             $table->timestamps();
 

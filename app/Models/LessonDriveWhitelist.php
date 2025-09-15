@@ -3,10 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class LessonDriveWhitelist extends Model
 {
+    use HasUuids;
+
+    /**
+     * Primary key UUID (string).
+     */
+    public $incrementing = false;
+    protected $keyType   = 'string';
+
     protected $table = 'lesson_drive_whitelists';
 
     protected $fillable = [
@@ -20,6 +29,8 @@ class LessonDriveWhitelist extends Model
     protected $casts = [
         'verified_at' => 'datetime',
     ];
+
+    /** ================= Relations ================= */
 
     public function lesson(): BelongsTo
     {

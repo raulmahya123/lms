@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\{
     BelongsTo,
     HasMany,
@@ -12,6 +13,14 @@ use Illuminate\Database\Eloquent\Relations\{
 
 class Lesson extends Model
 {
+    use HasUuids;
+
+    /**
+     * PK UUID (string).
+     */
+    public $incrementing = false;
+    protected $keyType   = 'string';
+
     protected $fillable = [
         'module_id',
         'title',
@@ -35,8 +44,8 @@ class Lesson extends Model
         'is_free'       => 'boolean',
         'ordering'      => 'integer',
         'drive_emails'  => 'array',
-        'reviews'       => 'array',   // JSON → array
-        'tools'         => 'array',   // JSON → array
+        'reviews'       => 'array',
+        'tools'         => 'array',
     ];
 
     protected $attributes = [
@@ -89,7 +98,6 @@ class Lesson extends Model
         return $this->hasMany(LessonProgress::class);
     }
 
-    // pembuat lesson
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');

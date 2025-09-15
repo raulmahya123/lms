@@ -3,9 +3,19 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class QuizSeasonLock extends Model
 {
+    use HasUuids;
+
+    /**
+     * PK UUID (string).
+     */
+    public $incrementing = false;
+    protected $keyType   = 'string';
+
     protected $table = 'quiz_season_locks';
 
     protected $fillable = [
@@ -19,19 +29,20 @@ class QuizSeasonLock extends Model
     ];
 
     protected $casts = [
-        'season_start'   => 'datetime',
-        'season_end'     => 'datetime',
-        'last_attempt_at'=> 'datetime',
-        'attempt_count'  => 'integer',
+        'season_start'    => 'datetime',
+        'season_end'      => 'datetime',
+        'last_attempt_at' => 'datetime',
+        'attempt_count'   => 'integer',
     ];
 
-    // Relasi opsional (sesuaikan namespace modelmu)
-    public function user()
+    /** ================= Relations ================= */
+
+    public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);
     }
 
-    public function quiz()
+    public function quiz(): BelongsTo
     {
         return $this->belongsTo(Quiz::class);
     }

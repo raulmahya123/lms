@@ -9,19 +9,27 @@ return new class extends Migration
     /**
      * Run the migrations.
      */
-   public function up(): void
-{
-    Schema::create('enrollments', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-        $table->foreignId('course_id')->constrained()->cascadeOnDelete();
-        $table->enum('status', ['pending','active','inactive'])->default('pending');
-        $table->timestamp('activated_at')->nullable();
-        $table->timestamps();
-        $table->unique(['user_id','course_id']);
-    });
-}
+    public function up(): void
+    {
+        Schema::create('enrollments', function (Blueprint $table) {
+            $table->uuid('id')->primary();   // ✅ PK pakai UUID
 
+            // FK ke users & courses, dua-duanya UUID
+            $table->foreignUuid('user_id')
+                  ->constrained('users')
+                  ->cascadeOnDelete();
+
+            $table->foreignUuid('course_id')
+                  ->constrained('courses')
+                  ->cascadeOnDelete();
+
+            $table->enum('status', ['pending','active','inactive'])->default('pending');
+            $table->timestamp('activated_at')->nullable();
+            $table->timestamps();
+
+            $table->unique(['user_id', 'course_id']); // 1 user hanya bisa 1x per course
+        });
+    }
 
     /**
      * Reverse the migrations.

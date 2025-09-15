@@ -7,10 +7,17 @@ use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
-    use Notifiable;
+    use Notifiable, HasUuids;
+
+    /** ✅ PK pakai UUID */
+    protected $keyType = 'string';
+    public $incrementing = false;
 
     protected $fillable = [
         'name',
@@ -43,12 +50,11 @@ class User extends Authenticatable
         return $this->role?->name === 'mentor';
     }
 
-    // Optional: scopes biar query lebih rapi
+    // Optional: scopes
     public function scopeAdmins($q)  { return $q->whereHas('role', fn($r) => $r->where('name','admin')); }
     public function scopeMentors($q) { return $q->whereHas('role', fn($r) => $r->where('name','mentor')); }
 
     // === Relasi: user sebagai mentor dari banyak course (pivot) ===
-    // Pivot table: course_mentors (user_id, course_id)
     public function mentorOfCourses(): BelongsToMany
     {
         return $this->belongsToMany(Course::class, 'course_mentors', 'user_id', 'course_id')
@@ -84,11 +90,11 @@ class User extends Authenticatable
             ->withTimestamps();
     }
 
-    // (Opsional) Mutator password biar otomatis di-hash saat set
+    // Mutator password biar otomatis di-hash
     public function setPasswordAttribute($value): void
     {
-        if ($value && \Illuminate\Support\Str::startsWith($value, '$2y$') === false) {
-            $this->attributes['password'] = \Illuminate\Support\Facades\Hash::make($value);
+        if ($value && Str::startsWith($value, '$2y$') === false) {
+            $this->attributes['password'] = Hash::make($value);
         } else {
             $this->attributes['password'] = $value;
         }

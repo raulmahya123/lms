@@ -3,8 +3,37 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-class PsyProfile extends Model {
-  protected $fillable=['test_id','key','name','min_total','max_total','description'];
-  public function test(){ return $this->belongsTo(PsyTest::class,'test_id'); }
+class PsyProfile extends Model
+{
+    use HasUuids;
+
+    /**
+     * PK UUID (string).
+     */
+    public $incrementing = false;
+    protected $keyType   = 'string';
+
+    protected $fillable = [
+        'test_id',
+        'key',
+        'name',
+        'min_total',
+        'max_total',
+        'description',
+    ];
+
+    protected $casts = [
+        'min_total' => 'integer',
+        'max_total' => 'integer',
+    ];
+
+    /** ================= Relations ================= */
+
+    public function test(): BelongsTo
+    {
+        return $this->belongsTo(PsyTest::class, 'test_id');
+    }
 }

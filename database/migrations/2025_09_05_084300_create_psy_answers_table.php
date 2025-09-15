@@ -12,13 +12,28 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('psy_answers', function (Blueprint $t) {
-    $t->id();
-    $t->foreignId('attempt_id')->constrained('psy_attempts')->cascadeOnDelete();
-    $t->foreignId('question_id')->constrained('psy_questions')->cascadeOnDelete();
-    $t->foreignId('option_id')->nullable()->constrained('psy_options')->nullOnDelete();
-    $t->integer('value')->nullable();     // untuk likert direct
-    $t->timestamps();
-});
+            $t->uuid('id')->primary();   // ✅ PK pakai UUID
+
+            // FK ke psy_attempts (UUID)
+            $t->foreignUuid('attempt_id')
+              ->constrained('psy_attempts')
+              ->cascadeOnDelete();
+
+            // FK ke psy_questions (UUID)
+            $t->foreignUuid('question_id')
+              ->constrained('psy_questions')
+              ->cascadeOnDelete();
+
+            // FK ke psy_options (UUID, nullable)
+            $t->foreignUuid('option_id')
+              ->nullable()
+              ->constrained('psy_options')
+              ->nullOnDelete();
+
+            $t->integer('value')->nullable(); // untuk likert direct
+
+            $t->timestamps();
+        });
     }
 
     /**

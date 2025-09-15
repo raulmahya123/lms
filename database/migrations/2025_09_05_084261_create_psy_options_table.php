@@ -11,14 +11,20 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('psy_options', function (Blueprint $t) {
-    $t->id();
-    $t->foreignId('question_id')->constrained('psy_questions')->cascadeOnDelete();
-    $t->string('label');
-    $t->integer('value'); // -2..+2 atau skor MCQ
-    $t->unsignedSmallInteger('ordering')->default(0);
-    $t->timestamps();
-});
+        Schema::create('psy_options', function (Blueprint $t) {
+            $t->uuid('id')->primary();   // ✅ PK pakai UUID
+
+            // FK ke psy_questions (UUID)
+            $t->foreignUuid('question_id')
+              ->constrained('psy_questions')
+              ->cascadeOnDelete();
+
+            $t->string('label');
+            $t->integer('value'); // -2..+2 atau skor MCQ
+            $t->unsignedSmallInteger('ordering')->default(0);
+
+            $t->timestamps();
+        });
     }
 
     /**

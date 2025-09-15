@@ -12,15 +12,24 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('psy_tests', function (Blueprint $t) {
-    $t->id();
-    $t->string('name');
-    $t->string('slug')->unique();
-    $t->enum('track',['backend','frontend','fullstack','qa','devops','pm','custom'])->default('custom');
-    $t->enum('type',['likert','mcq','iq','disc','big5','custom'])->default('likert');
-    $t->unsignedInteger('time_limit_min')->nullable();
-    $t->boolean('is_active')->default(true);
-    $t->timestamps();
-});
+            $t->uuid('id')->primary();   // ✅ PK pakai UUID
+
+            $t->string('name');
+            $t->string('slug')->unique();
+
+            $t->enum('track', [
+                'backend','frontend','fullstack','qa','devops','pm','custom'
+            ])->default('custom');
+
+            $t->enum('type', [
+                'likert','mcq','iq','disc','big5','custom'
+            ])->default('likert');
+
+            $t->unsignedInteger('time_limit_min')->nullable();
+            $t->boolean('is_active')->default(true);
+
+            $t->timestamps();
+        });
     }
 
     /**

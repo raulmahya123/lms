@@ -12,10 +12,25 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('qa_threads', function (Blueprint $t) {
-            $t->id();
-            $t->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $t->foreignId('course_id')->nullable()->constrained()->nullOnDelete();
-            $t->foreignId('lesson_id')->nullable()->constrained()->nullOnDelete();
+            $t->uuid('id')->primary();   // ✅ PK pakai UUID
+
+            // FK ke users (UUID)
+            $t->foreignUuid('user_id')
+              ->constrained('users')
+              ->cascadeOnDelete();
+
+            // FK ke courses (UUID, nullable)
+            $t->foreignUuid('course_id')
+              ->nullable()
+              ->constrained('courses')
+              ->nullOnDelete();
+
+            // FK ke lessons (UUID, nullable)
+            $t->foreignUuid('lesson_id')
+              ->nullable()
+              ->constrained('lessons')
+              ->nullOnDelete();
+
             $t->string('title');
             $t->longText('body');
             $t->enum('status', ['open', 'resolved', 'closed'])->default('open');

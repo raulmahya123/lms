@@ -12,15 +12,26 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('psy_attempts', function (Blueprint $t) {
-            $t->id();
-            $t->foreignId('test_id')->constrained('psy_tests')->cascadeOnDelete();
-            $t->foreignId('user_id')->constrained()->cascadeOnDelete();
+            $t->uuid('id')->primary();   // ✅ PK pakai UUID
+
+            // FK ke psy_tests (UUID)
+            $t->foreignUuid('test_id')
+              ->constrained('psy_tests')
+              ->cascadeOnDelete();
+
+            // FK ke users (UUID)
+            $t->foreignUuid('user_id')
+              ->constrained('users')
+              ->cascadeOnDelete();
+
             $t->timestamp('started_at')->nullable();
             $t->timestamp('submitted_at')->nullable();
+
             $t->json('score_json')->nullable();   // per trait
-            $t->integer('total_score')->nullable(); // JANGAN pakai ->after() saat create
+            $t->integer('total_score')->nullable();
             $t->string('result_key')->nullable();
             $t->text('recommendation_text')->nullable();
+
             $t->timestamps();
         });
     }

@@ -11,17 +11,27 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('psy_profiles', function (Blueprint $t) {
-    $t->id();
-    $t->foreignId('test_id')->constrained('psy_tests')->cascadeOnDelete();
-    $t->foreignId('user_id')->constrained()->cascadeOnDelete();
-    $t->string('key');   // e.g. "backend_fit_high"
-    $t->string('name');  // e.g. "Strong Backend Fit"
-    $t->integer('min_total')->default(0);
-    $t->integer('max_total')->default(9999);
-    $t->text('description')->nullable();
-    $t->timestamps();
-});
+        Schema::create('psy_profiles', function (Blueprint $t) {
+            $t->uuid('id')->primary();   // ✅ PK pakai UUID
+
+            // FK ke psy_tests (UUID)
+            $t->foreignUuid('test_id')
+              ->constrained('psy_tests')
+              ->cascadeOnDelete();
+
+            // FK ke users (UUID)
+            $t->foreignUuid('user_id')
+              ->constrained('users')
+              ->cascadeOnDelete();
+
+            $t->string('key');   // e.g. "backend_fit_high"
+            $t->string('name');  // e.g. "Strong Backend Fit"
+            $t->integer('min_total')->default(0);
+            $t->integer('max_total')->default(9999);
+            $t->text('description')->nullable();
+
+            $t->timestamps();
+        });
     }
 
     /**

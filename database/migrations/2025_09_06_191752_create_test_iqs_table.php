@@ -12,7 +12,8 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('test_iq', function (Blueprint $table) {
-            $table->id();
+            $table->uuid('id')->primary();   // ✅ PK pakai UUID
+
             $table->string('title');
             $table->text('description')->nullable();
             $table->json('questions')->nullable();
@@ -30,6 +31,6 @@ return new class extends Migration
 
     public function down(): void
     {
-        Schema::dropIfExists('test_iqs');
+        Schema::dropIfExists('test_iq'); // ✅ konsisten dengan nama di up()
     }
 };

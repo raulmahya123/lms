@@ -10,17 +10,16 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::create('plans', function (Blueprint $table) {
-        $table->id();
-        $table->string('name')->unique();         // Basic, Pro, dsb.
-        $table->unsignedInteger('price');         // dalam rupiah
-        $table->enum('period', ['monthly','yearly'])->default('monthly');
-        $table->json('features')->nullable();
-        $table->timestamps();
-    });
-}
-
+    {
+        Schema::create('plans', function (Blueprint $table) {
+            $table->uuid('id')->primary();   // ✅ UUID PK
+            $table->string('name')->unique();         // Basic, Pro, dsb.
+            $table->unsignedInteger('price');         // dalam rupiah
+            $table->enum('period', ['monthly','yearly'])->default('monthly');
+            $table->json('features')->nullable();
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

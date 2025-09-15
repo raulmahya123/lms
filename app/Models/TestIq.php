@@ -3,12 +3,18 @@
 namespace App\Models;
 
 use Carbon\Carbon;
-use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 
 class TestIq extends Model
 {
-    use HasFactory;
+    use HasUuids;
+
+    /**
+     * PK UUID (string).
+     */
+    public $incrementing = false;
+    protected $keyType   = 'string';
 
     protected $table = 'test_iq';
 
@@ -24,13 +30,15 @@ class TestIq extends Model
     ];
 
     protected $casts = [
-        'questions'         => 'array',
-        'submissions'       => 'array',
-        'is_active'         => 'boolean',
-        'duration_minutes'  => 'integer',
-        'cooldown_value'    => 'integer',
-        // cooldown_unit tetap string => tidak perlu cast
+        'questions'        => 'array',
+        'submissions'      => 'array',
+        'is_active'        => 'boolean',
+        'duration_minutes' => 'integer',
+        'cooldown_value'   => 'integer',
+        // cooldown_unit tetap string
     ];
+
+    /** ================= Helpers ================= */
 
     /** Total jumlah soal */
     public function totalQuestions(): int
@@ -40,10 +48,8 @@ class TestIq extends Model
 
     /**
      * Kapan user tertentu boleh tes lagi?
-     * - Jika belum pernah submit → sekarang (now()).
-     * - Jika sudah, tambahkan cool-down sesuai unit & value.
      */
-    public function nextAvailableAtFor(int $userId): Carbon
+    public function nextAvailableAtFor(string $userId): Carbon
     {
         $last = collect($this->submissions ?? [])
             ->where('user_id', $userId)
@@ -64,13 +70,13 @@ class TestIq extends Model
     }
 
     /** Apakah user boleh ikut tes sekarang? */
-    public function canAttempt(int $userId): bool
+    public function canAttempt(string $userId): bool
     {
         return now()->greaterThanOrEqualTo($this->nextAvailableAtFor($userId));
     }
 
-    /** (Opsional) Ambil submission terakhir user ini untuk tes ini */
-    public function lastSubmissionFor(int $userId): ?array
+    /** Ambil submission terakhir user ini untuk tes ini */
+    public function lastSubmissionFor(string $userId): ?array
     {
         return collect($this->submissions ?? [])
             ->where('user_id', $userId)

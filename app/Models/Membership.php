@@ -3,13 +3,39 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class Membership extends Model
 {
-    protected $fillable = ['user_id', 'plan_id', 'status', 'activated_at', 'expires_at'];
+    use HasUuids;
 
-    protected $dates = ['activated_at', 'expires_at'];
+    /**
+     * PK UUID (string).
+     */
+    public $incrementing = false;
+    protected $keyType   = 'string';
+
+    /**
+     * Mass assignable fields.
+     */
+    protected $fillable = [
+        'user_id',
+        'plan_id',
+        'status',
+        'activated_at',
+        'expires_at',
+    ];
+
+    /**
+     * Casts.
+     */
+    protected $casts = [
+        'activated_at' => 'datetime',
+        'expires_at'   => 'datetime',
+    ];
+
+    /** ================= Relations ================= */
 
     public function user(): BelongsTo
     {

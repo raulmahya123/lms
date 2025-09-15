@@ -10,13 +10,21 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::table('users', function (Blueprint $table) {
-        $table->foreignId('role_id')->nullable()->constrained()->nullOnDelete();
-        $table->enum('status', ['active', 'inactive'])->default('active');
-    });
-}
+    {
+        Schema::table('users', function (Blueprint $table) {
+            if (!Schema::hasColumn('users', 'role_id')) {
+                $table->foreignUuid('role_id')
+                      ->nullable()
+                      ->constrained('roles')
+                      ->nullOnDelete();
+            }
 
+            if (!Schema::hasColumn('users', 'status')) {
+                $table->enum('status', ['active', 'inactive'])
+                      ->default('active');
+            }
+        });
+    }
 
     /**
      * Reverse the migrations.
@@ -24,7 +32,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('users', function (Blueprint $table) {
-            //
+            $table->dropConstrainedForeignIdIfExists('role_id');
+            $table->dropColumn('status');
         });
     }
 };

@@ -3,11 +3,28 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class PlanCourse extends Model
 {
-    protected $fillable = ['plan_id', 'course_id'];
+    use HasUuids;
+
+    /**
+     * PK UUID (string).
+     */
+    public $incrementing = false;
+    protected $keyType   = 'string';
+
+    /**
+     * Mass assignable fields.
+     */
+    protected $fillable = [
+        'plan_id',
+        'course_id',
+    ];
+
+    /** ================= Relations ================= */
 
     public function plan(): BelongsTo
     {

@@ -3,11 +3,34 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
 
 class QuizAttempt extends Model
 {
-    protected $fillable = ['quiz_id', 'user_id', 'score', 'started_at', 'submitted_at'];
+    use HasUuids;
+
+    /**
+     * PK UUID (string).
+     */
+    public $incrementing = false;
+    protected $keyType   = 'string';
+
+    protected $fillable = [
+        'quiz_id',
+        'user_id',
+        'score',
+        'started_at',
+        'submitted_at',
+    ];
+
+    protected $casts = [
+        'score'        => 'decimal:2',
+        'started_at'   => 'datetime',
+        'submitted_at' => 'datetime',
+    ];
+
+    /** ================= Relations ================= */
 
     public function quiz(): BelongsTo
     {

@@ -9,28 +9,30 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('certificate_issues', function (Blueprint $t) {
-            $t->id();
+            $t->uuid('id')->primary();   // ✅ PK pakai UUID
 
             $t->string('serial')->unique();
 
-            $t->foreignId('template_id')
+            // FK ke template (UUID)
+            $t->foreignUuid('template_id')
               ->constrained('certificate_templates')
               ->cascadeOnDelete();
 
-            $t->foreignId('user_id')
-              ->constrained()
+            // FK ke users (UUID)
+            $t->foreignUuid('user_id')
+              ->constrained('users')
               ->cascadeOnDelete();
 
-            $t->foreignId('course_id')
+            // FK ke courses (UUID, nullable)
+            $t->foreignUuid('course_id')
               ->nullable()
-              ->constrained()
+              ->constrained('courses')
               ->nullOnDelete();
 
-            // relasi ke entitas penilaian; dibiarkan tanpa FK karena polymorphic/by-type
+            // polymorphic assessment
             $t->enum('assessment_type', ['course', 'psych'])->default('course');
-            $t->unsignedBigInteger('assessment_id')->nullable();
+            $t->uuid('assessment_id')->nullable(); // 👈 pakai UUID biar konsisten
 
-            // decimal unsigned: pakai decimal(...)->unsigned()
             $t->decimal('score', 5, 2)->unsigned()->nullable();
 
             $t->timestamp('issued_at')->useCurrent();

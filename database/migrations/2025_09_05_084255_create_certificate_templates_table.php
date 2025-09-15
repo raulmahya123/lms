@@ -11,16 +11,16 @@ return new class extends Migration
      */
     public function up(): void
     {
-       Schema::create('certificate_templates', function (Blueprint $t) {
-    $t->id();
-    $t->string('name');
-    $t->string('background_url')->nullable();
-    $t->json('fields_json')->nullable();   // misal mapping {name, course, date, score}
-    $t->json('svg_json')->nullable();      // opsional: layout vektor
-    $t->boolean('is_active')->default(true);
-    $t->timestamps();
-});
+        Schema::create('certificate_templates', function (Blueprint $t) {
+            $t->uuid('id')->primary();   // ✅ PK pakai UUID
 
+            $t->string('name');
+            $t->string('background_url')->nullable();
+            $t->json('fields_json')->nullable();   // mapping {name, course, date, score}
+            $t->json('svg_json')->nullable();      // opsional: layout vektor
+            $t->boolean('is_active')->default(true);
+            $t->timestamps();
+        });
     }
 
     /**

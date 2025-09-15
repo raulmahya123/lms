@@ -3,11 +3,31 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany};
 
 class Question extends Model
 {
-    protected $fillable = ['quiz_id', 'type', 'prompt', 'points'];
+    use HasUuids;
+
+    /**
+     * PK UUID (string).
+     */
+    public $incrementing = false;
+    protected $keyType   = 'string';
+
+    protected $fillable = [
+        'quiz_id',
+        'type',
+        'prompt',
+        'points',
+    ];
+
+    protected $casts = [
+        'points' => 'integer',
+    ];
+
+    /** ================= Relations ================= */
 
     public function quiz(): BelongsTo
     {

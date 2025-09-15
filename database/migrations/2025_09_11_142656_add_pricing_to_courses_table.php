@@ -10,13 +10,14 @@ return new class extends Migration
     {
         Schema::table('courses', function (Blueprint $table) {
             // true = gratis, false = berbayar
-            $table->boolean('is_free')->default(true)->after('cover_url');
+            if (!Schema::hasColumn('courses', 'is_free')) {
+                $table->boolean('is_free')->default(true)->after('cover_url');
+            }
 
             // harga dalam mata uang lokal (Rp) — gunakan decimal agar aman untuk koma
-            $table->decimal('price', 12, 2)->nullable()->after('is_free');
-            // Catatan:
-            // - Untuk kursus gratis, price boleh null.
-            // - Untuk kursus berbayar, price wajib diisi (validasi di controller).
+            if (!Schema::hasColumn('courses', 'price')) {
+                $table->decimal('price', 12, 2)->nullable()->after('is_free');
+            }
         });
     }
 

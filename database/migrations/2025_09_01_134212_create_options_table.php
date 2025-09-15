@@ -10,15 +10,20 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-{
-    Schema::create('options', function (Blueprint $table) {
-        $table->id();
-        $table->foreignId('question_id')->constrained()->cascadeOnDelete();
-        $table->string('text');
-        $table->boolean('is_correct')->default(false);
-        $table->timestamps();
-    });
-}
+    {
+        Schema::create('options', function (Blueprint $table) {
+            $table->uuid('id')->primary();   // ✅ UUID PK
+
+            // questions.id sudah UUID → pakai foreignUuid
+            $table->foreignUuid('question_id')
+                  ->constrained('questions')
+                  ->cascadeOnDelete();
+
+            $table->string('text');
+            $table->boolean('is_correct')->default(false);
+            $table->timestamps();
+        });
+    }
 
     /**
      * Reverse the migrations.

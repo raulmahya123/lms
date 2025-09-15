@@ -12,13 +12,22 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('lesson_progresses', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('lesson_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->json('progress')->nullable(); // 👈 sekarang JSON array
+            $table->uuid('id')->primary();   // ✅ PK pakai UUID
+
+            // FK ke lessons & users (UUID)
+            $table->foreignUuid('lesson_id')
+                  ->constrained('lessons')
+                  ->cascadeOnDelete();
+
+            $table->foreignUuid('user_id')
+                  ->constrained('users')
+                  ->cascadeOnDelete();
+
+            $table->json('progress')->nullable(); // simpan JSON array progress
             $table->timestamp('completed_at')->nullable();
             $table->timestamps();
-            $table->unique(['lesson_id', 'user_id']);
+
+            $table->unique(['lesson_id', 'user_id']); // 1 user hanya 1 progress per lesson
         });
     }
 
