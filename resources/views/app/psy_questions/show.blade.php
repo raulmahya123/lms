@@ -94,12 +94,13 @@
 
     <form id="answerForm"
           method="POST"
-          action="{{ route('app.psy.attempts.answer', [$slugId, $question]) }}"
+          action="{{ route('app.psy.attempts.answer', [$slugId, $question->getKey()]) }}"
           class="mt-5 space-y-4"
           x-bind:class="timeUp ? 'opacity-60 pointer-events-none' : ''"
           @submit="
             submitting=true;
-            $el.querySelectorAll('button, input, a, select').forEach(el => el.setAttribute('disabled','disabled'));
+            // Disable interaktif, jangan disable hidden inputs (_token)
+            $el.querySelectorAll('button, a, select, input[type=radio], input[type=checkbox], input[type=number], input[type=text]').forEach(el => el.setAttribute('disabled','disabled'));
           ">
       @csrf
 
@@ -140,23 +141,20 @@
           @endif
           <button type="button" class="btn btn-outline" @click="openSheet=true">Daftar Soal</button>
         </div>
-        <button type="submit" class="btn btn-primary" :disabled="timeUp || submitting">
-          {{ $nextId ? 'Simpan & Lanjut' : 'Simpan' }}
-        </button>
+
+        @if($nextId)
+          {{-- Soal belum terakhir --}}
+          <button type="submit" class="btn btn-primary" :disabled="timeUp || submitting">
+            Simpan & Lanjut
+          </button>
+        @else
+          {{-- Soal terakhir: langsung Selesai & Hitung --}}
+          <button type="submit" class="btn btn-primary" :disabled="timeUp || submitting">
+            Selesai & Hitung
+          </button>
+        @endif
       </div>
     </form>
-
-    @if(!$nextId)
-      <div class="mt-5 border-t pt-4 flex items-center justify-between">
-        <div class="text-xs text-gray-500">
-          Pintasan: angka 1–9, ←/→, Enter, ?
-        </div>
-        <a id="finishLink" href="{{ route('app.psy.attempts.submit', $slugId) }}"
-           class="btn btn-primary" :class="timeUp ? 'opacity-60 pointer-events-none' : ''">
-          Selesai & Hitung
-        </a>
-      </div>
-    @endif
 
     <template x-if="timeUp">
       <div class="mt-4 p-3 rounded bg-red-50 text-red-700 text-sm">

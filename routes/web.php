@@ -244,38 +244,41 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // =====================
     // Psy Tests (USER)
     // =====================
+    // =====================
+    // Psy Tests (USER) — simple & jelas
+    // =====================
     Route::prefix('psy-tests')->group(function () {
-        // List
-        Route::get('/', [UserPsyTestController::class, 'index'])
-            ->name('app.psytests.index');
+        // List & detail tes
+        Route::get('/', [UserPsyTestController::class, 'index'])->name('app.psytests.index');
+        Route::get('/{slugOrId}', [UserPsyTestController::class, 'show'])->name('app.psytests.show');
 
-        // Detail
-        Route::get('/{slugOrId}', [UserPsyTestController::class, 'show'])
-            ->name('app.psytests.show');
-
-        // Tampilkan 1 soal
+        // Tampilkan 1 soal (pakai UUID question)
         Route::get('/{slugOrId}/questions/{question}', [UserPsyQuestionController::class, 'show'])
-            ->whereNumber('question')
+            ->whereUuid('question')
             ->name('app.psytests.questions.show');
 
-        // ⬇️ Mulai / lanjut attempt — terima GET & POST
+        // Mulai / lanjut attempt (GET/POST)
         Route::match(['GET', 'POST'], '/{slugOrId}/start', [UserPsyAttemptController::class, 'start'])
             ->middleware('throttle:quiz')
             ->name('app.psy.attempts.start');
 
-        // Simpan jawaban 1 soal
+        // Simpan jawaban (POST)
         Route::post('/{slugOrId}/q/{question}/answer', [UserPsyAttemptController::class, 'answer'])
-            ->middleware('throttle:quiz')
-            ->whereNumber('question')
+            ->whereUuid('question')
             ->name('app.psy.attempts.answer');
 
-        // Submit & hitung hasil
+        // Kalau ada yang buka via GET, balikin ke halaman soal (biar gak 419)
+        Route::get('/{slugOrId}/q/{question}/answer', function ($slugOrId, $question) {
+            return redirect()->route('app.psytests.questions.show', [$slugOrId, $question]);
+        })->whereUuid('question');
+
+        // Submit & hasil
         Route::get('/{slugOrId}/submit', [UserPsyAttemptController::class, 'submit'])
             ->name('app.psy.attempts.submit');
 
-        // Lihat hasil attempt
         Route::get('/{slugOrId}/result/{attempt}', [UserPsyAttemptController::class, 'result'])
-            ->whereUuid('attempt')->name('app.psy.attempts.result');
+            ->whereUuid('attempt')
+            ->name('app.psy.attempts.result');
     });
 
     // ⬇️ Sudah ada sebelumnya, dipertahankan

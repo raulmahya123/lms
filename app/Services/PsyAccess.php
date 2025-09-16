@@ -12,15 +12,23 @@ class PsyAccess
     {
         // Sesuaikan dengan logika membership/plan milikmu.
         // Contoh default: jika tes premium, butuh membership aktif.
-        if (!($test->is_premium ?? false)) return true;
+        if (!($test->is_premium ?? false)) {
+            return true;
+        }
 
         $m = $user->memberships()->active()->first();
         return (bool) $m;
     }
-    
 
-   public static function findProfile(int $testId, int $total): ?PsyProfile
+    /**
+     * Cari profil berdasarkan total skor.
+     * Menerima PsyTest model atau test_id (UUID string / int).
+     */
+    public static function findProfile(PsyTest|int|string $test, int $total): ?PsyProfile
     {
+        // Ambil primary key sebagai string (mendukung UUID)
+        $testId = $test instanceof PsyTest ? (string) $test->getKey() : (string) $test;
+
         return PsyProfile::where('test_id', $testId)
             ->where('min_total', '<=', $total)
             ->where(function ($q) use ($total) {

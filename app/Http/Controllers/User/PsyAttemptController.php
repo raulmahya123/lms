@@ -10,6 +10,7 @@ use App\Models\{
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 
 class PsyAttemptController extends Controller
 {
@@ -37,24 +38,21 @@ class PsyAttemptController extends Controller
             return null;
         }
         $elapsed = now()->diffInSeconds($attempt->started_at);
-        $left    = max(0, ($limitMin * 60) - $elapsed);
-        return $left;
+        return max(0, ($limitMin * 60) - $elapsed);
     }
 
     /** Finalisasi attempt: hitung skor, pilih profil, set submitted_at */
     private function finalizeAttempt(PsyAttempt $attempt, PsyTest $test): PsyAttempt
     {
         return DB::transaction(function () use ($attempt, $test) {
-            // reload answers lengkap saat finalisasi
             $attempt->load(['answers.question', 'answers.option']);
 
-            // Skor per-trait & total
             $traitTotals = [];
             $traitCounts = [];
             $total       = 0;
 
             foreach ($attempt->answers as $ans) {
-                // jika ada jawaban yang "nyasar" (bukan milik test ini), abaikan hardening
+                // abaikan jika bukan milik test ini
                 if ($ans->question && $ans->question->test_id !== $test->id) {
                     continue;
                 }
@@ -76,14 +74,12 @@ class PsyAttemptController extends Controller
             }
             $scores['_total'] = $total;
 
-            // Profil cocok (min_total..max_total)
             $profile = PsyProfile::where('test_id', $test->id)
                 ->where('min_total', '<=', $total)
                 ->where('max_total', '>=', $total)
                 ->orderBy('min_total', 'desc')
                 ->first();
 
-            // Set hasil akhir
             $attempt->score_json          = $scores;
             $attempt->result_key          = $profile?->key;
             $attempt->recommendation_text = $profile
@@ -107,14 +103,14 @@ class PsyAttemptController extends Controller
             ['started_at' => now()]
         );
 
-        // Jika sudah melewati time limit, langsung finalisasi
+        // time limit habis → finalisasi
         $left = $this->timeLeftSec($attempt, $test);
         if ($left === 0) {
             $attempt = $this->finalizeAttempt($attempt, $test);
             return redirect()->route('app.psy.attempts.result', [$test->slug ?: $test->id, $attempt]);
         }
 
-        // Soal pertama / berikutnya yang belum dijawab
+        // soal berikutnya yang belum dijawab
         $qIds     = $test->questions()->orderBy('ordering')->orderBy('id')->pluck('id')->all();
         $answered = PsyAnswer::where('attempt_id', $attempt->id)->pluck('question_id')->all();
         $nextId   = collect($qIds)->first(fn($id) => !in_array($id, $answered, true)) ?? end($qIds);
@@ -126,54 +122,48 @@ class PsyAttemptController extends Controller
     public function answer(Request $r, string|int $slugOrId, PsyQuestion $question)
     {
         $test = $this->resolveActiveTest($slugOrId);
-
-        // Soal harus milik test ini
         abort_unless($question->test_id === $test->id, 404);
 
-        // Attempt aktif milik user
         $attempt = PsyAttempt::where('user_id', Auth::id())
             ->where('test_id', $test->id)
             ->whereNull('submitted_at')
             ->firstOrFail();
 
-        // Cek time limit: kalau habis saat submit jawaban, finalisasi langsung
+        // time limit habis saat submit → finalisasi
         $left = $this->timeLeftSec($attempt, $test);
         if ($left === 0) {
             $attempt = $this->finalizeAttempt($attempt, $test);
             return redirect()->route('app.psy.attempts.result', [$test->slug ?: $test->id, $attempt]);
         }
 
-        // Validasi: jika question punya options → wajib option_id yang belongTo question
-        $hasOptions = $question->exists && $question->options()->exists();
+        $hasOptions = $question->options()->exists();
 
-        $rules = [
-            'option_id' => ['nullable', 'integer'],
-            'value'     => ['nullable', 'integer'],
-        ];
-        $r->validate($rules);
-
-        // Hardening: pastikan option (jika ada) memang milik question ini
-        $optionId = $r->input('option_id');
         if ($hasOptions) {
-            // Jika pakai opsi, value bebas boleh null; option_id harus valid & milik question
-            abort_if(
-                is_null($optionId) ||
-                !PsyOption::where('id', $optionId)->where('question_id', $question->id)->exists(),
-                422,
-                'Pilihan tidak valid.'
-            );
+            // option_id boleh null (skip), kalau ada harus milik question ini
+            $data = $r->validate([
+                'option_id' => [
+                    'nullable',
+                    'integer',
+                    Rule::exists('psy_options', 'id')->where('question_id', $question->id),
+                ],
+            ]);
+            $optionId = $data['option_id'] ?? null;
+            $value    = null;
         } else {
-            // Kalau tidak pakai opsi, wajib ada value integer; kosongkan option_id
-            abort_if(!is_numeric($r->input('value')), 422, 'Nilai jawaban tidak valid.');
+            // soal numerik: value wajib
+            $data = $r->validate([
+                'value' => ['required', 'numeric'],
+            ]);
             $optionId = null;
+            $value    = (int) $data['value'];
         }
 
         PsyAnswer::updateOrCreate(
             ['attempt_id' => $attempt->id, 'question_id' => $question->id],
-            ['option_id'  => $optionId, 'value' => $hasOptions ? null : (int) $r->input('value')]
+            ['option_id'  => $optionId, 'value' => $value]
         );
 
-        // Tentukan next question
+        // next question
         $qIds = $test->questions()->orderBy('ordering')->orderBy('id')->pluck('id')->all();
         $idx  = array_search($question->id, $qIds, true);
         $next = ($idx !== false && $idx < count($qIds) - 1) ? $qIds[$idx + 1] : null;
@@ -194,7 +184,6 @@ class PsyAttemptController extends Controller
             ->with(['answers.question', 'answers.option'])
             ->firstOrFail();
 
-        // Finalisasi (termasuk kalau time limit sudah habis)
         $attempt = $this->finalizeAttempt($attempt, $test);
 
         return redirect()->route('app.psy.attempts.result', [$test->slug ?: $test->id, $attempt]);
@@ -204,23 +193,18 @@ class PsyAttemptController extends Controller
     public function result(string|int $slugOrId, PsyAttempt $attempt)
     {
         $test = $this->resolveActiveTest($slugOrId);
-
-        // Attempt harus milik user & test cocok
         abort_unless($attempt->user_id === Auth::id() && $attempt->test_id === $test->id, 404);
 
-        // Jika attempt belum disubmit (misal user langsung akses URL), finalisasi dulu
         if (is_null($attempt->submitted_at)) {
             $attempt = $this->finalizeAttempt($attempt, $test);
         }
 
-        // Eager load untuk rekap jawaban
         $attempt->load([
             'answers' => fn($q) => $q->orderBy('id'),
             'answers.question:id,prompt,trait_key,qtype',
             'answers.option:id,label,value',
         ]);
 
-        // Skor & total
         $scoresArr = is_array($attempt->score_json)
             ? $attempt->score_json
             : (array) json_decode($attempt->score_json ?? '[]', true);
@@ -228,19 +212,16 @@ class PsyAttemptController extends Controller
         $total  = (int) ($scoresArr['_total'] ?? 0);
         $traits = collect($scoresArr)->except('_total');
 
-        // Profil detail (key, name, description)
         $profile = PsyProfile::where('test_id', $test->id)
             ->where('min_total', '<=', $total)
             ->where('max_total', '>=', $total)
             ->orderBy('min_total', 'desc')
             ->first();
 
-        // Durasi (detik)
         $durationSec = ($attempt->started_at && $attempt->submitted_at)
             ? $attempt->submitted_at->diffInSeconds($attempt->started_at)
             : null;
 
-        // Persentil kasar berdasarkan rentang min/max psy_profiles
         $rangeMin = PsyProfile::where('test_id', $test->id)->min('min_total');
         $rangeMax = PsyProfile::where('test_id', $test->id)->max('max_total');
         $percentile = null;
@@ -254,18 +235,14 @@ class PsyAttemptController extends Controller
         return view('app.psy_attempts.result', [
             'test'          => $test,
             'attempt'       => $attempt,
-
-            // skor & profil
             'scores'        => $scoresArr,
             'traits'        => $traits,
             'total'         => $total,
-            'profile'       => $attempt->result_key, // tetap kirim yang lama untuk backward-compat
+            'profile'       => $attempt->result_key,
             'profileKey'    => optional($profile)->key,
             'profileName'   => optional($profile)->name,
-            'reco'          => $attempt->recommendation_text, // lama
+            'reco'          => $attempt->recommendation_text,
             'recoText'      => optional($profile)->description ?: 'Profil belum terdefinisi untuk rentang skor ini.',
-
-            // tambahan lengkap
             'answers'       => $attempt->answers,
             'durationSec'   => $durationSec,
             'percentile'    => $percentile,
