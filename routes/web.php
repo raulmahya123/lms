@@ -6,6 +6,11 @@ use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
 use Illuminate\Http\Request;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
+use App\Http\Middleware\VerifyCsrfToken;
+use Illuminate\Auth\Middleware\Authenticate;
+use Illuminate\Session\Middleware\StartSession;
+use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
+use Illuminate\View\Middleware\ShareErrorsFromSession;
 
 // =====================
 // Public
@@ -104,8 +109,19 @@ use App\Http\Controllers\User\{
 // =====================
 // User Area (login diperlukan)
 // =====================
-Route::get('/midtrans/webhook', [MidtransWebhookController::class, 'ping']);   // buat tombol "Test"
-Route::post('/midtrans/webhook', [MidtransWebhookController::class, 'handle']); // notifikasi asli
+// GET ping (boleh pakai web biasa)
+Route::get('/midtrans/webhook', [MidtransWebhookController::class, 'ping'])->middleware('web');
+
+// POST notif Midtrans — TANPA session/auth/CSRF
+Route::post('/midtrans/webhook', [MidtransWebhookController::class, 'handle'])
+    ->middleware('web') // pastikan masuk pipeline web dulu
+    ->withoutMiddleware([
+        Authenticate::class,
+        VerifyCsrfToken::class,
+        StartSession::class,
+        AddQueuedCookiesToResponse::class,
+        ShareErrorsFromSession::class,
+    ]);
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard (USER)
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');

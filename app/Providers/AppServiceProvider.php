@@ -32,8 +32,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        if (str_starts_with(config('app.url'), 'https://')) {
-        URL::forceScheme('https');
+      if (str_starts_with(config('app.url'), 'https://')) {
+    URL::forceScheme('https');
     }
         View::composer('*', function ($view) {
             $user = Auth::user();
