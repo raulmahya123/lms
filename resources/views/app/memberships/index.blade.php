@@ -111,6 +111,9 @@
               @if($current->expires_at)
                 <span class="chip">Berakhir: {{ Carbon::parse($current->expires_at)->format('d M Y H:i') }}</span>
               @endif
+              @if($current->status === 'pending')
+                <span class="chip">Menunggu konfirmasi pembayaran (otomatis via webhook)</span>
+              @endif
             </div>
 
             @if($current->status === 'active' && $current->expires_at)
@@ -150,10 +153,10 @@
               <a href="{{ route('app.memberships.checkout', $current) }}" class="btn btn-primary text-center">
                 Lanjutkan Pembayaran
               </a>
+              <button type="button" id="btnRefresh" class="btn btn-muted">Cek Status Sekarang</button>
               <form method="POST" action="{{ route('app.memberships.cancel', $current) }}">
                 @csrf
-                <button class="btn btn-muted w-full"
-                        onclick="return confirm('Batalkan membership ini?')">
+                <button class="btn btn-muted w-full" onclick="return confirm('Batalkan membership ini?')">
                   Batalkan
                 </button>
               </form>
@@ -165,8 +168,7 @@
               @endif
               <form method="POST" action="{{ route('app.memberships.cancel', $current) }}">
                 @csrf
-                <button class="btn btn-muted"
-                        onclick="return confirm('Nonaktifkan membership sekarang?')">
+                <button class="btn btn-muted" onclick="return confirm('Nonaktifkan membership sekarang?')">
                   Nonaktifkan
                 </button>
               </form>
@@ -278,4 +280,24 @@
     @endif
   </section>
 </div>
+
+{{-- Auto refresh saat pending (biar status cepat ter-update oleh webhook) --}}
+@if($current && $current->status === 'pending')
+  @push('scripts')
+  <script>
+    (function(){
+      const btn = document.getElementById('btnRefresh');
+      let tries = 0, maxTries = 30; // ~3 menit kalau interval 6s
+      function reload(){ location.reload(); }
+      if(btn){ btn.addEventListener('click', reload); }
+      const timer = setInterval(function(){
+        tries++;
+        if(tries > maxTries){ clearInterval(timer); return; }
+        fetch(location.href, {headers:{'X-Requested-With':'XMLHttpRequest'}})
+          .then(()=>reload()).catch(()=>{ /* skip */ });
+      }, 6000);
+    })();
+  </script>
+  @endpush
+@endif
 @endsection

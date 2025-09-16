@@ -6,22 +6,27 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 use App\Http\Middleware\EnsureLessonAccessible;
 use App\Http\Middleware\EnsureAttemptOwner;
+
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
         web: __DIR__.'/../routes/web.php',
-         api: null,          // <— matikan API routes
-        commands: null,     // <— matikan console routes kalau ga ada
+        api: null,      // kamu memang mematikan API routes
+        commands: null,
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        // Alias middleware — cukup daftar di sini, JANGAN di routes/web.php
+        // Alias middleware kustom kamu
         $middleware->alias([
             'ensure.lesson.accessible'      => EnsureLessonAccessible::class,
-            'app.ensure.lesson.accessible'  => EnsureLessonAccessible::class, // biar dua-duanya valid
+            'app.ensure.lesson.accessible'  => EnsureLessonAccessible::class,
             'ensure.attempt.owner'          => EnsureAttemptOwner::class,
+        ]);
+
+        $middleware->validateCsrfTokens(except: [
+            'midtrans/webhook',      // atau 'midtrans/*' kalau mau lebih longgar
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
-        // biarkan default; penting blok ini ADA
+        // default ok
     })
     ->create();

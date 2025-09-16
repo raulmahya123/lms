@@ -14,6 +14,7 @@ use App\Models\{
     QaThread,
     TestIq,
 };
+use Illuminate\Support\Facades\URL;
 use PHPUnit\Event\Code\Test;
 
 class AppServiceProvider extends ServiceProvider
@@ -31,6 +32,9 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        if (str_starts_with(config('app.url'), 'https://')) {
+        URL::forceScheme('https');
+    }
         View::composer('*', function ($view) {
             $user = Auth::user();
 

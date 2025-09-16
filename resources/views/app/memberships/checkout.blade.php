@@ -20,11 +20,11 @@
       <h1 class="text-2xl md:text-3xl font-semibold text-gray-900">Checkout Membership</h1>
       <a href="{{ route('app.memberships.index') }}" class="text-sm text-blue-700 hover:underline">Kembali</a>
     </div>
-    <p class="mt-1 text-sm text-gray-600">Selesaikan pembayaran untuk mengaktifkan membership Anda.</p>
+    <p class="mt-1 text-sm text-gray-600">Selesaikan pembayaran. Setelah berhasil, status akan berubah otomatis via webhook.</p>
   </header>
 
   <div class="grid md:grid-cols-[1fr_18rem] gap-6 items-start">
-    {{-- Rincian --}}
+    {{-- Ringkasan --}}
     <div class="p-5 rounded-lg border bg-white">
       <h2 class="text-base font-semibold text-gray-900">Ringkasan</h2>
       <dl class="mt-3 divide-y divide-gray-100 text-sm">
@@ -34,7 +34,13 @@
         </div>
         <div class="flex items-center justify-between py-2">
           <dt class="text-gray-600">Durasi</dt>
-          <dd class="font-medium text-gray-900">{{ $membership->plan->duration_days ?? 30 }} hari</dd>
+          <dd class="font-medium text-gray-900">
+            @if(($membership->plan->period ?? 'monthly') === 'yearly')
+              12 bulan
+            @else
+              30 hari
+            @endif
+          </dd>
         </div>
         <div class="flex items-center justify-between py-2">
           <dt class="text-gray-600">Harga</dt>
@@ -44,44 +50,35 @@
         </div>
       </dl>
 
-      {{-- Instruksi / integrasi payment gateway --}}
       <div class="mt-5">
         <h3 class="text-sm font-semibold text-gray-900">Instruksi Pembayaran</h3>
         <div class="mt-2 text-sm text-gray-600 space-y-2">
-          <p>Silakan lanjutkan pembayaran melalui metode yang tersedia. Setelah pembayaran berhasil, membership akan aktif otomatis.</p>
+          <p>Gunakan tombol di samping untuk membuka Snap Midtrans. Setelah selesai, Anda akan diarahkan kembali dan status akan otomatis diperbarui oleh sistem.</p>
           <ul class="list-disc pl-5">
-            <li>Metode: Transfer bank / e-wallet / kartu (sesuaikan gateway).</li>
-            <li>Konfirmasi otomatis via callback gateway.</li>
+            <li>Metode: Transfer bank / e-wallet / kartu.</li>
+            <li>Konfirmasi otomatis via webhook (tidak perlu upload bukti).</li>
           </ul>
         </div>
       </div>
 
-      {{-- Tombol simulasi aktivasi (untuk dev / tanpa gateway) --}}
       <div class="mt-6 rounded border bg-gray-50 p-3">
-        <div class="text-sm text-gray-700 mb-2 font-medium">Uji Aktivasi Manual (Dev)</div>
-        <form method="POST" action="{{ route('app.memberships.activate', $membership) }}" class="flex items-center gap-2">
-          @csrf
-          <input type="text" name="reference" placeholder="Nomor referensi (opsional)"
-                class="w-full rounded border-gray-300 focus:border-gray-400 focus:ring-0" />
-          <button class="px-3 py-2 rounded-lg bg-green-600 text-white hover:bg-green-700">
-            Tandai Sudah Bayar
-          </button>
-        </form>
-        <p class="mt-2 text-xs text-gray-500">Di produksi, ini digantikan oleh callback dari payment gateway.</p>
+        <div class="text-sm text-gray-700 mb-2 font-medium">Catatan</div>
+        <p class="text-xs text-gray-500">Jika popup ditutup sebelum pembayaran, Anda bisa buka lagi dari halaman ini.</p>
       </div>
     </div>
 
-    {{-- Ringkasan harga di sidebar --}}
+    {{-- Sidebar --}}
     <aside class="p-5 rounded-lg border bg-white">
       <h2 class="text-base font-semibold text-gray-900">Total</h2>
       <div class="mt-3 flex items-baseline gap-2">
         <div class="text-3xl font-bold text-gray-900">
           {{ isset($membership->plan->price) ? 'Rp '.number_format($membership->plan->price,0,',','.') : 'Gratis' }}
         </div>
-        <div class="text-sm text-gray-500">/ {{ $membership->plan->duration_days ?? 30 }} hari</div>
+        <div class="text-sm text-gray-500">
+          / {{ ($membership->plan->period ?? 'monthly') === 'yearly' ? '12 bulan' : '30 hari' }}
+        </div>
       </div>
 
-      {{-- CTA contoh ke gateway --}}
       <button id="btnPay"
           class="mt-5 w-full px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700">
           Bayar Sekarang
@@ -102,31 +99,60 @@
   src="https://app{{ $isSandbox ? '.sandbox' : '' }}.midtrans.com/snap/snap.js"
   data-client-key="{{ $clientKey }}"></script>
 
-  <script>
-document.getElementById('btnPay').addEventListener('click', async function () {
-  try {
-    const url = "{{ route('app.memberships.snap', $membership) }}";
-    const res = await fetch(url, {
-      method: 'POST',
-      headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' } // penting: hindari 419
-    });
-    if (!res.ok) throw new Error('Gagal membuat transaksi');
-    const { snap_token } = await res.json();
+<script>
+(function() {
+  const btn  = document.getElementById('btnPay');
+  const csrf = '{{ csrf_token() }}';
 
-    window.snap.pay(snap_token, {
-      onSuccess: function(){ window.location = "{{ route('app.memberships.index') }}"; },
-      onPending: function(){ window.location = "{{ route('app.memberships.index') }}"; },
-      onError:   function(err){ console.error(err); alert('Pembayaran gagal'); },
-      onClose:   function(){ alert('Popup ditutup sebelum bayar'); }
+  // ⬇️ pakai relative path agar tidak tergantung APP_URL
+  const startSnapUrl = "{{ route('app.memberships.snap', $membership, /* absolute */ false) }}";
+
+  async function startSnap() {
+    const res  = await fetch(startSnapUrl, {
+      method: 'POST',
+      headers: {
+        'X-CSRF-TOKEN': csrf,
+        'Accept': 'application/json'
+      },
+      credentials: 'same-origin' // kirim cookie session auth
     });
-  } catch (e) {
-    alert(e.message || 'Error memulai pembayaran');
-    console.error(e);
+    const data = await res.json();
+    if (!res.ok) throw new Error(data?.message || 'Gagal membuat transaksi');
+    return data;
   }
-});
+
+  btn.addEventListener('click', async function () {
+    const original = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Memproses…';
+
+    try {
+      const data = await startSnap();
+      if (data.free) return location.href = "{{ route('app.memberships.index') }}";
+
+      const snapToken   = data.snap_token;
+      const redirectUrl = data.redirect_url;
+
+      if (!window.snap || !snapToken) {
+        if (redirectUrl) return location.href = redirectUrl;
+        throw new Error('Token pembayaran tidak tersedia.');
+      }
+
+      window.snap.pay(snapToken, {
+        onSuccess: () => location.href = "{{ route('app.memberships.index') }}",
+        onPending: () => location.href = "{{ route('app.memberships.index') }}",
+        onError:   (e) => { console.error(e); alert('Pembayaran gagal.'); },
+        onClose:   ()  => alert('Popup ditutup sebelum bayar')
+      });
+    } catch (e) {
+      alert(e.message || 'Error memulai pembayaran');
+      console.error(e);
+    } finally {
+      btn.disabled  = false;
+      btn.textContent = original;
+    }
+  });
+})();
 </script>
 
 @endsection
-
-
-

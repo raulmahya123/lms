@@ -22,7 +22,7 @@
               {{ isset($plan->price) ? 'Rp '.number_format($plan->price,0,',','.') : 'Gratis' }}
             </div>
             <div class="text-sm text-gray-500">
-              Durasi {{ $plan->duration_days ?? 30 }} hari
+              Durasi {{ ($plan->period ?? 'monthly') === 'yearly' ? '12 bulan' : '30 hari' }}
             </div>
           </div>
           <ul class="mt-4 text-sm text-gray-600 space-y-1">

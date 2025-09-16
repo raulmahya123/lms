@@ -72,7 +72,7 @@ use App\Http\Controllers\Admin\{
     PsyAttemptController     as AdminPsyAttemptController,
     TestIqController         as AdminTestIqController,
 };
-
+use App\Http\Controllers\MidtransWebhookController;
 // =====================
 // User Controllers
 // =====================
@@ -104,6 +104,8 @@ use App\Http\Controllers\User\{
 // =====================
 // User Area (login diperlukan)
 // =====================
+Route::get('/midtrans/webhook', [MidtransWebhookController::class, 'ping']);   // buat tombol "Test"
+Route::post('/midtrans/webhook', [MidtransWebhookController::class, 'handle']); // notifikasi asli
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard (USER)
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
@@ -141,6 +143,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
         '/memberships/{membership}/midtrans/snap',
         [UserMembershipController::class, 'startSnap']
     )->whereUuid('membership')->name('app.memberships.snap');
+
+
+
+    Route::post('/memberships/{membership}/snap', [UserMembershipController::class, 'startSnap'])
+        ->name('app.memberships.snap');
 
     // Katalog & detail kursus
     Route::get('/courses', [CourseBrowseController::class, 'index'])->name('app.courses.index');
