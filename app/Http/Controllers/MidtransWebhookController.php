@@ -3,139 +3,108 @@
 namespace App\Http\Controllers;
 
 use App\Models\{Payment, Membership, Plan};
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
-use Carbon\Carbon;
-use Midtrans\Config;
-use Midtrans\Transaction;
-
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class MidtransWebhookController extends Controller
 {
-       public function ping()
-    {
-        return response()->json(['ok' => true, 'service' => 'midtrans'], 200);
-    }
-
-    // POST /midtrans/webhook -> untuk notifikasi Midtrans
     public function handle(Request $request)
     {
         $payload = $request->all();
-        Log::info('midtrans.webhook', $payload);
+        Log::info('midtrans.webhook.incoming', $payload);
 
-        // Verifikasi signature
+        // ---- Signature check ----
         $serverKey = config('services.midtrans.server_key');
         $expected = hash('sha512',
-            ($payload['order_id'] ?? '').
-            ($payload['status_code'] ?? '').
-            ($payload['gross_amount'] ?? '').
+            ($payload['order_id'] ?? '') .
+            ($payload['status_code'] ?? '') .
+            ($payload['gross_amount'] ?? '') .
             $serverKey
         );
-        if (($payload['signature_key'] ?? '') !== $expected) {
-            Log::warning('midtrans.signature_mismatch', ['order_id' => $payload['order_id'] ?? null]);
-            return response('invalid signature', 403);
+
+        if (!hash_equals($expected, (string) ($payload['signature_key'] ?? ''))) {
+            Log::warning('midtrans.webhook.signature_mismatch', [
+                'order_id' => $payload['order_id'] ?? null,
+            ]);
+            return response()->json(['message' => 'invalid signature'], 403);
         }
 
-        // Update tabel payments
-        $payment = Payment::where('reference', $payload['order_id'] ?? '')->first();
-        if (!$payment) return response('not found', 404);
+        $orderId   = $payload['order_id'] ?? null;           // = payments.reference
+        $trxStatus = $payload['transaction_status'] ?? '';   // capture/settlement/pending/deny/expire/cancel/failure
+        $fraud     = $payload['fraud_status'] ?? '';         // accept/challenge
+        $gross     = $payload['gross_amount'] ?? null;
 
-        $trx = $payload['transaction_status'] ?? 'pending';
-        if (in_array($trx, ['capture','settlement'])) {
-            $payment->status  = 'paid';
-            $payment->paid_at = now();
-        } elseif (in_array($trx, ['cancel','deny','expire'])) {
-            $payment->status = 'failed';
-        } else {
-            $payment->status = 'pending';
-        }
-        $payment->provider = 'midtrans';
-        $payment->save();
-
-        return response('OK', 200);
-    }
-    private function activateMembership(Payment $payment): void
-    {
-        $membership = null;
-
-        if ($payment->membership_id) {
-            $membership = Membership::find($payment->membership_id);
+        if (!$orderId) {
+            return response()->json(['message' => 'order_id missing'], 422);
         }
 
-        if (!$membership && $payment->plan_id && $payment->user_id) {
-            $membership = Membership::where('user_id', $payment->user_id)
-                ->where('plan_id', $payment->plan_id)
-                ->where('status', 'pending')
-                ->latest('id')
+        DB::transaction(function () use ($orderId, $trxStatus, $fraud, $gross) {
+            // Cari payment by reference (order_id)
+            $payment = Payment::where('reference', $orderId)
+                ->lockForUpdate()
                 ->first();
-        }
 
-        if (!$membership) {
-            Log::info('No membership to activate', ['payment_id' => $payment->id]);
-            return;
-        }
+            if (!$payment) {
+                Log::warning('midtrans.webhook.payment_not_found', ['order_id' => $orderId]);
+                return; // idempotent: tidak error 5xx
+            }
 
-        $plan = Plan::find($membership->plan_id);
-        $now  = Carbon::now();
-        $expiresAt = match ($plan?->period) {
-            'yearly' => $now->copy()->addYear(),
-            default  => $now->copy()->addMonth(),
-        };
+            // Map status
+            $newStatus = match ($trxStatus) {
+                'capture'    => ($fraud === 'challenge') ? 'pending' : 'paid',
+                'settlement' => 'paid',
+                'pending'    => 'pending',
+                'cancel', 'deny', 'expire', 'failure' => 'failed',
+                default      => 'pending',
+            };
 
-        $membership->update([
-            'status'       => 'active',
-            'activated_at' => $membership->activated_at ?: $now,
-            'expires_at'   => $expiresAt,
-        ]);
+            // Idempotent
+            if ($payment->status === $newStatus) {
+                return;
+            }
 
-        Log::info('Membership activated', [
-            'membership_id' => $membership->id,
-            'payment_id'    => $payment->id
-        ]);
-    }
-    public function __invoke(Request $request)
-    {
-        // 1) Ping untuk tombol "Test" (GET)
-        if ($request->isMethod('get')) {
-            return response()->json(['ok' => true, 'service' => 'midtrans'], 200);
-        }
+            // Update payment
+            $payment->provider  = 'midtrans';
+            $payment->status    = $newStatus;
+            // optional konsistensi jumlah
+            if ($gross !== null && is_numeric($gross)) {
+                $payment->amount = (int) $gross;
+            }
+            if ($newStatus === 'paid') {
+                $payment->paid_at = now();
+            }
+            $payment->save();
 
-        // 2) Proses notifikasi asli (POST)
-        $payload = $request->all();
-        Log::info('midtrans.webhook', $payload);
+            // Bila sudah paid dan ada plan → update membership
+            if ($newStatus === 'paid' && $payment->plan_id) {
+                $plan = Plan::find($payment->plan_id);
+                if ($plan) {
+                    $m = Membership::firstOrNew(['user_id' => $payment->user_id]);
 
-        // --- verifikasi signature (sangat direkomendasikan) ---
-        $serverKey = config('services.midtrans.server_key');
-        $expected = hash(
-            'sha512',
-            ($payload['order_id'] ?? '') .
-                ($payload['status_code'] ?? '') .
-                ($payload['gross_amount'] ?? '') .
-                $serverKey
-        );
-        if (($payload['signature_key'] ?? '') !== $expected) {
-            Log::warning('midtrans.signature_mismatch', ['order_id' => $payload['order_id'] ?? null]);
-            return response('invalid signature', 403);
-        }
+                    $now  = Carbon::now();
+                    $from = ($m->exists && $m->expires_at && $m->expires_at->isFuture())
+                        ? $m->expires_at
+                        : $now;
 
-        // --- mapping status ke tabel payments ---
-        $payment = Payment::where('reference', $payload['order_id'] ?? '')->first();
-        if (!$payment) return response('not found', 404);
+                    $expires = ($plan->period === 'yearly')
+                        ? $from->copy()->addYear()
+                        : $from->copy()->addMonth();
 
-        $status = $payload['transaction_status'] ?? 'pending';
-        if (in_array($status, ['capture', 'settlement'])) {
-            $payment->status = 'paid';
-            $payment->paid_at = now();
-        } elseif (in_array($status, ['cancel', 'deny', 'expire'])) {
-            $payment->status = 'failed';
-        } else {
-            $payment->status = 'pending';
-        }
-        $payment->provider = 'midtrans';
-        $payment->save();
+                    $m->plan_id      = $plan->id;
+                    $m->status       = 'active';
+                    $m->activated_at = $m->exists && $m->activated_at ? $m->activated_at : $now;
+                    $m->expires_at   = $expires;
+                    $m->save();
 
-        return response('OK', 200);
+                    // Link back
+                    $payment->membership_id = $m->id;
+                    $payment->save();
+                }
+            }
+        });
+
+        return response()->json(['ok' => true]);
     }
 }

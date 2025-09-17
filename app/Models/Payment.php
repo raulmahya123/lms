@@ -31,6 +31,9 @@ class Payment extends Model
         'paid_at',
         'snap_token',
         'snap_redirect_url',
+        'midtrans_transaction_id',
+        'midtrans_payment_type',
+        'midtrans_settlement_time',
     ];
 
     /**
@@ -39,6 +42,7 @@ class Payment extends Model
     protected $casts = [
         'paid_at' => 'datetime',
         'amount'  => 'decimal:2',
+        'midtrans_settlement_time' => 'datetime',
     ];
 
     /** ================= Relations ================= */

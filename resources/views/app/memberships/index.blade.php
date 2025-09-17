@@ -150,17 +150,17 @@
         <div class="shrink-0 flex flex-col gap-2">
           @if($current)
             @if($current->status === 'pending')
-              <a href="{{ route('app.memberships.checkout', $current) }}" class="btn btn-primary text-center">
-                Lanjutkan Pembayaran
-              </a>
-              <button type="button" id="btnRefresh" class="btn btn-muted">Cek Status Sekarang</button>
-              <form method="POST" action="{{ route('app.memberships.cancel', $current) }}">
-                @csrf
-                <button class="btn btn-muted w-full" onclick="return confirm('Batalkan membership ini?')">
-                  Batalkan
-                </button>
-              </form>
-            @elseif($current->status === 'active')
+      <a href="{{ route('app.memberships.checkout', $current) }}" class="btn btn-primary text-center">
+        Lanjutkan Pembayaran
+      </a>
+      <button type="button" id="btnRefresh" class="btn btn-muted" onclick="location.reload()">Cek Status Sekarang</button>
+      <form method="POST" action="{{ route('app.memberships.cancel', $current) }}">
+        @csrf
+        <button class="btn btn-muted w-full" onclick="return confirm('Batalkan membership ini?')">
+          Batalkan
+        </button>
+      </form>
+    @elseif($current->status === 'active')
               @if(($left ?? 0) <= 7 && $left !== null)
                 <a href="{{ route('app.memberships.plans') }}" class="btn btn-primary text-center">
                   Perpanjang / Upgrade
@@ -280,24 +280,4 @@
     @endif
   </section>
 </div>
-
-{{-- Auto refresh saat pending (biar status cepat ter-update oleh webhook) --}}
-@if($current && $current->status === 'pending')
-  @push('scripts')
-  <script>
-    (function(){
-      const btn = document.getElementById('btnRefresh');
-      let tries = 0, maxTries = 30; // ~3 menit kalau interval 6s
-      function reload(){ location.reload(); }
-      if(btn){ btn.addEventListener('click', reload); }
-      const timer = setInterval(function(){
-        tries++;
-        if(tries > maxTries){ clearInterval(timer); return; }
-        fetch(location.href, {headers:{'X-Requested-With':'XMLHttpRequest'}})
-          .then(()=>reload()).catch(()=>{ /* skip */ });
-      }, 6000);
-    })();
-  </script>
-  @endpush
-@endif
 @endsection

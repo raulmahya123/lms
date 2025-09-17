@@ -110,18 +110,18 @@ use App\Http\Controllers\User\{
 // User Area (login diperlukan)
 // =====================
 // GET ping (boleh pakai web biasa)
-Route::get('/midtrans/webhook', [MidtransWebhookController::class, 'ping'])->middleware('web');
+// Route::get('/midtrans/webhook', [MidtransWebhookController::class, 'ping'])->middleware('web');
 
-// POST notif Midtrans — TANPA session/auth/CSRF
-Route::post('/midtrans/webhook', [MidtransWebhookController::class, 'handle'])
-    ->middleware('web') // pastikan masuk pipeline web dulu
-    ->withoutMiddleware([
-        Authenticate::class,
-        VerifyCsrfToken::class,
-        StartSession::class,
-        AddQueuedCookiesToResponse::class,
-        ShareErrorsFromSession::class,
-    ]);
+// // POST notif Midtrans — TANPA session/auth/CSRF
+// Route::post('/midtrans/webhook', [MidtransWebhookController::class, 'handle'])
+//     ->middleware('web') // pastikan masuk pipeline web dulu
+//     ->withoutMiddleware([
+//         Authenticate::class,
+//         VerifyCsrfToken::class,
+//         StartSession::class,
+//         AddQueuedCookiesToResponse::class,
+//         ShareErrorsFromSession::class,
+//     ]);
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard (USER)
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
@@ -139,6 +139,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/memberships/subscribe/{plan}', [UserMembershipController::class, 'subscribe'])
         ->whereUuid('plan')->name('app.memberships.subscribe');
 
+     Route::get('/memberships/finish', [UserMembershipController::class, 'finish'])->name('app.memberships.finish');
+
     // halaman checkout membership pending
     Route::get('/memberships/checkout/{membership}', [UserMembershipController::class, 'checkout'])
         ->whereUuid('membership')->name('app.memberships.checkout');
@@ -151,7 +153,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/memberships/cancel/{membership}', [UserMembershipController::class, 'cancel'])
         ->whereUuid('membership')->name('app.memberships.cancel');
 
+    Route::post('/memberships/update/{membership}', [UserMembershipController::class, 'update'])->name('app.memberships.update');
     // update membership oleh user (opsional)
+
     Route::patch('/memberships/{membership}', [UserMembershipController::class, 'update'])
         ->whereUuid('membership')->name('app.memberships.update');
 
@@ -160,10 +164,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         [UserMembershipController::class, 'startSnap']
     )->whereUuid('membership')->name('app.memberships.snap');
 
+    Route::post('/memberships/snap/{membership}', [UserMembershipController::class, 'startSnap'])->name('app.memberships.snap');
 
-
-    Route::post('/memberships/{membership}/snap', [UserMembershipController::class, 'startSnap'])
-        ->name('app.memberships.snap');
 
     // Katalog & detail kursus
     Route::get('/courses', [CourseBrowseController::class, 'index'])->name('app.courses.index');
