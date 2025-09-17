@@ -58,11 +58,19 @@ class TestIqController extends Controller
         abort_unless($testIq->is_active, 404);
         abort_unless(Auth::check(), 403);
 
+        // bersihkan sisa sesi lama
         session()->forget([
             $this->sessKey($testIq, 'answers'),
             $this->sessKey($testIq, 'started_at'),
         ]);
-        session([$this->sessKey($testIq, 'started_at') => now()]);
+
+        // set flag sesi ujian (LOCKDOWN)
+        session([
+            $this->sessKey($testIq, 'started_at') => now(),
+            'iq.in_progress'  => $testIq->getKey(),                                   // ← FLAG kunci utama
+            'iq.current_step' => 1,                                                   // ← posisi awal
+            'iq.return_to'    => route('user.test-iq.question', [$testIq->getKey(), 1]), // ← URL terakhir
+        ]);
 
         return redirect()->route('user.test-iq.question', [$testIq, 1]);
     }
@@ -91,6 +99,12 @@ class TestIqController extends Controller
 
         $startedAt   = session($this->sessKey($testIq, 'started_at'));
         $startedAtMs = Carbon::parse($startedAt)->valueOf();
+
+        // ==== UPDATE POSISI & URL TERAKHIR (untuk redirect akurat oleh middleware) ====
+        session([
+            'iq.current_step' => $step,
+            'iq.return_to'    => route('user.test-iq.question', [$testIq->getKey(), $step]),
+        ]);
 
         return view('app.test_iq.step', [
             'test'        => $testIq,
@@ -188,10 +202,13 @@ class TestIqController extends Controller
         $testIq->submissions = $subs;
         $testIq->save();
 
-        // bersihkan session attempt
+        // ==== BERSIHKAN SEMUA FLAG LOCKDOWN ====
         session()->forget([
             $this->sessKey($testIq, 'answers'),
             $this->sessKey($testIq, 'started_at'),
+            'iq.in_progress',
+            'iq.current_step',
+            'iq.return_to',
         ]);
 
         return redirect()
@@ -212,7 +229,7 @@ class TestIqController extends Controller
             ->values();
 
         $last   = $subs->isEmpty() ? null : $subs->last();
-        $nextAt = null; // <-- penting: inisialisasi supaya tidak undefined
+        $nextAt = null; // inisialisasi
 
         // Jika limiter diaktifkan, hitung kapan boleh tes lagi
         if (self::MAX_ATTEMPTS_PER_SEASON > 0 && self::SEASON_SECONDS > 0) {

@@ -315,14 +315,40 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // =====================
     // IQ Test (USER) — EXISTING milikmu (biarin)
     // =====================
-    Route::get('/iq/{testIq}', [UserTestIqController::class, 'show'])
-        ->whereUuid('testIq')->name('user.test-iq.show');
+    // Route::get('/iq/{testIq}', [UserTestIqController::class, 'show'])
+    //     ->whereUuid('testIq')->name('user.test-iq.show');
 
-    Route::post('/iq/{testIq}/submit', [UserTestIqController::class, 'submit'])
-        ->whereUuid('testIq')->name('user.test-iq.submit');
+    // Route::post('/iq/{testIq}/submit', [UserTestIqController::class, 'submit'])
+    //     ->whereUuid('testIq')->name('user.test-iq.submit');
 
-    Route::get('/iq/{testIq}/result', [UserTestIqController::class, 'result'])
-        ->whereUuid('testIq')->name('user.test-iq.result');
+    // Route::get('/iq/{testIq}/result', [UserTestIqController::class, 'result'])
+    //     ->whereUuid('testIq')->name('user.test-iq.result');
+
+    Route::prefix('iq/{testIq}')
+    ->whereUuid('testIq')
+    ->as('user.test-iq.')
+    ->group(function () {
+
+        // Landing / info tes
+        Route::get('/', [UserTestIqController::class, 'show'])->name('show');
+
+        // Mulai tes (GET) — tombol "Mulai Tes" di Blade mengarah ke sini
+        Route::get('/start', [UserTestIqController::class, 'start'])->name('start');
+
+        // Tampilkan 1 soal (GET) — step bernomor
+        Route::get('/q/{step}', [UserTestIqController::class, 'showStep'])
+            ->whereNumber('step')->name('question');
+
+        // Simpan jawaban 1 soal & navigasi (POST)
+        Route::post('/q/{step}', [UserTestIqController::class, 'answer'])
+            ->whereNumber('step')->name('answer');
+
+        // Submit akhir (POST)
+        Route::post('/submit', [UserTestIqController::class, 'submit'])->name('submit');
+
+        // Hasil
+        Route::get('/result', [UserTestIqController::class, 'result'])->name('result');
+    });
 
     // =====================
     // IQ Test (USER) — TAMBAHAN: versi app.* (URI berbeda biar gak tabrakan)

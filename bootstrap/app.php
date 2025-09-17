@@ -6,12 +6,13 @@ use Illuminate\Foundation\Configuration\Middleware;
 
 use App\Http\Middleware\EnsureLessonAccessible;
 use App\Http\Middleware\EnsureAttemptOwner;
+use App\Http\Middleware\PreventDuringIqTest;
 
 return Application::configure(basePath: dirname(__DIR__))
     ->withRouting(
-        web: __DIR__.'/../routes/web.php',
-        api: __DIR__.'/../routes/api.php',   // <- Nyalakan API routes
-        commands: __DIR__.'/../routes/console.php',
+        web: __DIR__ . '/../routes/web.php',
+        api: __DIR__ . '/../routes/api.php',   // <- Nyalakan API routes
+        commands: __DIR__ . '/../routes/console.php',
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
@@ -21,7 +22,9 @@ return Application::configure(basePath: dirname(__DIR__))
             'app.ensure.lesson.accessible'  => EnsureLessonAccessible::class,
             'ensure.attempt.owner'          => EnsureAttemptOwner::class,
         ]);
-
+        $middleware->web(append: [
+            PreventDuringIqTest::class,
+        ]);
         // CSRF hanya berlaku untuk group "web".
         // Jika webhook Midtrans kamu pakai route API, ini SEBENARNYA tidak perlu.
         // Boleh kamu hapus. Kalau ingin tetap ada, biarkan saja—tidak berpengaruh ke /api.
