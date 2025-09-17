@@ -49,7 +49,8 @@
         nextUrl: @js($nextId ? route('app.psytests.questions.show', [$slugId, $nextId]) : null),
         prevUrl: @js($prevId ? route('app.psytests.questions.show', [$slugId, $prevId]) : null),
         finishUrl: @js(!$nextId ? route('app.psy.attempts.submit', $slugId) : null),
-        pickedInit: {{ $answerOptionId ? (int)$answerOptionId : 'null' }}
+        // penting: biarkan UUID sebagai string
+        pickedInit: @js($answerOptionId ?: null)
       })"
      x-init="init()">
 
@@ -108,14 +109,14 @@
         <div class="grid gap-2">
           @foreach($question->options as $i => $op)
             <label class="choice cursor-pointer"
-                   :class="picked == {{ $op->id }} ? 'choice--active' : ''">
+                   :class="picked === @js($op->id) ? 'choice--active' : ''">
               <div class="flex items-center gap-3">
                 <input type="radio"
                        name="option_id"
                        value="{{ $op->id }}"
                        class="h-4 w-4"
+                       x-model="picked"
                        @checked($answerOptionId == $op->id)
-                       @change="picked={{ $op->id }}"
                        required>
                 <div class="flex items-center gap-2">
                   <span class="kbd">{{ $i+1 }}</span>
@@ -233,7 +234,7 @@ function ui({secondsLeft, timeLimitMin, nextUrl, prevUrl, finishUrl, pickedInit}
         if (/^[1-9]$/.test(e.key)) {
           const idx = parseInt(e.key, 10) - 1;
           const radios = Array.from(document.querySelectorAll('input[type=radio][name=option_id]'));
-          if (radios[idx]) { radios[idx].checked = true; this.picked = parseInt(radios[idx].value, 10); }
+          if (radios[idx]) { radios[idx].checked = true; this.picked = radios[idx].value; }
         }
         if (e.key === 'ArrowLeft' && prevUrl) { e.preventDefault(); window.location.href = prevUrl; }
         if (e.key === 'ArrowRight' && nextUrl) { e.preventDefault(); window.location.href = nextUrl; }

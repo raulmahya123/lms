@@ -4,8 +4,12 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\{
-    PsyTest, PsyQuestion, PsyOption,
-    PsyAttempt, PsyAnswer, PsyProfile
+    PsyTest,
+    PsyQuestion,
+    PsyOption,
+    PsyAttempt,
+    PsyAnswer,
+    PsyProfile
 };
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -139,18 +143,16 @@ class PsyAttemptController extends Controller
         $hasOptions = $question->options()->exists();
 
         if ($hasOptions) {
-            // option_id boleh null (skip), kalau ada harus milik question ini
             $data = $r->validate([
                 'option_id' => [
                     'nullable',
-                    'integer',
+                    'uuid',
                     Rule::exists('psy_options', 'id')->where('question_id', $question->id),
                 ],
             ]);
             $optionId = $data['option_id'] ?? null;
             $value    = null;
         } else {
-            // soal numerik: value wajib
             $data = $r->validate([
                 'value' => ['required', 'numeric'],
             ]);
