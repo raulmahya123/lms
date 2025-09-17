@@ -785,6 +785,7 @@
 </section>
 
 {{-- ===================== PLANS ===================== --}}
+{{-- ===================== PLANS ===================== --}}
 <section id="plans" class="py-12 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
     <div class="flex items-end justify-between gap-4">
@@ -804,20 +805,26 @@
               <span class="text-xs px-2 py-1 rounded-full bg-white/20">Rekomendasi</span>
             @endif
           </div>
+
           <div class="mt-3">
-            @php $price = $plan->price ?? 0; @endphp
-            <div class="text-3xl font-extrabold">Rp {{ number_format($price,0,',','.') }}</div>
-            <div class="text-xs text-blue-100 mt-1">/ {{ $plan->billing_cycle ?? 'bulan' }}</div>
+            @php $price = (int) ($plan->price ?? 0); @endphp
+            <div class="text-3xl font-extrabold">Rp {{ number_format($price, 0, ',', '.') }}</div>
+            <div class="text-xs text-blue-100 mt-1">
+              / {{ ($plan->period ?? 'monthly') === 'yearly' ? 'tahun' : 'bulan' }}
+            </div>
           </div>
+
           <ul class="mt-4 space-y-2 text-sm">
-            <li>✓ Akses {{ $plan->planCourses_count ?? $plan->plan_courses_count ?? 0 }} kelas terpilih</li>
+            <li>✓ Akses {{ $plan->plan_courses_count ?? 0 }} kelas terpilih</li>
             <li>✓ Kuis & Sertifikat</li>
             <li>✓ Pelacakan Progres</li>
             <li>✓ Dukungan Komunitas</li>
           </ul>
+
           <div class="mt-6">
             @auth
-              <form method="POST" action="{{ route('app.checkout.plan', $plan) }}">
+              {{-- 🔁 arahkan ke MembershipController@subscribe, bukan CheckoutController --}}
+              <form method="POST" action="{{ route('app.memberships.subscribe', $plan) }}">
                 @csrf
                 <button class="shine w-full px-4 py-2 rounded-xl bg-white text-blue-800 font-semibold hover:bg-blue-50">
                   Pilih Paket
@@ -839,6 +846,7 @@
     </div>
   </div>
 </section>
+
 
 {{-- ===================== COUPONS ===================== --}}
 <section id="kupon" class="py-12 bg-white">
