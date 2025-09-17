@@ -217,13 +217,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/checkout/{payment}/confirm', [CheckoutController::class, 'confirm'])
         ->whereUuid('payment')->name('app.checkout.confirm');
 
-    // Halaman checkout course
+    // === User: Checkout & Snap & Finish (harus login) ===
     Route::get('/courses/{course}/checkout', [UserCourseCheckoutController::class, 'checkout'])
         ->whereUuid('course')->name('app.courses.checkout');
 
-    // Ambil Snap token (dipanggil dari tombol Bayar)
-    Route::post('/courses/{course}/midtrans/snap', [UserCourseCheckoutController::class, 'startSnap'])
+    Route::post('/courses/{course}/snap', [UserCourseCheckoutController::class, 'startSnap'])
         ->whereUuid('course')->name('app.courses.snap');
+
+    // Fallback selesai pembayaran (cek status ke Midtrans lalu aktifkan enrollment)
+    Route::get('/payments/finish', [UserCourseCheckoutController::class, 'finish'])
+        ->name('app.payments.finish');
 
     // Sertifikat (PDF)
     Route::get('/courses/{course}/certificate', [CertificateController::class, 'course'])
