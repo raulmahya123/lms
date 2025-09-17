@@ -34,8 +34,8 @@
       @if($course->price > 0)
         {{-- tombol checkout --}}
         <a href="{{ route('app.courses.checkout', $course) }}"
-           class="w-full block text-center px-4 py-2 bg-purple-600 text-white rounded hover:bg-purple-700">
-          Beli Sekarang - Rp {{ number_format($course->price,0,',','.') }}
+          class="w-full block text-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
+          Enroll
         </a>
       @else
         {{-- enroll gratis --}}
