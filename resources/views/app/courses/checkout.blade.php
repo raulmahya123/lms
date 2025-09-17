@@ -46,18 +46,22 @@
 <script>
 document.getElementById('btnPay').addEventListener('click', async function(){
   try {
-    const res = await fetch("{{ route('app.courses.snap', $course) }}", {
+    const res  = await fetch("{{ route('app.courses.snap', $course) }}", {
       method: 'POST',
       headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept':'application/json' }
     });
     const data = await res.json();
     if (!res.ok) { alert(data.message || 'Gagal membuat transaksi'); return; }
 
-    if (data.free) { window.location = "{{ route('app.my.courses') }}"; return; }
+    if (data.free) {
+      window.location = "{{ route('app.my.courses') }}";
+      return;
+    }
 
+    const orderId = data.order_id; // ← penting
     window.snap.pay(data.snap_token, {
-      onSuccess: () => window.location = "{{ route('app.my.courses') }}",
-      onPending: () => window.location = "{{ route('app.my.courses') }}",
+      onSuccess: () => window.location = "{{ route('app.payments.finish') }}?order_id=" + encodeURIComponent(orderId),
+      onPending: () => window.location = "{{ route('app.payments.finish') }}?order_id=" + encodeURIComponent(orderId),
       onError:   (e) => { console.error(e); alert('Pembayaran gagal'); },
       onClose:   () => alert('Popup ditutup sebelum bayar'),
     });
