@@ -107,7 +107,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
-            <th class="p-3 text-left w-16">ID</th>
             <th class="p-3 text-left">Code</th>
             <th class="p-3 text-left w-28">Discount</th>
             <th class="p-3 text-left">Valid</th>
@@ -131,7 +130,6 @@
               $limit = $c->usage_limit ?? '∞';
             @endphp
             <tr class="border-t">
-              <td class="p-3 font-semibold text-gray-700">#{{ $c->id }}</td>
               <td class="p-3">
                 <div class="flex items-center gap-2">
                   <span class="font-mono tracking-wide">{{ $c->code }}</span>

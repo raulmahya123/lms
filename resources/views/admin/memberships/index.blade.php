@@ -126,7 +126,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
-            <th class="p-3 text-left w-16">#</th>
             <th class="p-3 text-left">User</th>
             <th class="p-3 text-left">Plan</th>
             <th class="p-3 text-left w-28">Status</th>
@@ -147,7 +146,6 @@
               };
             @endphp
             <tr class="border-t">
-              <td class="p-3 font-semibold text-gray-700">#{{ $m->id }}</td>
               <td class="p-3">
                 <div class="font-medium">{{ $m->user?->name ?? '—' }}</div>
                 <div class="text-xs text-gray-500">{{ $m->user?->email ?? '—' }}</div>

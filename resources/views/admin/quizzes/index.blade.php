@@ -117,7 +117,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
-            <th class="p-3 text-left w-16">#</th>
             <th class="p-3 text-left">Lesson</th>
             <th class="p-3 text-left">Title</th>
             <th class="p-3 text-center w-40">Actions</th>
@@ -126,7 +125,6 @@
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse($quizzes as $qz)
             <tr class="border-t">
-              <td class="p-3 font-semibold text-gray-700">#{{ $qz->id }}</td>
               <td class="p-3">
                 <div class="truncate max-w-[420px]" title="{{ $qz->lesson?->title }}">
                   {{ $qz->lesson?->title ?? '-' }}

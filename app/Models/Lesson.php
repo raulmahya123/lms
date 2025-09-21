@@ -46,6 +46,7 @@ class Lesson extends Model
         'drive_emails'  => 'array',
         'reviews'       => 'array',
         'tools'         => 'array',
+        'benefits'      => 'array',   // ⬅️ tambahkan ini
     ];
 
     protected $attributes = [
@@ -55,6 +56,7 @@ class Lesson extends Model
         'content_url'   => '[]',
         'reviews'       => '[]',
         'tools'         => '[]',
+        'benefits'      => '[]',      // ⬅️ opsional, tambahkan ini juga
     ];
 
     /* ===========================

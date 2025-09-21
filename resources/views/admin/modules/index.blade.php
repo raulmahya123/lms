@@ -116,7 +116,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
-            <th class="p-3 text-left w-16">#</th>
             <th class="p-3 text-left">Course</th>
             <th class="p-3 text-left">Title</th>
             <th class="p-3 text-left w-32">Ordering</th>
@@ -126,7 +125,6 @@
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse($modules as $m)
             <tr class="border-t">
-              <td class="p-3 font-semibold text-gray-700">#{{ $m->id }}</td>
               <td class="p-3">
                 @if($m->course)
                   <div class="flex items-center gap-2">

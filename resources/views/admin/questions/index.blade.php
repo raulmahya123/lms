@@ -43,7 +43,7 @@
       <select name="quiz_id" class="w-full rounded-xl border pl-3 pr-3 py-2">
         <option value="">— All Quizzes —</option>
         @foreach($quizzes ?? [] as $quiz)
-          <option value="{{ $quiz->id }}" @selected(request('quiz_id')==$quiz->id)>{{ $quiz->title }}</option>
+          <option value="{{ $quiz->uuid }}" @selected(request('quiz_id')==$quiz->id)>{{ $quiz->title }}</option>
         @endforeach
       </select>
     </div>
@@ -97,7 +97,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
-            <th class="px-4 py-3 text-left w-16">#</th>
             <th class="px-4 py-3 text-left">Quiz</th>
             <th class="px-4 py-3 text-left">Prompt</th>
             <th class="px-4 py-3 text-left w-28">Type</th>
@@ -108,7 +107,6 @@
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse ($questions as $item)
             <tr class="border-t">
-              <td class="px-4 py-3 font-semibold text-gray-700">#{{ $item->id }}</td>
               <td class="px-4 py-3">{{ $item->quiz->title ?? '—' }}</td>
               <td class="px-4 py-3">
                 {{ \Illuminate\Support\Str::limit($item->prompt, 80) }}

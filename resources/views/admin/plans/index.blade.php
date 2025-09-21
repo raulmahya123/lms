@@ -119,7 +119,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
-            <th class="p-3 text-left w-16">#</th>
             <th class="p-3 text-left">Name</th>
             <th class="p-3 text-left w-28">Price</th>
             <th class="p-3 text-left w-28">Period</th>
@@ -131,7 +130,6 @@
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse($plans as $p)
             <tr class="border-t">
-              <td class="p-3 font-semibold text-gray-700">#{{ $p->id }}</td>
               <td class="p-3 font-medium">{{ $p->name }}</td>
               <td class="p-3">Rp {{ number_format((float)$p->price,0,',','.') }}</td>
               <td class="p-3">

@@ -8,7 +8,6 @@
   <div class="flex items-center justify-between">
     <div>
       <h1 class="text-2xl font-extrabold tracking-wide flex items-center gap-2">
-        {{-- Play/lesson icon --}}
         <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
           <path d="M4.5 5.75A2.75 2.75 0 0 1 7.25 3h9.5A2.75 2.75 0 0 1 19.5 5.75v12.5A2.75 2.75 0 0 1 16.75 21h-9.5A2.75 2.75 0 0 1 4.5 18.25V5.75Zm5 1.25a.75.75 0 0 0-.75.75v8.5a.75.75 0 0 0 1.14.64l6.5-4.25a.75.75 0 0 0 0-1.28l-6.5-4.25a.75.75 0 0 0-.39-.11Z"/>
         </svg>
@@ -70,13 +69,11 @@
 
       {{-- TOOLS / BENEFITS (chip input + CSV friendly) --}}
       <div class="grid md:grid-cols-2 gap-4">
+        {{-- Tools --}}
         <div x-data="{
-              items: (()=>{
-                const raw = @js(old('tools'));
-                if (!raw) return [];
+              items: (()=>{ const raw = @js(old('tools')); if (!raw) return [];
                 try { const j=JSON.parse(raw); return Array.isArray(j)?j:[]; } catch(e) {}
-                return String(raw).split(',').map(s=>s.trim()).filter(Boolean);
-              })(),
+                return String(raw).split(',').map(s=>s.trim()).filter(Boolean); })(),
               input:'',
               add(){ const v=this.input.trim(); if(!v) return; if(!this.items.includes(v)) this.items.push(v); this.input=''; },
               remove(i){ this.items.splice(i,1); }
@@ -100,18 +97,20 @@
           </div>
           {{-- fallback CSV (kalau JS mati) --}}
           <noscript>
-            <input type="text" name="tools" value="{{ old('tools') }}" class="mt-2 w-full border rounded-xl px-3 py-2" placeholder="Pisahkan dengan koma">
+            @php
+              $oldTools = old('tools');
+              $oldToolsCsv = is_array($oldTools) ? implode(',', $oldTools) : (string) $oldTools;
+            @endphp
+            <input type="text" name="tools" value="{{ $oldToolsCsv }}" class="mt-2 w-full border rounded-xl px-3 py-2" placeholder="Pisahkan dengan koma">
           </noscript>
           @error('tools') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 
+        {{-- Benefits --}}
         <div x-data="{
-              items: (()=>{
-                const raw = @js(old('benefits'));
-                if (!raw) return [];
+              items: (()=>{ const raw = @js(old('benefits')); if (!raw) return [];
                 try { const j=JSON.parse(raw); return Array.isArray(j)?j:[]; } catch(e) {}
-                return String(raw).split(',').map(s=>s.trim()).filter(Boolean);
-              })(),
+                return String(raw).split(',').map(s=>s.trim()).filter(Boolean); })(),
               input:'',
               add(){ const v=this.input.trim(); if(!v) return; if(!this.items.includes(v)) this.items.push(v); this.input=''; },
               remove(i){ this.items.splice(i,1); }
@@ -135,7 +134,11 @@
           </div>
           {{-- fallback CSV --}}
           <noscript>
-            <input type="text" name="benefits" value="{{ old('benefits') }}" class="mt-2 w-full border rounded-xl px-3 py-2" placeholder="Pisahkan dengan koma">
+            @php
+              $oldBenefits = old('benefits');
+              $oldBenefitsCsv = is_array($oldBenefits) ? implode(',', $oldBenefits) : (string) $oldBenefits;
+            @endphp
+            <input type="text" name="benefits" value="{{ $oldBenefitsCsv }}" class="mt-2 w-full border rounded-xl px-3 py-2" placeholder="Pisahkan dengan koma">
           </noscript>
           @error('benefits') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
@@ -179,7 +182,7 @@
         @error('content_url.*.url') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
       </div>
 
-      {{-- GOOGLE DRIVE (link + status + whitelist by user_id dgn "pilih & tambah") --}}
+      {{-- GOOGLE DRIVE (link + status + whitelist by user_id) --}}
       <div class="rounded-xl border p-4 space-y-4">
         <h3 class="font-semibold">Google Drive</h3>
 
@@ -208,20 +211,23 @@
         {{-- Whitelist picker (add/remove) --}}
         <div
           x-data="{
-            users: @js($users->map(fn($u)=>['id'=>$u->id,'name'=>$u->name,'email'=>$u->email])->values()),
-            selected: @js(collect(old('drive_user_ids', []))->map(fn($v)=> (int)$v)->values()),
+            users: @js($users->map(fn($u)=>['id'=>(string)$u->id,'name'=>$u->name,'email'=>$u->email])->values()),
+            selected: @js(collect(old('drive_user_ids', []))->map(fn($v)=>(string)$v)->values()),
             pick: '',
             add() {
-              const id = parseInt(this.pick);
+              const id = String(this.pick||'').trim();
               if (!id) return;
               if (this.selected.includes(id)) return;
-              if (this.selected.length >= 4) return alert('Maksimal 4 user.');
+              if (this.selected.length >= 4) { alert('Maksimal 4 user.'); return; }
               this.selected.push(id);
               this.pick = '';
             },
             remove(i){ this.selected.splice(i,1); },
-            available() { return this.users.filter(u => !this.selected.includes(u.id)); },
-            label(u){ return `${u.name} — ${u.email}`; }
+            available(){ return this.users.filter(u => !this.selected.includes(u.id)); },
+            labelById(id){
+              const u = this.users.find(x => x.id === id);
+              return u ? `${u.name} — ${u.email}` : '(user tidak ditemukan)';
+            }
           }"
           class="space-y-2"
         >
@@ -230,12 +236,11 @@
             <span class="text-xs opacity-70" x-text="`— dipilih: ${selected.length}/4`"></span>
           </label>
 
-          {{-- picker --}}
           <div class="flex gap-2">
             <select x-model="pick" class="w-full border rounded-xl px-3 py-2" :disabled="selected.length>=4">
               <option value="">— pilih user —</option>
               <template x-for="u in available()" :key="u.id">
-                <option :value="u.id" x-text="label(u)"></option>
+                <option :value="u.id" x-text="`${u.name} — ${u.email}`"></option>
               </template>
             </select>
             <button type="button"
@@ -245,13 +250,12 @@
               Tambah
             </button>
           </div>
-          <p class="text-xs opacity-70">Pilih user lalu klik “Tambah”. Kamu bisa hapus lagi jika keliru.</p>
+          <p class="text-xs opacity-70">Pilih user lalu klik “Tambah”. Bisa dihapus jika keliru.</p>
 
-          {{-- list terpilih + hidden inputs --}}
           <div class="mt-2 space-y-2">
             <template x-for="(id, i) in selected" :key="id">
               <div class="flex items-center justify-between rounded-lg border px-3 py-2">
-                <div class="text-sm font-medium" x-text="label(users.find(u=>u.id===id) ?? {name:'Unknown',email:''})"></div>
+                <div class="text-sm font-medium" x-text="labelById(id)"></div>
                 <div class="flex items-center gap-2">
                   <input type="hidden" :name="`drive_user_ids[${i}]`" :value="id">
                   <button type="button" class="px-2 text-red-600" @click="remove(i)">✕</button>

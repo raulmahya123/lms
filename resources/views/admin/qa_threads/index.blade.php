@@ -73,7 +73,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700">
           <tr>
-            <th class="p-3 text-left w-16">ID</th>
             <th class="p-3 text-left">Title</th>
             <th class="p-3 text-left">Course / Lesson</th>
             <th class="p-3 text-left w-28">Replies</th>
@@ -84,7 +83,6 @@
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse($threads as $t)
             <tr class="border-t">
-              <td class="p-3 font-semibold text-gray-700">#{{ $t->id }}</td>
               <td class="p-3">
                 <div class="font-medium">{{ $t->title }}</div>
                 <div class="text-xs text-gray-500">by {{ $t->user->name ?? '—' }}</div>

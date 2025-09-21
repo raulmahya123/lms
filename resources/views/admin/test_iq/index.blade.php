@@ -122,7 +122,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
-            <th class="p-3 text-left w-16">#</th>
             <th class="p-3 text-left">Judul</th>
             <th class="p-3 text-left w-28">Aktif</th>
             <th class="p-3 text-left w-28">Soal</th>
@@ -133,7 +132,6 @@
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse($tests as $t)
             <tr class="border-t">
-              <td class="p-3 font-semibold text-gray-700">#{{ $t->id }}</td>
 
               <td class="p-3">
                 <div class="font-semibold">{{ $t->title }}</div>

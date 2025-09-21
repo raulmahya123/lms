@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\TestIq;
 use Illuminate\Http\Request;
-use Illuminate\Validation\Rule;
 
 class TestIqController extends Controller
 {
@@ -38,7 +37,7 @@ class TestIqController extends Controller
             'description'       => ['nullable','string'],
             'is_active'         => ['nullable','boolean'],
             'duration_minutes'  => ['nullable','integer','min:0','max:1440'],
-            // questions akan diisi via textarea JSON, validasi basic dulu
+            // dikirim dari builder sebagai JSON string
             'questions_json'    => ['nullable','string'],
         ]);
 
@@ -47,6 +46,7 @@ class TestIqController extends Controller
             'description'       => $data['description'] ?? null,
             'is_active'         => (bool)($data['is_active'] ?? false),
             'duration_minutes'  => (int)($data['duration_minutes'] ?? 0),
+            // simpan sebagai ARRAY terstruktur (bukan string JSON)
             'questions'         => $this->decodeQuestions($data['questions_json'] ?? null),
         ];
 
@@ -59,9 +59,8 @@ class TestIqController extends Controller
     /** Form edit */
     public function edit(TestIq $testIq)
     {
-        // stringify questions utk textarea
-        $questions_json = json_encode($testIq->questions ?? [], JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE);
-        return view('admin.test_iq.edit', compact('testIq','questions_json'));
+        // View builder akan baca $testIq->questions (array)
+        return view('admin.test_iq.edit', compact('testIq'));
     }
 
     /** Update data */
@@ -104,30 +103,55 @@ class TestIqController extends Controller
         return back()->with('success','Status test diubah.');
     }
 
-    /** Util: decode dan normalisasi struktur questions */
+    /**
+     * Decode & normalisasi struktur questions dari JSON string builder.
+     * Standar disimpan: [
+     *   { id:int, text:string, options:string[], answer_index:int|null }
+     * ]
+     */
     private function decodeQuestions(?string $json): ?array
     {
-        if (!$json) return null;
+        if (!$json || !is_string($json)) {
+            return null; // biarkan null kalau kosong
+        }
 
         try {
             $arr = json_decode($json, true, 512, JSON_THROW_ON_ERROR);
         } catch (\Throwable $e) {
-            // Jika JSON invalid, lempar balik ke form dengan pesan rapi
-            abort(422, 'Format JSON tidak valid: '.$e->getMessage());
+            // kembalikan HTTP 422 agar error tampil rapi di form
+            abort(422, 'Format pertanyaan tidak valid: '.$e->getMessage());
         }
 
-        // Normalisasi minimal: setiap item harus punya id, text, options[], answer
+        if (!is_array($arr)) return null;
+
         $norm = [];
         $i = 1;
         foreach ($arr as $item) {
+            $text    = (string)($item['text'] ?? '');
+            $options = array_values(array_map('strval', $item['options'] ?? []));
+            // dukung keduanya: answer_index (prefer) atau answer (string)
+            $answerIndex = null;
+
+            if (array_key_exists('answer_index', $item) && $item['answer_index'] !== null) {
+                $ai = $item['answer_index'];
+                if (is_int($ai) && $ai >= 0 && $ai < count($options)) {
+                    $answerIndex = $ai;
+                }
+            } elseif (array_key_exists('answer', $item) && $item['answer'] !== null) {
+                $ans = (string)$item['answer'];
+                $idx = array_search($ans, $options, true);
+                if ($idx !== false) $answerIndex = (int) $idx;
+            }
+
             $norm[] = [
-                'id'      => $item['id']      ?? $i,
-                'text'    => $item['text']    ?? '',
-                'options' => array_values($item['options'] ?? []),
-                'answer'  => $item['answer']  ?? null,
+                'id'            => (int)($item['id'] ?? $i),
+                'text'          => $text,
+                'options'       => $options,
+                'answer_index'  => $answerIndex,
             ];
             $i++;
         }
+
         return $norm;
     }
 }

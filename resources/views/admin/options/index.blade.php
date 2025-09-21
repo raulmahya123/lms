@@ -122,7 +122,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
-            <th class="p-3 text-left w-12">#</th>
             <th class="p-3 text-left">Question</th>
             <th class="p-3 text-left">Text</th>
             <th class="p-3 text-left w-28">Correct</th>
@@ -132,7 +131,6 @@
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse ($options as $opt)
             <tr class="border-t">
-              <td class="p-3 font-semibold text-gray-700">#{{ $opt->id }}</td>
               <td class="p-3">
                 {{ \Illuminate\Support\Str::limit($opt->question->prompt ?? '—', 60) }}
               </td>

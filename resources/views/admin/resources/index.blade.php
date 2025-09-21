@@ -99,7 +99,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
-            <th class="p-3 text-left w-14">#</th>
             <th class="p-3 text-left">Lesson</th>
             <th class="p-3 text-left">Title</th>
             <th class="p-3 text-left">URL</th>
@@ -110,7 +109,6 @@
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse($resources as $res)
             <tr class="border-t">
-              <td class="p-3 font-semibold text-gray-700">#{{ $res->id }}</td>
               <td class="p-3">{{ $res->lesson->title ?? '-' }}</td>
               <td class="p-3 font-medium">{{ $res->title }}</td>
               <td class="p-3">

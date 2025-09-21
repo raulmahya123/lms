@@ -3,33 +3,31 @@
 
 @section('content')
 @php
-  // Helper: pastikan selalu string saat ditampilkan dalam <textarea> atau input
+  // Helper: pastikan selalu string saat ditampilkan dalam <textarea> / input
   $toText = function ($v) {
       if (is_null($v)) return '';
       if (is_string($v)) return $v;
-      // array / object -> JSON pretty agar terbaca & aman
       return json_encode($v, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
   };
 
-  // Siapkan nilai string yang aman untuk textareas
+  // Siapkan nilai string aman untuk textarea
   $aboutStr    = $toText(old('about',    $lesson->about    ?? null));
   $syllabusStr = $toText(old('syllabus', $lesson->syllabus ?? null));
   $reviewsStr  = $toText(old('reviews',  $lesson->reviews  ?? null));
 
-  $contentOld  = old('content', is_array($lesson->content)
-      ? json_encode($lesson->content, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
-      : ($lesson->content ?? '')
+  $contentOld  = old('content',
+      is_array($lesson->content)
+        ? json_encode($lesson->content, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT)
+        : ($lesson->content ?? '')
   );
-  $contentStr  = $toText($contentOld); // kalau old('content') array, tetap jadi string
+  $contentStr  = $toText($contentOld);
 @endphp
 
 <div class="max-w-3xl mx-auto space-y-6">
-
   {{-- HEADER --}}
   <div class="flex items-center justify-between">
     <div>
       <h1 class="text-2xl font-extrabold tracking-wide flex items-center gap-2">
-        {{-- Pencil/Edit icon --}}
         <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
           <path d="M16.862 3.487a2.25 2.25 0 0 1 3.182 3.182l-9.57 9.569a4.5 4.5 0 0 1-1.78 1.11l-3.27 1.09a.75.75 0 0 1-.947-.948l1.09-3.269a4.5 4.5 0 0 1 1.11-1.78l9.57-9.57Z"/>
         </svg>
@@ -37,10 +35,7 @@
       </h1>
       <p class="text-sm opacity-70">Perbarui judul, konten, meta, urutan, status, dan whitelist Drive.</p>
     </div>
-
-    <a href="{{ route('admin.lessons.index') }}"
-       class="px-3 py-2 rounded-xl border hover:bg-gray-50 transition"
-       aria-label="Kembali ke daftar lesson">← Back</a>
+    <a href="{{ route('admin.lessons.index') }}" class="px-3 py-2 rounded-xl border hover:bg-gray-50 transition" aria-label="Kembali ke daftar lesson">← Back</a>
   </div>
 
   {{-- FORM CARD --}}
@@ -51,9 +46,7 @@
 
       {{-- MODULE --}}
       <div>
-        <label for="module_id" class="block text-sm font-medium mb-1">
-          Module <span class="text-red-500">*</span>
-        </label>
+        <label for="module_id" class="block text-sm font-medium mb-1">Module <span class="text-red-500">*</span></label>
         <select id="module_id" name="module_id" class="w-full border rounded-xl px-3 py-2" required>
           @foreach ($modules as $m)
             <option value="{{ $m->id }}" @selected(old('module_id', $lesson->module_id) == $m->id)>
@@ -61,30 +54,17 @@
             </option>
           @endforeach
         </select>
-        @error('module_id')
-          <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-        @enderror
+        @error('module_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
       </div>
 
       {{-- TITLE --}}
       <div>
-        <label for="title" class="block text-sm font-medium mb-1">
-          Title <span class="text-red-500">*</span>
-        </label>
-        <input
-          id="title"
-          type="text"
-          name="title"
-          value="{{ old('title', $lesson->title) }}"
-          class="w-full border rounded-xl px-3 py-2"
-          required
-        >
-        @error('title')
-          <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-        @enderror
+        <label for="title" class="block text-sm font-medium mb-1">Title <span class="text-red-500">*</span></label>
+        <input id="title" type="text" name="title" value="{{ old('title', $lesson->title) }}" class="w-full border rounded-xl px-3 py-2" required>
+        @error('title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
       </div>
 
-      {{-- ABOUT / SYLLABUS / REVIEWS (BARU) --}}
+      {{-- ABOUT / SYLLABUS / REVIEWS --}}
       <div class="grid md:grid-cols-2 gap-4">
         <div class="md:col-span-2">
           <label class="block text-sm font-medium mb-1">About</label>
@@ -103,7 +83,7 @@
         </div>
       </div>
 
-      {{-- TOOLS / BENEFITS (BARU, chip input + fallback CSV) --}}
+      {{-- TOOLS / BENEFITS (chip input + fallback CSV) --}}
       <div class="grid md:grid-cols-2 gap-4">
         {{-- TOOLS --}}
         @php
@@ -117,7 +97,8 @@
         @endphp
         <div x-data="{
               items: @js(array_values($toolsInit)),
-              input:'', add(){ const v=this.input.trim(); if(!v) return; if(!this.items.includes(v)) this.items.push(v); this.input=''; },
+              input:'',
+              add(){ const v=this.input.trim(); if(!v) return; if(!this.items.includes(v)) this.items.push(v); this.input=''; },
               remove(i){ this.items.splice(i,1); }
             }">
           <label class="block text-sm font-medium mb-1">Tools</label>
@@ -133,9 +114,7 @@
                 <button type="button" @click="remove(i)" class="text-sky-700/70 hover:text-sky-900">×</button>
               </span>
             </template>
-            <template x-if="items.length===0">
-              <span class="text-xs opacity-60">Kosong (opsional)</span>
-            </template>
+            <template x-if="items.length===0"><span class="text-xs opacity-60">Kosong (opsional)</span></template>
           </div>
           <noscript>
             <input type="text" name="tools" value="{{ is_array($lesson->tools)? implode(',', $lesson->tools) : ($lesson->tools ?? '') }}" class="mt-2 w-full border rounded-xl px-3 py-2" placeholder="Pisahkan dengan koma">
@@ -155,7 +134,8 @@
         @endphp
         <div x-data="{
               items: @js(array_values($benefitsInit)),
-              input:'', add(){ const v=this.input.trim(); if(!v) return; if(!this.items.includes(v)) this.items.push(v); this.input=''; },
+              input:'',
+              add(){ const v=this.input.trim(); if(!v) return; if(!this.items.includes(v)) this.items.push(v); this.input=''; },
               remove(i){ this.items.splice(i,1); }
             }">
           <label class="block text-sm font-medium mb-1">Benefits</label>
@@ -171,9 +151,7 @@
                 <button type="button" @click="remove(i)" class="text-emerald-700/70 hover:text-emerald-900">×</button>
               </span>
             </template>
-            <template x-if="items.length===0">
-              <span class="text-xs opacity-60">Kosong (opsional)</span>
-            </template>
+            <template x-if="items.length===0"><span class="text-xs opacity-60">Kosong (opsional)</span></template>
           </div>
           <noscript>
             <input type="text" name="benefits" value="{{ is_array($lesson->benefits)? implode(',', $lesson->benefits) : ($lesson->benefits ?? '') }}" class="mt-2 w-full border rounded-xl px-3 py-2" placeholder="Pisahkan dengan koma">
@@ -184,13 +162,9 @@
 
       {{-- CONTENT --}}
       <div>
-        <label for="content" class="block text-sm font-medium mb-1">
-          Content (HTML / Markdown / text)
-        </label>
+        <label for="content" class="block text-sm font-medium mb-1">Content (HTML / Markdown / text)</label>
         <textarea id="content" name="content" rows="6" class="w-full border rounded-xl px-3 py-2">{{ $contentStr }}</textarea>
-        @error('content')
-          <p class="text-sm text-red-600 mt-1">{{ $message }}</p>
-        @enderror
+        @error('content') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
       </div>
 
       {{-- CONTENT URLs --}}
@@ -223,7 +197,7 @@
           @error('drive_link') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
 
-        {{-- Drive Status (biarkan ada di UI; controller bisa abaikan bila kolom tak ada) --}}
+        {{-- Drive Status (opsional) --}}
         <div>
           <label for="drive_status" class="block text-sm font-medium mb-1">Drive Status</label>
           @php $currentStatus = old('drive_status', $lesson->drive_status ?? ''); @endphp
@@ -238,16 +212,25 @@
 
         {{-- Whitelist (maks 4 user) --}}
         @php
-          $oldIds = collect(old('drive_user_ids', []))->map(fn($v) => (int) $v)->filter()->values();
+          // Ambil pilihan sebelumnya sebagai STRING (UUID), jangan cast ke int
+          $oldIds = collect(old('drive_user_ids', []))
+            ->map(fn($v) => (string) $v)
+            ->filter(fn($v) => $v !== '')
+            ->values();
+
           if ($oldIds->isEmpty()) {
+              // Turunkan dari whitelist/email -> user_id (semua string)
               $usersByEmail = $users->keyBy(fn($u) => mb_strtolower($u->email));
               $derived = collect($lesson->driveWhitelists ?? [])
                   ->map(function ($w) use ($usersByEmail) {
-                      if ($w->user_id) return (int) $w->user_id;
+                      if ($w->user_id) return (string) $w->user_id;
                       $match = $usersByEmail->get(mb_strtolower($w->email));
-                      return $match ? (int) $match->id : null;
+                      return $match ? (string) $match->id : null;
                   })
-                  ->filter()->unique()->take(4)->values();
+                  ->filter()
+                  ->unique()
+                  ->take(4)
+                  ->values();
               $initialSelected = $derived;
           } else {
               $initialSelected = $oldIds->take(4)->values();
@@ -256,19 +239,24 @@
 
         <div
           x-data="{
-            users: @js($users->map(fn($u) => ['id'=>$u->id, 'name'=>$u->name, 'email'=>$u->email])->values()),
-            selected: @js($initialSelected),
+            // Semua ID dalam bentuk STRING (UUID)
+            users: @js($users->map(fn($u) => ['id'=>(string)$u->id, 'name'=>$u->name, 'email'=>$u->email])->values()),
+            selected: @js($initialSelected->map(fn($v)=>(string)$v)->values()),
             pick: '',
             add() {
-              const id = parseInt(this.pick);
+              const id = String(this.pick || '').trim();
               if (!id) return;
               if (this.selected.includes(id)) return;
-              if (this.selected.length >= 4) return alert('Maksimal 4 user.');
-              this.selected.push(id); this.pick = '';
+              if (this.selected.length >= 4) { alert('Maksimal 4 user.'); return; }
+              this.selected.push(id);
+              this.pick = '';
             },
             remove(i) { this.selected.splice(i, 1); },
             available() { return this.users.filter(u => !this.selected.includes(u.id)); },
-            label(u) { return `${u.name} — ${u.email}`; }
+            labelById(id) {
+              const u = this.users.find(x => x.id === id);
+              return u ? `${u.name} — ${u.email}` : '(user tidak ditemukan)';
+            }
           }"
           class="space-y-2"
         >
@@ -281,24 +269,26 @@
             <select x-model="pick" class="w-full border rounded-xl px-3 py-2" :disabled="selected.length >= 4">
               <option value="">— pilih user —</option>
               <template x-for="u in available()" :key="u.id">
-                <option :value="u.id" x-text="label(u)"></option>
+                <option :value="u.id" x-text="`${u.name} — ${u.email}`"></option>
               </template>
             </select>
-            <button type="button" class="px-3 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50" @click="add()" :disabled="selected.length >= 4 || !pick">Tambah</button>
+            <button type="button"
+                    class="px-3 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 disabled:opacity-50"
+                    @click="add()"
+                    :disabled="selected.length >= 4 || !pick">Tambah</button>
           </div>
           <p class="text-xs opacity-70">Pilih user lalu klik “Tambah”. Bisa dihapus jika keliru.</p>
 
           <div class="mt-2 space-y-2">
             <template x-for="(id, i) in selected" :key="id">
               <div class="flex items-center justify-between rounded-lg border px-3 py-2">
-                <div class="text-sm font-medium" x-text="label(users.find(u => u.id === id) ?? { name:'Unknown', email:'' })"></div>
+                <div class="text-sm font-medium" x-text="labelById(id)"></div>
                 <div class="flex items-center gap-2">
                   <input type="hidden" :name="`drive_user_ids[${i}]`" :value="id">
                   <button type="button" class="px-2 text-red-600" @click="remove(i)" aria-label="Hapus dari whitelist">✕</button>
                 </div>
               </div>
             </template>
-
             <template x-if="selected.length === 0">
               <div class="text-xs opacity-60">Belum ada user terpilih.</div>
             </template>
@@ -345,17 +335,13 @@
                           <option value="rejected" @selected($chosen === 'rejected')>Rejected</option>
                         </select>
                       </td>
-                      <td class="px-3 py-2">
-                        {{ $w->verified_at ? $w->verified_at->format('Y-m-d H:i') : '—' }}
-                      </td>
+                      <td class="px-3 py-2">{{ $w->verified_at ? $w->verified_at->format('Y-m-d H:i') : '—' }}</td>
                     </tr>
                   @endforeach
                 </tbody>
               </table>
             </div>
-            <p class="text-xs opacity-70 mt-1">
-              Catatan: Jika kamu menghapus email dari pilihan user di atas, entri whitelist terkait akan ikut dihapus saat disimpan.
-            </p>
+            <p class="text-xs opacity-70 mt-1">Catatan: Jika kamu menghapus email dari pilihan user di atas, entri whitelist terkait akan ikut dihapus saat disimpan.</p>
           </div>
         @endif
       </div>
@@ -395,9 +381,7 @@
                     <td class="px-3 py-2">
                       <span class="px-2 py-0.5 rounded {{ $badge }}">{{ ucfirst($w->status) }}</span>
                     </td>
-                    <td class="px-3 py-2">
-                      {{ $w->verified_at ? $w->verified_at->format('Y-m-d H:i') : '—' }}
-                    </td>
+                    <td class="px-3 py-2">{{ $w->verified_at ? $w->verified_at->format('Y-m-d H:i') : '—' }}</td>
                   </tr>
                 @endforeach
               </tbody>
@@ -415,7 +399,6 @@
           <p class="text-xs opacity-70 mt-1">Urutan tampil (angka kecil muncul duluan).</p>
           @error('ordering') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
         </div>
-
         <div class="flex items-end">
           <label class="inline-flex items-center gap-2">
             <input type="checkbox" name="is_free" value="1" @checked(old('is_free', $lesson->is_free)) class="rounded">
@@ -431,7 +414,6 @@
         </button>
         <a href="{{ route('admin.lessons.index') }}" class="px-4 py-2 rounded-xl border hover:bg-gray-50 transition">Cancel</a>
       </div>
-
     </form>
   </div>
 </div>

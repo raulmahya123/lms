@@ -119,7 +119,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
-            <th class="p-3 text-left w-20">ID</th>
             <th class="p-3 text-left">Cover</th>
             <th class="p-3 text-left">Title</th>
             <th class="p-3 text-left w-36">Pricing</th>
@@ -132,9 +131,7 @@
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse($courses as $c)
             <tr class="border-t align-top">
-              <td class="p-3 font-semibold text-gray-700">
-                <span title="{{ $c->id }}">#{{ Str::of($c->id)->substr(0,8) }}</span>
-              </td>
+              
 
               {{-- Cover (pakai accessor agar rapi) --}}
               <td class="p-3">

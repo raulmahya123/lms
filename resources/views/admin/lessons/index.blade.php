@@ -99,7 +99,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
-            <th class="p-3 text-left w-16">#</th>
             <th class="p-3 text-left">Course</th>
             <th class="p-3 text-left">Module</th>
             <th class="p-3 text-left">Title & Meta</th>
@@ -113,7 +112,7 @@
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse($lessons as $l)
             @php
-              // --- helper to string ---
+              // --- helper: flatten value to text ---
               $toText = function ($v): string {
                   if (is_array($v)) {
                       $flat = [];
@@ -129,14 +128,29 @@
                   return (string)($v ?? '');
               };
 
-              // Normalisasi content_url
+              // --- Content (array | JSON string | string) -> text ringkas ---
+              $contentRaw = $l->content;
+              if (is_string($contentRaw)) {
+                  $decoded = json_decode($contentRaw, true);
+                  $contentArr = is_array($decoded) ? $decoded : [$contentRaw];
+              } elseif (is_array($contentRaw)) {
+                  $contentArr = $contentRaw;
+              } else {
+                  $contentArr = [];
+              }
+              $contentText = collect($contentArr)
+                  ->flatten()
+                  ->filter(fn($v) => is_scalar($v) && trim((string)$v) !== '')
+                  ->implode("\n");
+
+              // --- Content URLs normalize ---
               $videos = $l->content_url;
               if (is_string($videos)) {
                   $decoded = json_decode($videos, true);
                   $videos = is_array($decoded) ? $decoded : [];
               }
 
-              // Normalisasi tools & benefits (boleh string CSV / JSON array / array)
+              // --- Tools / Benefits normalize ---
               $tools = $l->tools;
               if (is_string($tools)) {
                   $json = json_decode($tools, true);
@@ -151,12 +165,12 @@
               }
               if (!is_array($benefits)) $benefits = [];
 
-              // Normalisasi about/reviews/syllabus → string agar aman untuk strip_tags
+              // --- About/Reviews/Syllabus to string (aman untuk strip_tags) ---
               $aboutStr    = $toText($l->about);
               $reviewsStr  = $toText($l->reviews);
               $syllabusStr = $toText($l->syllabus);
 
-              // Whitelist Drive
+              // --- Drive summary ---
               $wl = $l->driveWhitelists ?? collect();
               $total = $wl->count();
               $approved = $wl->where('status','approved')->count();
@@ -171,8 +185,8 @@
                 default    => 'bg-gray-100 text-gray-700',
               };
             @endphp
+
             <tr class="border-t align-top">
-              <td class="p-3 font-semibold text-gray-700">#{{ $l->id }}</td>
               <td class="p-3">{{ $l->module?->course?->title ?? '-' }}</td>
               <td class="p-3">{{ $l->module?->title ?? '-' }}</td>
 
@@ -184,6 +198,14 @@
                 @if($aboutStr !== '')
                   <div class="text-xs text-gray-600 mt-1">
                     {{ \Illuminate\Support\Str::limit(strip_tags($aboutStr), 120) }}
+                  </div>
+                @endif
+
+                {{-- content (ringkas) --}}
+                @if($contentText !== '')
+                  <div class="text-xs text-gray-600 mt-1">
+                    <span class="font-medium">Content:</span>
+                    {{ \Illuminate\Support\Str::limit(strip_tags($contentText), 120) }}
                   </div>
                 @endif
 

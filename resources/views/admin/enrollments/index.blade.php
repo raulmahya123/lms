@@ -108,7 +108,6 @@
       <table class="min-w-full text-sm">
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
-            <th class="p-3 text-left w-16">ID</th>
             <th class="p-3 text-left">User</th>
             <th class="p-3 text-left">Course</th>
             <th class="p-3 text-left w-28">Status</th>
@@ -129,7 +128,6 @@
               };
             @endphp
             <tr class="border-t">
-              <td class="p-3 font-semibold text-gray-700">#{{ $e->id }}</td>
               <td class="p-3">
                 <div class="font-medium">{{ $e->user?->name ?? '—' }}</div>
                 <div class="text-xs text-gray-500">{{ $e->user?->email ?? '' }}</div>

@@ -11,12 +11,20 @@ use Illuminate\Auth\Middleware\Authenticate;
 use Illuminate\Session\Middleware\StartSession;
 use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
-
+use App\Http\Middleware\EnsureCurrentSession;
+use App\Http\Middleware\EnsureSameDevice;
 // =====================
 // Public
 // =====================
 use App\Http\Controllers\HomeController;
-
+Route::get('/__sid', function(\Illuminate\Http\Request $r){
+    return [
+        'session_id' => $r->session()->getId(),
+        'current_id' => optional($r->user())->current_session_id,
+        'ua_hash'    => $r->session()->get('ua_hash'),
+        'ua_now'     => hash('sha256', (string)$r->header('User-Agent')),
+    ];
+})->middleware(['auth', EnsureCurrentSession::class, EnsureSameDevice::class]);
 // Throttle untuk quiz/psy-tests
 RateLimiter::for('quiz', function ($request) {
     return [
@@ -122,7 +130,7 @@ use App\Http\Controllers\User\{
 //         AddQueuedCookiesToResponse::class,
 //         ShareErrorsFromSession::class,
 //     ]);
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', EnsureCurrentSession::class,EnsureSameDevice::class])->group(function () {
     // Dashboard (USER)
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
     Route::get('/app/dashboard', [UserDashboardController::class, 'index'])->name('app.dashboard'); // alias
@@ -431,10 +439,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     });
 });
 
-// =====================
-// Admin Area (role admin)
-// =====================
-Route::middleware(['auth', 'can:backoffice'])
+Route::middleware(['auth', 'can:backoffice', EnsureCurrentSession::class, EnsureSameDevice::class])
     ->prefix('admin')
     ->as('admin.')
     ->group(function () {
@@ -442,7 +447,9 @@ Route::middleware(['auth', 'can:backoffice'])
         // Admin Dashboard (/admin/dashboard)
         Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-        // ✅ perbaiki pemetaan ke AdminTestIqController
+        // =====================
+        // Test IQ (Admin)
+        // =====================
         Route::get('test-iq',                 [AdminTestIqController::class, 'index'])->name('test-iq.index');
         Route::get('test-iq/create',          [AdminTestIqController::class, 'create'])->name('test-iq.create');
         Route::post('test-iq',                [AdminTestIqController::class, 'store'])->name('test-iq.store');
@@ -458,62 +465,97 @@ Route::middleware(['auth', 'can:backoffice'])
         // Resource khusus
         Route::resource('dashboard_admin', AdminDashboardController::class);
 
-        // === Courses ===
+        // =====================
+        // Courses / Modules / Lessons / Resources
+        // =====================
         Route::resource('courses', AdminCourseController::class);
         Route::get('courses/{course}/modules', [AdminCourseController::class, 'modules'])
             ->whereUuid('course')->name('courses.modules');
 
-        // === Modules ===
         Route::resource('modules', AdminModuleController::class);
-
-        // === Lessons ===
         Route::resource('lessons', AdminLessonController::class);
 
-        // === Resources ===
         Route::resource('resources', AdminResourceController::class)
             ->only(['index', 'create', 'store', 'update', 'destroy', 'show', 'edit']);
 
-        // === Quizzes / Questions / Options ===
-        Route::resource('quizzes',   AdminQuizController::class);
-        Route::resource('questions', AdminQuestionController::class);
-        Route::resource('options',   AdminOptionController::class);
+        // =====================
+        // QUIZZES / QUESTIONS / OPTIONS (FOCUS QUIZ)
+        // =====================
 
-        // === Plans & Plan-Course ===
+        // QUIZZES (CRUD): /admin/quizzes
+        Route::resource('quizzes', AdminQuizController::class)
+            ->parameters(['quizzes' => 'quiz'])
+            ->whereUuid(['quiz']);
+
+        // QUIZ QUESTIONS (CRUD flat): /admin/questions
+        Route::resource('questions', AdminQuestionController::class)
+            ->parameters(['questions' => 'question'])
+            ->whereUuid(['question']);
+
+        // Nested helper: /admin/quizzes/{quiz}/questions -> index/create/store
+        Route::resource('quizzes.questions', AdminQuestionController::class)
+            ->only(['index','create','store'])
+            ->names('quizzes.questions')
+            ->parameters(['quizzes' => 'quiz', 'questions' => 'question'])
+            ->whereUuid(['quiz']);
+
+        // OPTIONS (CRUD): /admin/options
+        Route::resource('options', AdminOptionController::class)
+            ->parameters(['options' => 'option'])
+            ->whereUuid(['option']);
+
+        // =====================
+        // Plans & Membership & Payments & Enrollments & Coupons
+        // =====================
         Route::resource('plans', AdminPlanController::class);
         Route::resource('plan-courses', AdminPlanCourseController::class)->only(['store', 'destroy']);
 
-        // === Memberships ===
         Route::resource('memberships', AdminMembershipController::class);
 
-        // === Payments ===
-        Route::resource('payments', AdminPaymentController::class)->only(['index', 'show', 'update']);
+        Route::resource('payments', AdminPaymentController::class)
+            ->only(['index', 'show', 'update']);
 
-        // === Enrollments ===
         Route::resource('enrollments', AdminEnrollmentController::class);
 
-        // === Coupons ===
         Route::resource('coupons', AdminCouponController::class);
 
-        // === Q&A ===
+        // =====================
+        // Q&A (Admin)
+        // =====================
         Route::resource('qa-threads', \App\Http\Controllers\Admin\QaThreadController::class);
         Route::post('qa-threads/{thread}/replies', [\App\Http\Controllers\Admin\QaReplyController::class, 'store'])
             ->whereUuid('thread')->name('qa-threads.replies.store');
         Route::patch('qa-replies/{reply}/answer', [\App\Http\Controllers\Admin\QaReplyController::class, 'markAnswer'])
             ->whereUuid('reply')->name('qa-replies.answer');
 
-        // === Certificates ===
+        // =====================
+        // Certificates
+        // =====================
         Route::resource('certificate-templates', \App\Http\Controllers\Admin\CertificateTemplateController::class);
-        Route::resource('certificate-issues', \App\Http\Controllers\Admin\CertificateIssueController::class)->only(['index', 'show', 'destroy']);
+        Route::resource('certificate-issues', \App\Http\Controllers\Admin\CertificateIssueController::class)
+            ->only(['index', 'show', 'destroy']);
 
-        // === Psych Tests ===
+        // =====================
+        // PSY (dipisah agar TIDAK BENTROK dengan /admin/questions milik QUIZ)
+        // =====================
         Route::resource('psy-tests', \App\Http\Controllers\Admin\PsyTestController::class);
 
-        // Nested: psy-tests/{psy_test}/questions
-        // (aktifkan SEMUA method shg admin.psy-tests.questions.index dkk tersedia)
+        // Nested PSY (per test): index/create/store
+        // /admin/psy-tests/{psy_test}/questions
         Route::resource('psy-tests.questions', \App\Http\Controllers\Admin\PsyQuestionController::class)
-            ->shallow();
+            ->only(['index','create','store'])
+            ->names('psy-tests.questions')
+            ->parameters(['psy-tests' => 'psy_test', 'questions' => 'psy_question'])
+            ->whereUuid(['psy_test']);
 
-        // GLOBAL (opsional, untuk semua soal lintas tes)
+        // PSY single (flat): show/edit/update/destroy di /admin/psy-questions/{psy_question}
+        Route::resource('psy-questions', \App\Http\Controllers\Admin\PsyQuestionController::class)
+            ->only(['show','edit','update','destroy'])
+            ->names('psy-questions')
+            ->parameters(['psy-questions' => 'psy_question'])
+            ->whereUuid(['psy_question']);
+
+        // GLOBAL PSY (opsional) — daftar lintas tes, create/store global
         Route::get('psy-questions', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalIndex'])
             ->name('psy-questions.index');
         Route::get('psy-questions/create', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalCreate'])
@@ -526,8 +568,7 @@ Route::middleware(['auth', 'can:backoffice'])
     });
 
 /* ================== USER AREA ================== */
-Route::middleware(['auth'])
+Route::middleware(['auth', EnsureCurrentSession::class,EnsureSameDevice::class])
     ->prefix('app')->name('app.')->group(function () {
-        // Dashboard Psikologi (USER)
         Route::get('psychology', UserPysDashController::class)->name('psychology');
     });
