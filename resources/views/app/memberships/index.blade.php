@@ -112,7 +112,7 @@
                 <span class="chip">Berakhir: {{ Carbon::parse($current->expires_at)->format('d M Y H:i') }}</span>
               @endif
               @if($current->status === 'pending')
-                <span class="chip">Menunggu konfirmasi pembayaran (otomatis via webhook)</span>
+                <span class="chip">Menunggu konfirmasi pembayaran</span>
               @endif
             </div>
 
