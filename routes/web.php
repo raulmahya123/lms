@@ -135,44 +135,39 @@ Route::middleware(['auth', 'verified', EnsureCurrentSession::class,EnsureSameDev
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
     Route::get('/app/dashboard', [UserDashboardController::class, 'index'])->name('app.dashboard'); // alias
 
-    // Membership (USER)
-    Route::get('/memberships', [UserMembershipController::class, 'index'])
-        ->name('app.memberships.index');
+   // Membership (USER)
+Route::get('/memberships', [UserMembershipController::class, 'index'])
+    ->name('app.memberships.index');
 
-    // daftar paket membership versi user (dipakai UI saya: route('app.memberships.plans'))
-    Route::get('/memberships/plans', [UserMembershipController::class, 'plans'])
-        ->name('app.memberships.plans');
+Route::get('/memberships/plans', [UserMembershipController::class, 'plans'])
+    ->name('app.memberships.plans');
 
-    // mulai subscribe (buat membership status "pending" untuk plan terpilih)
-    Route::post('/memberships/subscribe/{plan}', [UserMembershipController::class, 'subscribe'])
-        ->whereUuid('plan')->name('app.memberships.subscribe');
+Route::post('/memberships/subscribe/{plan}', [UserMembershipController::class, 'subscribe'])
+    ->whereUuid('plan')->name('app.memberships.subscribe');
 
-     Route::get('/memberships/finish', [UserMembershipController::class, 'finish'])->name('app.memberships.finish');
+Route::get('/memberships/finish', [UserMembershipController::class, 'finish'])
+    ->name('app.memberships.finish');
 
-    // halaman checkout membership pending
-    Route::get('/memberships/checkout/{membership}', [UserMembershipController::class, 'checkout'])
-        ->whereUuid('membership')->name('app.memberships.checkout');
+Route::get('/memberships/checkout/{membership}', [UserMembershipController::class, 'checkout'])
+    ->whereUuid('membership')->name('app.memberships.checkout');
 
-    // aktivasi membership (dipanggil setelah pembayaran sukses / simulasi dev)
-    Route::post('/memberships/activate/{membership}', [UserMembershipController::class, 'activate'])
-        ->whereUuid('membership')->name('app.memberships.activate');
+Route::post('/memberships/activate/{membership}', [UserMembershipController::class, 'activate'])
+    ->whereUuid('membership')->name('app.memberships.activate');
 
-    // batalkan/nonaktifkan membership user
-    Route::post('/memberships/cancel/{membership}', [UserMembershipController::class, 'cancel'])
-        ->whereUuid('membership')->name('app.memberships.cancel');
+Route::post('/memberships/cancel/{membership}', [UserMembershipController::class, 'cancel'])
+    ->whereUuid('membership')->name('app.memberships.cancel');
 
-    Route::post('/memberships/update/{membership}', [UserMembershipController::class, 'update'])->name('app.memberships.update');
-    // update membership oleh user (opsional)
+Route::patch('/memberships/{membership}', [UserMembershipController::class, 'update'])
+    ->whereUuid('membership')->name('app.memberships.update');
 
-    Route::patch('/memberships/{membership}', [UserMembershipController::class, 'update'])
-        ->whereUuid('membership')->name('app.memberships.update');
+// ✅ Fix: kasih nama berbeda
+Route::post(
+    '/memberships/{membership}/midtrans/snap',
+    [UserMembershipController::class, 'startSnap']
+)->whereUuid('membership')->name('app.memberships.snap'); // ini utama
 
-    Route::post(
-        '/memberships/{membership}/midtrans/snap',
-        [UserMembershipController::class, 'startSnap']
-    )->whereUuid('membership')->name('app.memberships.snap');
-
-    Route::post('/memberships/snap/{membership}', [UserMembershipController::class, 'startSnap'])->name('app.memberships.snap');
+Route::post('/memberships/snap/{membership}', [UserMembershipController::class, 'startSnap'])
+    ->name('app.memberships.snap.alt'); // ganti nama agar tidak tabrakan
 
 
     // Katalog & detail kursus
