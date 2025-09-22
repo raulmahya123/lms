@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Course, Payment, Enrollment, Membership};
+use App\Models\{Course, Payment, Enrollment, Membership, Coupon, CouponRedemption};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -16,6 +16,11 @@ use Midtrans\Transaction as MidtransTransaction;
 
 class CourseCheckoutController extends Controller
 {
+    /* ============================
+     * Helpers: Membership & Access
+     * ============================ */
+
+    /** Cek membership aktif (support UUID string). */
     private function userHasActiveMembership(int|string|null $userId = null): bool
     {
         $userId = $userId ?? Auth::id();
@@ -29,6 +34,7 @@ class CourseCheckoutController extends Controller
             ->exists();
     }
 
+    /** Ambil membership aktif untuk copy expires_at. */
     private function getActiveMembership(int|string|null $userId = null): ?Membership
     {
         $userId = $userId ?? Auth::id();
@@ -43,7 +49,7 @@ class CourseCheckoutController extends Controller
             ->first();
     }
 
-    /** Cek akses efektif sebuah enrollment */
+    /** Akses efektif enrollment (memperhitungkan membership sekarang). */
     private function hasEffectiveAccess(?Enrollment $enr, bool $hasMembership): bool
     {
         if (!$enr || $enr->status !== 'active') return false;
@@ -51,17 +57,21 @@ class CourseCheckoutController extends Controller
         // Purchase / Free = selalu efektif
         if (in_array($enr->access_via, ['purchase','free'], true)) return true;
 
-        // Membership = efektif hanya jika membership aktif + belum lewat expires
+        // Membership = efektif hanya jika membership saat ini aktif & belum lewat expiry di enrollment
         if ($enr->access_via === 'membership') {
             $notExpired = is_null($enr->access_expires_at) || now()->lt($enr->access_expires_at);
             return $hasMembership && $notExpired;
         }
 
-        // Fallback lama (tanpa access_via), anggap aktif
+        // Fallback lama (enrollment lama tanpa access_via)
         if (empty($enr->access_via)) return true;
 
         return false;
     }
+
+    /* ==============
+     * Checkout Page
+     * ============== */
 
     public function checkout(Course $course)
     {
@@ -74,24 +84,26 @@ class CourseCheckoutController extends Controller
         $hasMembership      = $this->userHasActiveMembership(Auth::id());
         $hasEffectiveAccess = $this->hasEffectiveAccess($enr, $hasMembership);
 
-        // Kalau MASIH punya akses efektif, tidak perlu checkout
+        // Masih punya akses efektif → tidak perlu checkout
         if ($hasEffectiveAccess) {
             return redirect()->route('app.my.courses')
                 ->with('info', 'Kamu sudah ter-enroll dan masih punya akses ke course ini.');
         }
 
-        // Jika akses sudah tidak efektif (mis. membership habis), tetap tampilkan halaman checkout
+        // Akses tidak efektif → tetap tampilkan checkout
         $clientKey = config('services.midtrans.client_key');
         $isSandbox = !config('services.midtrans.is_production');
 
         return view('app.courses.checkout', compact('course', 'clientKey', 'isSandbox', 'hasMembership'));
     }
 
+    /* ===========================
+     * Start Snap / Apply Coupon
+     * =========================== */
+
     public function startSnap(Request $r, Course $course)
     {
         abort_unless($course->is_published, 404);
-
-        $amount = (int) ($course->price ?? 0);
 
         $enr = Enrollment::where('user_id', Auth::id())
             ->where('course_id', $course->id)
@@ -105,7 +117,7 @@ class CourseCheckoutController extends Controller
             return response()->json(['message' => 'Kamu sudah ter-enroll dan masih punya akses ke course ini.'], 409);
         }
 
-        // Membership aktif → enroll gratis lagi (akses mengikuti membership)
+        // Membership aktif → enroll gratis mengikuti masa membership
         if ($hasMembership) {
             $m   = $this->getActiveMembership(Auth::id());
             $exp = $m?->expires_at;
@@ -138,14 +150,49 @@ class CourseCheckoutController extends Controller
             'provider'  => 'midtrans',
             'status'    => 'paid',
         ])->exists();
-
         if ($paidExists) {
             return response()->json(['message' => 'Pembayaran course ini sudah berhasil.'], 409);
         }
 
-        // Course gratis → enroll gratis (akses permanen)
-        if ($amount <= 0) {
-            $enr = Enrollment::firstOrCreate(
+        /* ---------- Pricing + Coupon ---------- */
+        $baseAmount = (int) ($course->price ?? 0);
+        $couponId   = $r->input('coupon_id');
+        $couponCode = $r->input('coupon_code');
+
+        $appliedCoupon = null;
+        $discount      = 0;
+
+        if ($couponId || $couponCode) {
+            $appliedCoupon = $couponId
+                ? Coupon::find($couponId)
+                : Coupon::whereRaw('LOWER(code)=?', [strtolower((string)$couponCode)])->first();
+
+            // Validasi kupon server-side
+            if ($appliedCoupon) {
+                $now = now();
+                if ($appliedCoupon->valid_from && $appliedCoupon->valid_from->gt($now)) $appliedCoupon = null;
+                if ($appliedCoupon && $appliedCoupon->valid_until && $appliedCoupon->valid_until->lt($now)) $appliedCoupon = null;
+                if ($appliedCoupon && $appliedCoupon->usage_limit && $appliedCoupon->redemptions()->count() >= $appliedCoupon->usage_limit) $appliedCoupon = null;
+
+                if ($appliedCoupon) {
+                    $alreadyUse = CouponRedemption::where('coupon_id', $appliedCoupon->id)
+                        ->where('user_id', Auth::id())
+                        ->where('course_id', $course->id)
+                        ->exists();
+                    if ($alreadyUse) $appliedCoupon = null;
+                }
+
+                if ($appliedCoupon) {
+                    $discount = (int) round($baseAmount * ($appliedCoupon->discount_percent / 100));
+                }
+            }
+        }
+
+        $finalAmount = max(0, $baseAmount - $discount);
+
+        // Full discount (kupon 100% atau harga 0) → enroll gratis + catat redemption bila ada
+        if ($finalAmount <= 0) {
+            Enrollment::firstOrCreate(
                 ['user_id' => Auth::id(), 'course_id' => $course->id],
                 [
                     'status'            => 'active',
@@ -155,18 +202,24 @@ class CourseCheckoutController extends Controller
                 ]
             );
 
-            if (!$enr->wasRecentlyCreated) {
-                $enr->update([
-                    'status'            => 'active',
-                    'access_via'        => 'free',
-                    'access_expires_at' => null,
-                ]);
+            if ($appliedCoupon) {
+                CouponRedemption::firstOrCreate(
+                    [
+                        'coupon_id' => $appliedCoupon->id,
+                        'user_id'   => Auth::id(),
+                        'course_id' => $course->id,
+                    ],
+                    [
+                        'used_at'           => now(),
+                        'amount_discounted' => $discount,
+                    ]
+                );
             }
 
             return response()->json(['free' => true]);
         }
 
-        // ===== Snap Midtrans (per course) =====
+        /* ---------- Buat/Reuse Payment ---------- */
         $newReference = 'CRS-' . now()->format('ymdHis') . '-' . Str::upper(Str::random(6));
 
         $payment = Payment::firstOrCreate(
@@ -177,15 +230,20 @@ class CourseCheckoutController extends Controller
                 'provider'  => 'midtrans',
             ],
             [
-                'amount'    => $amount,
+                'amount'    => $finalAmount,
                 'reference' => $newReference,
             ]
         );
 
+        // Sinkronkan amount/kupon jika user gonta-ganti kupon
+        $payment->amount          = $finalAmount;
+        $payment->discount_amount = $discount;
+        $payment->coupon_id       = $appliedCoupon?->id;
+
         if (empty($payment->reference) || strlen($payment->reference) > 50) {
             $payment->reference = $newReference;
-            $payment->save();
         }
+        $payment->save();
 
         if ($payment->snap_token) {
             return response()->json([
@@ -194,6 +252,7 @@ class CourseCheckoutController extends Controller
             ]);
         }
 
+        // Midtrans config
         MidtransConfig::$serverKey    = config('services.midtrans.server_key');
         MidtransConfig::$isProduction = (bool) config('services.midtrans.is_production');
         MidtransConfig::$isSanitized  = true;
@@ -206,7 +265,7 @@ class CourseCheckoutController extends Controller
         $params = [
             'transaction_details' => [
                 'order_id'     => $payment->reference,
-                'gross_amount' => $payment->amount,
+                'gross_amount' => $payment->amount, // harga akhir
             ],
             'customer_details' => [
                 'first_name' => Auth::user()->name,
@@ -244,6 +303,10 @@ class CourseCheckoutController extends Controller
         }
     }
 
+    /* =================
+     * Finish (fallback)
+     * ================= */
+
     public function finish(Request $r)
     {
         $orderId = (string) $r->query('order_id');
@@ -258,7 +321,7 @@ class CourseCheckoutController extends Controller
 
         try {
             $statusResp = MidtransTransaction::status($orderId);
-            $transactionStatus = $statusResp->transaction_status ?? null;
+            $transactionStatus = $statusResp->transaction_status ?? null; // settlement|capture|pending|expire|deny|cancel|failure
             $fraudStatus       = $statusResp->fraud_status ?? null;
 
             $payment = Payment::where('reference', $orderId)->first();
@@ -278,6 +341,7 @@ class CourseCheckoutController extends Controller
         return redirect()->route('app.my.courses');
     }
 
+    /** Tandai paid + aktifkan enrollment (akses permanen purchase) + catat redemption jika ada. */
     private function markPaidAndEnroll(Payment $payment): void
     {
         if ($payment->status === 'paid') return;
@@ -286,6 +350,21 @@ class CourseCheckoutController extends Controller
             'status'  => 'paid',
             'paid_at' => now(),
         ]);
+
+        // Catat kupon kalau ada
+        if (!empty($payment->coupon_id) && (int) $payment->discount_amount > 0) {
+            CouponRedemption::firstOrCreate(
+                [
+                    'coupon_id' => $payment->coupon_id,
+                    'user_id'   => $payment->user_id,
+                    'course_id' => $payment->course_id,
+                ],
+                [
+                    'used_at'           => now(),
+                    'amount_discounted' => $payment->discount_amount,
+                ]
+            );
+        }
 
         Enrollment::updateOrCreate(
             ['user_id' => $payment->user_id, 'course_id' => $payment->course_id],
@@ -304,6 +383,10 @@ class CourseCheckoutController extends Controller
         ]);
     }
 
+    /* =======================
+     * Enroll Gratis (optional)
+     * ======================= */
+
     public function enroll(Request $r, Course $course)
     {
         abort_unless($course->is_published, 404);
@@ -318,7 +401,7 @@ class CourseCheckoutController extends Controller
             return redirect()->route('app.my.courses')->with('ok', 'Kamu sudah ter-enroll.');
         }
 
-        $isFreeCourse  = ((int) ($course->price ?? 0)) <= 0;
+        $isFreeCourse = ((int) ($course->price ?? 0)) <= 0;
 
         if ($hasMembership || $isFreeCourse) {
             $m   = $hasMembership ? $this->getActiveMembership(Auth::id()) : null;
