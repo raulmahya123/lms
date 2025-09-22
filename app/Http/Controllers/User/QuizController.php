@@ -39,12 +39,12 @@ class QuizController extends Controller
         $quiz = $lesson->quiz;
         abort_if(!$quiz, 404, 'Quiz tidak tersedia');
 
-        // Wajib lesson selesai
+        // 1) Harus selesai pelajaran
         if (!$this->isLessonCompleted($lesson, Auth::id())) {
             return back()->withErrors(['quiz' => 'Selesaikan pelajaran ini terlebih dahulu sebelum memulai kuis.']);
         }
 
-        // Cek enrollment utk course berbayar (pakai accessor is_paid)
+        // 2) Enroll bila course berbayar
         $course = $lesson->module->course;
         if (data_get($course, 'is_paid')) {
             $isEnrolled = Enrollment::query()
@@ -56,7 +56,7 @@ class QuizController extends Controller
             }
         }
 
-        // === LIMIT 2x PER SEASON via quiz_season_locks ===
+        // 3) Season lock
         [$seasonStart, $seasonEnd, $seasonKey] = $this->currentSeason();
 
         /** @var QuizSeasonLock $lock */
@@ -74,20 +74,34 @@ class QuizController extends Controller
             ]
         );
 
+        // === Jika sudah mencapai batas → redirect ke hasil attempt terakhir (bukan back) ===
         if ((int) $lock->attempt_count >= self::MAX_ATTEMPTS_PER_SEASON) {
-            $end    = $lock->season_end instanceof Carbon ? $lock->season_end : Carbon::parse($lock->season_end);
-            $remain = now()->lt($end) ? now()->diffInSeconds($end) : 0;
-            return back()->withErrors([
-                'quiz' => "Batas " . self::MAX_ATTEMPTS_PER_SEASON . " percobaan per season tercapai. Musim baru dalam {$remain} detik.",
-            ]);
+            $last = QuizAttempt::query()
+                ->where('quiz_id', $quiz->id)
+                ->where('user_id', Auth::id())
+                ->whereNotNull('submitted_at')
+                ->latest('submitted_at')
+                ->first();
+
+            if ($last) {
+                return redirect()
+                    ->route('app.quiz.result', $last) // -> /attempts/{uuid}
+                    ->with('quiz_status', "Batas percobaan musim ini tercapai. Menampilkan hasil percobaan terakhir.");
+            }
+
+            // fallback kalau entah bagaimana tidak ada attempt tersubmit
+            return redirect()
+                ->route('app.lessons.show', $lesson)
+                ->withErrors(['quiz' => 'Batas percobaan tercapai dan tidak ada riwayat yang bisa ditampilkan.']);
         }
 
-        // Pakai attempt aktif jika ada; kalau tidak, buat baru
+        // 4) Lanjutkan attempt aktif jika ada
         $attempt = $quiz->attempts()
             ->where('user_id', Auth::id())
             ->whereNull('submitted_at')
             ->first();
 
+        // 5) Atau buat attempt baru
         if (!$attempt) {
             $attempt = QuizAttempt::create([
                 'quiz_id'      => $quiz->id,
@@ -98,8 +112,10 @@ class QuizController extends Controller
             ]);
         }
 
+        // 6) Tampilkan halaman pengerjaan
         return view('app.quizzes.take', compact('lesson', 'quiz', 'attempt'));
     }
+
 
     /**
      * Submit attempt
@@ -413,7 +429,7 @@ class QuizController extends Controller
     {
         $nowTs      = now()->timestamp;
         $startTs    = intdiv($nowTs, self::SEASON_SECONDS) * self::SEASON_SECONDS;
-        $seasonStart= Carbon::createFromTimestamp($startTs, now()->timezoneName);
+        $seasonStart = Carbon::createFromTimestamp($startTs, now()->timezoneName);
         $seasonEnd  = $seasonStart->copy()->addSeconds(self::SEASON_SECONDS);
         $seasonKey  = (string) $seasonStart->timestamp; // kunci stabil per durasi
         return [$seasonStart, $seasonEnd, $seasonKey];
