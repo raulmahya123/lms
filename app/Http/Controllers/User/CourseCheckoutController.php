@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Course, Payment, Enrollment};
+use App\Models\{Course, Payment, Enrollment, Coupon, CouponRedemption};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
@@ -39,40 +39,82 @@ class CourseCheckoutController extends Controller
     {
         abort_unless($course->is_published, 404);
 
-        $amount = (int) ($course->price ?? 0);
-
-        // Guard: kalau sudah active, hentikan
+        // Guard: sudah aktif?
         $already = Enrollment::where('user_id', Auth::id())
             ->where('course_id', $course->id)
             ->where('status', 'active')->exists();
-        if ($already) {
-            return response()->json(['message' => 'Kamu sudah ter-enroll di course ini.'], 409);
-        }
+        if ($already) return response()->json(['message' => 'Kamu sudah ter-enroll di course ini.'], 409);
 
-        // Guard: kalau sudah ada payment 'paid' untuk course ini, hentikan
+        // Guard: sudah ada payment paid?
         $paidExists = Payment::where([
             'user_id'   => Auth::id(),
             'course_id' => $course->id,
             'provider'  => 'midtrans',
             'status'    => 'paid',
         ])->exists();
-        if ($paidExists) {
-            return response()->json(['message' => 'Pembayaran course ini sudah berhasil.'], 409);
+        if ($paidExists) return response()->json(['message' => 'Pembayaran course ini sudah berhasil.'], 409);
+
+        $baseAmount = (int) ($course->price ?? 0);
+        $couponId   = $r->input('coupon_id');
+        $couponCode = $r->input('coupon_code');
+
+        // Re-validate coupon di server
+        $appliedCoupon = null;
+        $discount      = 0;
+        if ($couponId || $couponCode) {
+            $appliedCoupon = $couponId
+                ? Coupon::find($couponId)
+                : Coupon::whereRaw('LOWER(code)=?', [strtolower($couponCode)])->first();
+
+            if ($appliedCoupon) {
+                $now = now();
+                if ($appliedCoupon->valid_from && $appliedCoupon->valid_from->gt($now)) $appliedCoupon = null;
+                if ($appliedCoupon && $appliedCoupon->valid_until && $appliedCoupon->valid_until->lt($now)) $appliedCoupon = null;
+                if ($appliedCoupon && $appliedCoupon->usage_limit && $appliedCoupon->redemptions()->count() >= $appliedCoupon->usage_limit) $appliedCoupon = null;
+
+                if ($appliedCoupon) {
+                    $alreadyUse = CouponRedemption::where('coupon_id', $appliedCoupon->id)
+                        ->where('user_id', Auth::id())
+                        ->where('course_id', $course->id)
+                        ->exists();
+                    if ($alreadyUse) $appliedCoupon = null;
+                }
+
+                if ($appliedCoupon) {
+                    $discount = (int) round($baseAmount * ($appliedCoupon->discount_percent / 100));
+                }
+            }
         }
 
-        // Kursus gratis → langsung enroll
-        if ($amount <= 0) {
+        $finalAmount = max(0, $baseAmount - $discount);
+
+        // Full discount → langsung enroll + catat redemption
+        if ($finalAmount <= 0) {
             Enrollment::firstOrCreate(
                 ['user_id' => Auth::id(), 'course_id' => $course->id],
                 ['status' => 'active', 'activated_at' => now()]
             );
+
+            if ($appliedCoupon) {
+                CouponRedemption::firstOrCreate(
+                    [
+                        'coupon_id' => $appliedCoupon->id,
+                        'user_id'   => Auth::id(),
+                        'course_id' => $course->id,
+                    ],
+                    [
+                        'used_at'           => now(),
+                        'amount_discounted' => $discount,
+                    ]
+                );
+            }
+
             return response()->json(['free' => true]);
         }
 
-        // 1) Buat reference/order_id pendek & unik
-        $newReference = 'CRS-' . now()->format('ymdHis') . '-' . Str::upper(Str::random(6));
+        // Payment pending
+        $newReference = 'CRS-' . now()->format('ymdHis') . '-' . \Illuminate\Support\Str::upper(\Illuminate\Support\Str::random(6));
 
-        // 2) Ambil/buat Payment pending
         $payment = Payment::firstOrCreate(
             [
                 'user_id'   => Auth::id(),
@@ -81,36 +123,38 @@ class CourseCheckoutController extends Controller
                 'provider'  => 'midtrans',
             ],
             [
-                'amount'    => $amount,
+                'amount'    => $finalAmount,
                 'reference' => $newReference,
             ]
         );
 
-        // 3) Pastikan reference aman (tak kosong/tak kepanjangan)
+        // Sinkronisasi nilai (kalau user apply/remove kupon berkali-kali)
+        $payment->amount          = $finalAmount;
+        $payment->discount_amount = $discount;
+        $payment->coupon_id       = $appliedCoupon?->id;
         if (empty($payment->reference) || strlen($payment->reference) > 50) {
             $payment->reference = $newReference;
-            $payment->save();
         }
+        $payment->save();
 
-        // 4) Reuse token jika masih ada
+        // Reuse snap_token bila ada
         if ($payment->snap_token) {
             return response()->json([
                 'snap_token' => $payment->snap_token,
-                'order_id'   => $payment->reference, // penting utk finish page
+                'order_id'   => $payment->reference,
             ]);
         }
 
-        // 5) Midtrans config
-        MidtransConfig::$serverKey    = config('services.midtrans.server_key');
-        MidtransConfig::$isProduction = (bool) config('services.midtrans.is_production');
-        MidtransConfig::$isSanitized  = true;
-        MidtransConfig::$is3ds        = true;
+        // Midtrans config
+        \Midtrans\Config::$serverKey    = config('services.midtrans.server_key');
+        \Midtrans\Config::$isProduction = (bool) config('services.midtrans.is_production');
+        \Midtrans\Config::$isSanitized  = true;
+        \Midtrans\Config::$is3ds        = true;
 
         if ($payment->amount < 100) {
             return response()->json(['message' => 'Nominal minimal 100 (sandbox).'], 422);
         }
 
-        // 6) Buat transaksi Snap
         $params = [
             'transaction_details' => [
                 'order_id'     => $payment->reference,
@@ -122,36 +166,37 @@ class CourseCheckoutController extends Controller
             ],
             'item_details' => [[
                 'id'       => (string) $course->id,
-                'price'    => $payment->amount,
+                'price'    => $payment->amount, // harga final
                 'quantity' => 1,
                 'name'     => mb_strimwidth($course->title, 0, 50, ''),
             ]],
         ];
 
         try {
-            $trx = MidtransSnap::createTransaction($params);
+            $trx = \Midtrans\Snap::createTransaction($params);
             $payment->snap_token        = $trx->token ?? null;
             $payment->snap_redirect_url = $trx->redirect_url ?? null;
             $payment->save();
 
             if (!$payment->snap_token) {
-                Log::error('Midtrans: token null (course)', ['response' => $trx ?? null]);
+                \Log::error('Midtrans: token null (course)', ['response' => $trx ?? null]);
                 return response()->json(['message' => 'Midtrans tidak memberi token'], 422);
             }
 
             return response()->json([
                 'snap_token' => $payment->snap_token,
-                'order_id'   => $payment->reference, // ← dikirim ke frontend
+                'order_id'   => $payment->reference,
             ]);
         } catch (\Throwable $e) {
-            Log::error('Midtrans createTransaction failed (course)', [
+            \Log::error('Midtrans createTransaction failed (course)', [
                 'error'   => $e->getMessage(),
                 'orderId' => $payment->reference,
-                'len'     => strlen($payment->reference),
             ]);
             return response()->json(['message' => 'Midtrans error: ' . $e->getMessage()], 422);
         }
     }
+
+
 
     /**
      * Fallback lokal: cek status ke Midtrans berdasarkan order_id,
@@ -198,7 +243,6 @@ class CourseCheckoutController extends Controller
         return redirect()->route('app.my.courses');
     }
 
-    /** Helper: set paid + enroll user ke course */
     private function markPaidAndEnroll(Payment $payment): void
     {
         if ($payment->status === 'paid') return;
@@ -208,12 +252,27 @@ class CourseCheckoutController extends Controller
             'paid_at' => now(),
         ]);
 
-        $enr = Enrollment::updateOrCreate(
+        // catat kupon jika ada
+        if (!empty($payment->coupon_id) && (int)$payment->discount_amount > 0) {
+            CouponRedemption::firstOrCreate(
+                [
+                    'coupon_id' => $payment->coupon_id,
+                    'user_id'   => $payment->user_id,
+                    'course_id' => $payment->course_id,
+                ],
+                [
+                    'used_at'           => now(),
+                    'amount_discounted' => $payment->discount_amount,
+                ]
+            );
+        }
+
+        $enr = \App\Models\Enrollment::updateOrCreate(
             ['user_id' => $payment->user_id, 'course_id' => $payment->course_id],
             ['status' => 'active', 'activated_at' => now()]
         );
 
-        Log::info('Enrollment upserted', [
+        \Log::info('Enrollment upserted', [
             'payment_id' => $payment->id,
             'user_id'    => $payment->user_id,
             'course_id'  => $payment->course_id,

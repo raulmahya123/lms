@@ -10,15 +10,9 @@ class Coupon extends Model
 {
     use HasUuids;
 
-    /**
-     * PK UUID (string).
-     */
     public $incrementing = false;
     protected $keyType   = 'string';
 
-    /**
-     * Kolom mass assignable.
-     */
     protected $fillable = [
         'code',
         'discount_percent',
@@ -27,18 +21,13 @@ class Coupon extends Model
         'usage_limit',
     ];
 
-    /**
-     * Casting kolom otomatis.
-     */
     protected $casts = [
-        'valid_from'      => 'datetime',
-        'valid_until'     => 'datetime',
-        'discount_percent'=> 'decimal:2',
+        'discount_percent' => 'float',
+        'valid_from'       => 'datetime',
+        'valid_until'      => 'datetime',
+        'usage_limit'      => 'integer',
     ];
 
-    /**
-     * Relasi ke CouponRedemption.
-     */
     public function redemptions(): HasMany
     {
         return $this->hasMany(CouponRedemption::class);
