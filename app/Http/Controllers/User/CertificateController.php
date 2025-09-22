@@ -4,8 +4,11 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\{
-    Course, Enrollment, QuizAttempt,
-    CertificateIssue, CertificateTemplate
+    Course,
+    Enrollment,
+    QuizAttempt,
+    CertificateIssue,
+    CertificateTemplate
 };
 use Illuminate\Support\Facades\Auth;
 use Barryvdh\DomPDF\Facade\Pdf;
@@ -28,17 +31,15 @@ class CertificateController extends Controller
 
         // 2) Ambil attempt terbaik (>=80% MCQ benar)
         [$bestAttempt, $percent, $correct, $total] =
-            $this->bestAttemptEligibilityForCourse($user->id, $course->id);
+            $this->bestAttemptEligibilityForCourse((string)$user->id, (string)$course->id);
 
         abort_unless($total > 0, 403, 'Belum ada soal MCQ yang bisa dinilai.');
-        abort_unless($percent >= 80, 403, "Belum memenuhi syarat ({$correct}/{$total} = ".round($percent,2)."%).");
+        abort_unless($percent >= 80, 403, "Belum memenuhi syarat ({$correct}/{$total} = " . round($percent, 2) . "%).");
 
-        // 3) Template sertifikat
-        $templateId = $course->certificate_template_id
-            ?? CertificateTemplate::where('is_active', true)->value('id')
-            ?? 1;
+        // 3) Template sertifikat (selalu valid, tidak null)
+        $templateId = $this->resolveTemplateId($course);
 
-        // 4) Catat issue
+        // 4) Catat issue (assessment_type pakai 'course' agar cocok skema sekarang)
         $issue = CertificateIssue::firstOrCreate(
             [
                 'user_id'         => $user->id,
@@ -48,7 +49,7 @@ class CertificateController extends Controller
             ],
             [
                 'template_id' => $templateId,
-                'serial'      => $this->makeSerial($user->id, $course->id),
+                'serial'      => $this->makeSerial((string)$user->id, (string)$course->id),
                 'score'       => optional($bestAttempt)->score ?? round($percent, 2),
                 'issued_at'   => now(),
             ]
@@ -63,7 +64,7 @@ class CertificateController extends Controller
     {
         $user = Auth::user();
 
-        $issues = CertificateIssue::with(['course','template'])
+        $issues = CertificateIssue::with(['course', 'template'])
             ->where('user_id', $user->id)
             ->orderByDesc('issued_at')
             ->paginate(12);
@@ -76,7 +77,7 @@ class CertificateController extends Controller
     {
         $this->authorizeIssue($issue);
 
-        $issue->load(['course','template']);
+        $issue->load(['course', 'template']);
         return view('app.certificates.show', compact('issue'));
     }
 
@@ -116,16 +117,16 @@ class CertificateController extends Controller
         $bestAttempt = null;
 
         if ($issue->assessment_type === 'course') {
-            // Coba recompute dari attempt terbaik (opsional)
+            // Recompute dari attempt terbaik (opsional)
             [$bestAttempt, $pct, $corr, $tot] =
-                $this->bestAttemptEligibilityForCourse($issue->user_id, $issue->course_id);
+                $this->bestAttemptEligibilityForCourse((string)$issue->user_id, (string)$issue->course_id);
             if ($tot > 0) {
                 $percent = round($pct, 2);
                 $correct = $corr;
                 $total   = $tot;
             }
         } elseif ($issue->assessment_type === 'quiz' && $issue->assessment_id) {
-            $bestAttempt = QuizAttempt::with(['answers.question','quiz.lesson.module.course'])
+            $bestAttempt = QuizAttempt::with(['answers.question', 'quiz.lesson.module.course'])
                 ->where('id', $issue->assessment_id)->first();
             if ($bestAttempt) {
                 $mcq     = $bestAttempt->answers->filter(fn($a) => $a->question && $a->question->type === 'mcq');
@@ -151,47 +152,91 @@ class CertificateController extends Controller
         ];
 
         $pdf = Pdf::loadView('app.certificates.course', $data)
-            ->setPaper('a4', 'landscape');
+            ->setPaper('letter', 'landscape');
 
         $filename = "certificate-{$issue->id}.pdf";
         return $download ? $pdf->download($filename) : $pdf->stream($filename);
     }
 
-    private function bestAttemptEligibilityForCourse(int $userId, int $courseId): array
+    /**
+     * Ambil attempt terbaik & metrik kelulusan untuk course tertentu (UUID string).
+     * @return array{0: ?\App\Models\QuizAttempt, 1: float, 2: int, 3: int}
+     */
+    private function bestAttemptEligibilityForCourse(string $userId, string $courseId): array
     {
         $attempts = QuizAttempt::with(['answers.question', 'quiz.lesson.module.course'])
-            ->where('user_id', $userId)
+            ->where('user_id', $userId) // UUID string
             ->whereNotNull('submitted_at')
             ->whereHas('quiz.lesson.module.course', fn($q) => $q->where('id', $courseId))
             ->get();
 
         $bestAttempt = null;
-        $bestPercent = 0;
+        $bestPercent = 0.0;
         $bestCorrect = 0;
         $bestTotal   = 0;
 
         foreach ($attempts as $attempt) {
-            $mcq     = $attempt->answers->filter(fn($a) => $a->question && $a->question->type === 'mcq');
-            $total   = $mcq->count();
-            $correct = $mcq->where('is_correct', true)->count();
-            $pct     = $total > 0 ? ($correct / $total) * 100 : 0;
+            // hitung % by points (selaras dgn QuizController)
+            $mcq       = $attempt->answers->filter(fn($a) => $a->question && $a->question->type === 'mcq');
+
+            $maxPoints = $attempt->quiz->questions
+                ->where('type', 'mcq')
+                ->sum(fn($q) => $q->points ?? 1);
+
+            $scorePoints = 0;
+            foreach ($mcq as $ans) {
+                if ($ans->is_correct && $ans->question) {
+                    $scorePoints += ($ans->question->points ?? 1);
+                }
+            }
+
+            $pct = $maxPoints > 0 ? ($scorePoints / $maxPoints) * 100 : 0;
 
             if ($pct > $bestPercent) {
                 $bestAttempt = $attempt;
                 $bestPercent = $pct;
-                $bestCorrect = $correct;
-                $bestTotal   = $total;
+                $bestCorrect = $mcq->where('is_correct', true)->count();
+                $bestTotal   = $mcq->count();
             }
         }
 
         return [$bestAttempt, $bestPercent, $bestCorrect, $bestTotal];
     }
 
-    private function makeSerial(int $userId, int $courseId): string
+    /**
+     * Buat serial yang aman utk UUID (bukan angka).
+     * Contoh: CERT-20250922-USRABC123-CRSDEF456-R7XK
+     */
+    private function makeSerial(string $userId, string $courseId): string
     {
-        return 'CERT-'
-            . now()->format('Ymd') . '-'
-            . Str::padLeft((string)$userId, 5, '0') . '-'
-            . Str::padLeft((string)$courseId, 5, '0');
+        $u = strtoupper(substr(str_replace('-', '', $userId),   0, 7));
+        $c = strtoupper(substr(str_replace('-', '', $courseId), 0, 7));
+        $rnd = strtoupper(Str::random(4));
+        return 'CERT-' . now()->format('Ymd') . "-USR{$u}-CRS{$c}-{$rnd}";
+    }
+
+    /**
+     * Pastikan dapat template_id valid (buat default jika belum ada).
+     */
+    private function resolveTemplateId(?Course $course): string
+    {
+        // 1) jika course punya template & exist → pakai
+        $cid = data_get($course, 'certificate_template_id');
+        if ($cid && CertificateTemplate::whereKey($cid)->exists()) {
+            return (string)$cid;
+        }
+        // 2) template aktif pertama
+        $tpl = CertificateTemplate::where('is_active', true)->first();
+        if ($tpl) return (string)$tpl->id;
+
+        // 3) buat default
+        $tpl = CertificateTemplate::create([
+            'name'           => 'Default Certificate',
+            'background_url' => '/storage/certificates/default.png',
+            'fields_json'    => [],
+            'svg_json'       => [],
+            'is_active'      => true,
+        ]);
+        return (string)$tpl->id;
     }
 }
