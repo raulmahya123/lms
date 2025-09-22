@@ -22,18 +22,63 @@
       </dl>
     </div>
 
-    <aside class="p-5 rounded-lg border bg-white">
-      <h2 class="text-base font-semibold">Total</h2>
-      <div class="mt-3 flex items-baseline gap-2">
-        <div class="text-3xl font-bold">Rp {{ number_format($course->price,0,',','.') }}</div>
-      </div>
-      <button id="btnPay" class="mt-5 w-full px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700">
-        Bayar Sekarang
-      </button>
-      <p class="mt-3 text-xs text-gray-500">Dengan melanjutkan, Anda menyetujui syarat & ketentuan.</p>
-    </aside>
+      <aside class="p-6 rounded-2xl border bg-white shadow-sm">
+  <h2 class="text-lg font-semibold text-slate-900">Total</h2>
+
+        {{-- Kupon --}}
+<div class="mt-4">
+  <label for="couponCode" class="block text-sm font-medium text-slate-700 mb-1">
+    Kode Kupon
+  </label>
+
+  <!-- Container input + button -->
+  <div class="grid w-full grid-cols-[minmax(0,1fr)_auto] rounded-lg overflow-hidden border border-gray-300">
+    <input
+      id="couponCode"
+      type="text"
+      placeholder="MASUKKAN KODE"
+      class="col-start-1 px-3 py-2 text-sm outline-none border-0
+            focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"/>
+    <button
+      id="btnApplyCoupon"
+      type="button"
+      class="col-start-2 px-4 py-2 text-sm font-semibold bg-indigo-600 text-white
+            hover:bg-indigo-700 focus:ring-2 focus:ring-offset-0 focus:ring-indigo-500">
+      Terapkan
+    </button>
   </div>
+
+  <p id="couponMsg" class="mt-2 text-xs text-gray-500"></p>
 </div>
+
+  {{-- Ringkasan harga dinamis --}}
+  <div class="mt-6 space-y-2 text-sm">
+    <div class="flex justify-between text-slate-600">
+      <span>Harga</span>
+      <span id="priceRaw" class="font-medium text-slate-800">
+        Rp {{ number_format($course->price,0,',','.') }}
+      </span>
+    </div>
+    <div id="rowDiscount" class="flex justify-between text-rose-600 hidden">
+      <span>Diskon</span>
+      <span id="discountText">- Rp 0</span>
+    </div>
+    <div class="border-t border-gray-200 my-3"></div>
+    <div class="flex justify-between text-base font-semibold text-slate-900">
+      <span>Total</span>
+      <span id="totalText">Rp {{ number_format($course->price,0,',','.') }}</span>
+    </div>
+  </div>
+
+  <button id="btnPay"
+          class="mt-6 w-full px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 focus:ring-2 focus:ring-offset-1 focus:ring-purple-500">
+    Bayar Sekarang
+  </button>
+  <p class="mt-3 text-xs text-slate-500 leading-relaxed">
+    Dengan melanjutkan, Anda menyetujui syarat &amp; ketentuan.
+  </p>
+</aside>
+
 
 @php
   $clientKey = config('services.midtrans.client_key');
@@ -41,29 +86,124 @@
 @endphp
 <script type="text/javascript"
   src="https://app{{ $isSandbox ? '.sandbox' : '' }}.midtrans.com/snap/snap.js"
-  data-client-key="{{ $clientKey }}"></script>
+  data-client-key="{{ $clientKey }}">
+</script>
 
 <script>
+const priceOriginal = @json((int) ($course->price ?? 0));
+let applied = { coupon_id: null, discount: 0, final: priceOriginal, code: null };
+
+const elMsg   = document.getElementById('couponMsg');
+const elRowD  = document.getElementById('rowDiscount');
+const elDisc  = document.getElementById('discountText');
+const elTotal = document.getElementById('totalText');
+
+function fmt(x){ return new Intl.NumberFormat('id-ID').format(x); }
+
+document.getElementById('btnApplyCoupon').addEventListener('click', async function(){
+  const code = document.getElementById('couponCode').value.trim();
+  if (!code) {
+    elMsg.textContent = 'Masukkan kode terlebih dulu.';
+    elMsg.className   = 'mt-2 text-xs text-red-600';
+    return;
+  }
+
+  try {
+    const res = await fetch(@json(route('app.coupons.validate')), {
+      method: 'POST',
+      headers: {
+        'X-CSRF-TOKEN': @json(csrf_token()),
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        code: code,
+        amount: @json((int) ($course->price ?? 0)),
+        course_id: @json($course->id)
+      })
+    });
+
+    if (!res.ok) {
+      const text = await res.text();
+      let msg = 'Kupon tidak valid';
+      try {
+        const j = JSON.parse(text);
+        if (j?.reason) msg = j.reason;
+        else if (j?.errors) {
+          const firstKey = Object.keys(j.errors)[0];
+          msg = j.errors[firstKey]?.[0] ?? msg;
+        }
+      } catch (_) { msg = text.slice(0,160); }
+
+      applied = { coupon_id: null, discount: 0, final: priceOriginal, code: null };
+      elRowD.classList.add('hidden'); elDisc.textContent = '- Rp 0';
+      elTotal.textContent = 'Rp ' + fmt(priceOriginal);
+      elMsg.textContent = msg;
+      elMsg.className = 'mt-2 text-xs text-red-600';
+      return;
+    }
+
+    const data = await res.json();
+    if (!data.valid) {
+      applied = { coupon_id: null, discount: 0, final: priceOriginal, code: null };
+      elRowD.classList.add('hidden');
+      elDisc.textContent  = '- Rp 0';
+      elTotal.textContent = 'Rp ' + fmt(priceOriginal);
+      elMsg.textContent   = (data?.reason || 'Kupon tidak valid');
+      elMsg.className     = 'mt-2 text-xs text-red-600';
+      return;
+    }
+
+    applied = {
+      coupon_id: data.coupon_id,
+      discount: Math.round(data.discount_amount),
+      final:    Math.max(0, Math.round(data.final_amount)),
+      code
+    };
+    elRowD.classList.remove('hidden');
+    elDisc.textContent  = '- Rp ' + fmt(applied.discount);
+    elTotal.textContent = 'Rp ' + fmt(applied.final);
+    elMsg.textContent   = 'Kupon diterapkan (' + (data.discount_percent ?? '-') + '%).';
+    elMsg.className     = 'mt-2 text-xs text-emerald-700';
+  } catch (e) {
+    applied = { coupon_id: null, discount: 0, final: priceOriginal, code: null };
+    elRowD.classList.add('hidden');
+    elDisc.textContent  = '- Rp 0';
+    elTotal.textContent = 'Rp ' + fmt(priceOriginal);
+    elMsg.textContent   = e.message || 'Gagal validasi kupon';
+    elMsg.className     = 'mt-2 text-xs text-red-600';
+  }
+});
+
 document.getElementById('btnPay').addEventListener('click', async function(){
   try {
-    const res  = await fetch("{{ route('app.courses.snap', $course) }}", {
+    const res  = await fetch(@json(route('app.courses.snap', $course)), {
       method: 'POST',
-      headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}', 'Accept':'application/json' }
+      headers: {
+        'X-CSRF-TOKEN': @json(csrf_token()),
+        'Accept':'application/json',
+        'Content-Type':'application/json'
+      },
+      body: JSON.stringify({
+        coupon_id: applied.coupon_id,
+        coupon_code: applied.code
+      })
     });
+
     const data = await res.json();
     if (!res.ok) { alert(data.message || 'Gagal membuat transaksi'); return; }
 
     if (data.free) {
-      window.location = "{{ route('app.my.courses') }}";
+      window.location = @json(route('app.my.courses'));
       return;
     }
 
-    const orderId = data.order_id; // ← penting
+    const orderId = data.order_id;
     window.snap.pay(data.snap_token, {
-      onSuccess: () => window.location = "{{ route('app.payments.finish') }}?order_id=" + encodeURIComponent(orderId),
-      onPending: () => window.location = "{{ route('app.payments.finish') }}?order_id=" + encodeURIComponent(orderId),
+      onSuccess: () => window.location = @json(route('app.payments.finish')) + '?order_id=' + encodeURIComponent(orderId),
+      onPending: () => window.location = @json(route('app.payments.finish')) + '?order_id=' + encodeURIComponent(orderId),
       onError:   (e) => { console.error(e); alert('Pembayaran gagal'); },
-      onClose:   () => alert('Popup ditutup sebelum bayar'),
+      onClose:   () => alert('Popup ditutup sebelum bayar')
     });
   } catch (e) {
     alert(e.message || 'Error memulai pembayaran');

@@ -29,7 +29,35 @@
 
 @section('content')
 @php
+  use Illuminate\Support\Facades\Auth;
+  use App\Models\{Enrollment, Membership};
+
   $q = request('q');
+
+  // ==== Hitung "locked" di sini agar langsung jalan tanpa ubah controller ====
+  $uid = Auth::id();
+
+  // Apakah user punya membership aktif saat ini?
+  $hasMembership = Membership::where('user_id', $uid)
+      ->where('status', 'active')
+      ->where(function ($q) { $q->whereNull('expires_at')->orWhere('expires_at','>', now()); })
+      ->exists();
+
+  // Ambil semua enrollment user (buat menentukan mana yang terkunci)
+  $myEnrollments = Enrollment::where('user_id', $uid)->get(['course_id','status','access_via','access_expires_at']);
+
+  // Daftar course yang dimiliki user
+  $myIds = $myEnrollments->pluck('course_id')->all();
+
+  // Daftar course yang TERKUNCI (enroll via membership, membership non-aktif/expired)
+  $lockedIds = $myEnrollments->filter(function($e) use ($hasMembership) {
+      if (($e->status ?? '') !== 'active') return false;
+      if (($e->access_via ?? null) === 'membership') {
+          $notExpired = is_null($e->access_expires_at) || now()->lt($e->access_expires_at);
+          return !($hasMembership && $notExpired);
+      }
+      return false; // purchase / free => tidak terkunci
+  })->pluck('course_id')->all();
 @endphp
 
 <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
@@ -61,14 +89,23 @@
   <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
     @forelse($courses as $c)
       @php
-        $img = $c->cover_url ?: 'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?q=80&w=1200&auto=format&fit=crop';
+        $img      = $c->cover_url ?: 'https://images.unsplash.com/photo-1523580846011-d3a5bc25702b?q=80&w=1200&auto=format&fit=crop';
+        $isLocked = in_array($c->id, $lockedIds);
+        $target   = route('app.courses.show', $c);
       @endphp
 
-      <a href="{{ route('app.courses.show',$c) }}" class="card group">
+      <a href="{{ $target }}" class="card group">
         {{-- Cover --}}
         <div class="cover relative" style="background-image:url('{{ $img }}');background-size:cover;background-position:center">
           <div class="absolute inset-0 grad opacity-0 group-hover:opacity-20 transition"></div>
-          @if(in_array($c->id, $myIds))
+
+          @if($isLocked)
+            <div class="absolute inset-0 bg-gray-900/40 backdrop-blur-[2px]"></div>
+            <span class="absolute top-3 right-3 inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold rounded-full bg-gray-900 text-white">
+              <svg xmlns="http://www.w3.org/2000/svg" class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 1a5 5 0 00-5 5v3H6a2 2 0 00-2 2v7a2 2 0 002 2h12a2 2 0 002-2v-7a2 2 0 00-2-2h-1V6a5 5 0 00-5-5zm-3 8V6a3 3 0 116 0v3H9z"/></svg>
+              Terkunci
+            </span>
+          @elseif(in_array($c->id, $myIds))
             <span class="badge-enrolled absolute top-3 left-3">
               <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9 12.75L11.25 15 15 9.75" /></svg>
               Enrolled

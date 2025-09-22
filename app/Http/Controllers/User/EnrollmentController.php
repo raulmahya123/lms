@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Course, Enrollment};
+use App\Models\{Course, Enrollment, Membership};
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
@@ -52,32 +52,69 @@ class EnrollmentController extends Controller
         return view('app.enrollments.index', compact('enrollments'));
     }
 
-    public function store(Request $r, Course $course)
+     public function store(Request $request, Course $course)
     {
         abort_unless($course->is_published, 404);
 
-        // sudah punya? keluar
-        $exists = Enrollment::where('user_id', Auth::id())
-            ->where('course_id', $course->id)->first();
-        if ($exists) {
-            return back()->with('status', 'Kamu sudah terdaftar di kursus ini.');
+        // Sudah aktif?
+        $already = Enrollment::where('user_id', Auth::id())
+            ->where('course_id', $course->id)
+            ->where('status', 'active')
+            ->exists();
+
+        if ($already) {
+            return redirect()->route('app.my.courses')->with('ok', 'Kamu sudah ter-enroll.');
         }
 
-        // 🔹 kalau HARGA > 0 → ke checkout dulu
-        if ((int)($course->price ?? 0) > 0) {
-            return redirect()->route('app.courses.checkout', $course);
+        // Membership aktif?
+        $hasActiveMembership = Membership::where('user_id', Auth::id())
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->exists();
+
+        // Dapatkan membership untuk copy expires_at bila perlu
+        $activeMembership = null;
+        if ($hasActiveMembership) {
+            $activeMembership = Membership::where('user_id', Auth::id())
+                ->where('status', 'active')
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
+                ->orderByDesc('expires_at')
+                ->first();
         }
 
-        // 🔹 gratis → langsung enroll
-        DB::transaction(function () use ($course) {
-            Enrollment::create([
-                'user_id' => Auth::id(),
-                'course_id' => $course->id,
-                'status' => 'active',
-                'activated_at' => now(),
-            ]);
-        });
+        // Free if membership or price 0
+        if ($hasActiveMembership || (int)($course->price ?? 0) <= 0) {
+            $via = $hasActiveMembership ? 'membership' : 'free';
+            $exp = $hasActiveMembership ? ($activeMembership?->expires_at) : null;
 
-        return redirect()->route('app.courses.show', $course)->with('status', 'Enroll berhasil.');
+            $enr = Enrollment::firstOrCreate(
+                ['user_id' => Auth::id(), 'course_id' => $course->id],
+                [
+                    'status'            => 'active',
+                    'activated_at'      => now(),
+                    'access_via'        => $via,
+                    'access_expires_at' => $exp,
+                ]
+            );
+
+            if ($enr->wasRecentlyCreated === false) {
+                $enr->update([
+                    'status'            => 'active',
+                    'access_via'        => $via,
+                    'access_expires_at' => $exp,
+                ]);
+            }
+
+            return redirect()->route('app.my.courses')->with('ok', 'Berhasil enroll.');
+        }
+
+        // Kalau tidak memenuhi → arahkan ke checkout (kalau kamu punya halaman checkout course)
+        return redirect()
+            ->route('app.courses.checkout', $course)
+            ->with('info', 'Silakan lanjutkan pembayaran untuk course ini.');
     }
 }

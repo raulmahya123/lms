@@ -173,7 +173,8 @@ Route::post('/memberships/snap/{membership}', [UserMembershipController::class, 
     // Katalog & detail kursus
     Route::get('/courses', [CourseBrowseController::class, 'index'])->name('app.courses.index');
     Route::get('/courses/{course}', [CourseBrowseController::class, 'show'])
-        ->whereUuid('course')->name('app.courses.show');
+    ->whereUuid('course')->name('app.courses.show');
+    // ->middleware('app.ensure.lesson.accessible')
 
     // Kursus saya & enroll
     Route::get('/my/courses', [UserEnrollmentController::class, 'index'])->name('app.my.courses');
