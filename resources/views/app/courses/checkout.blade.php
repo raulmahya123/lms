@@ -22,41 +22,63 @@
       </dl>
     </div>
 
-    <aside class="p-5 rounded-lg border bg-white">
-  <h2 class="text-base font-semibold">Total</h2>
+      <aside class="p-6 rounded-2xl border bg-white shadow-sm">
+  <h2 class="text-lg font-semibold text-slate-900">Total</h2>
 
-  {{-- Kupon --}}
-  <div class="mt-3">
-    <label class="text-sm font-medium text-gray-700">Kode Kupon</label>
-    <div class="mt-1 flex gap-2">
-      <input id="couponCode" class="border rounded px-3 py-2 flex-1" placeholder="MASUKKAN KODE">
-      <button id="btnApplyCoupon" type="button" class="px-3 py-2 rounded bg-gray-900 text-white">Terapkan</button>
-    </div>
-    <p id="couponMsg" class="mt-2 text-xs"></p>
+        {{-- Kupon --}}
+<div class="mt-4">
+  <label for="couponCode" class="block text-sm font-medium text-slate-700 mb-1">
+    Kode Kupon
+  </label>
+
+  <!-- Container input + button -->
+  <div class="grid w-full grid-cols-[minmax(0,1fr)_auto] rounded-lg overflow-hidden border border-gray-300">
+    <input
+      id="couponCode"
+      type="text"
+      placeholder="MASUKKAN KODE"
+      class="col-start-1 px-3 py-2 text-sm outline-none border-0
+            focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500"/>
+    <button
+      id="btnApplyCoupon"
+      type="button"
+      class="col-start-2 px-4 py-2 text-sm font-semibold bg-indigo-600 text-white
+            hover:bg-indigo-700 focus:ring-2 focus:ring-offset-0 focus:ring-indigo-500">
+      Terapkan
+    </button>
   </div>
 
+  <p id="couponMsg" class="mt-2 text-xs text-gray-500"></p>
+</div>
+
   {{-- Ringkasan harga dinamis --}}
-  <div class="mt-4 text-sm space-y-1">
-    <div class="flex justify-between">
+  <div class="mt-6 space-y-2 text-sm">
+    <div class="flex justify-between text-slate-600">
       <span>Harga</span>
-      <span id="priceRaw">Rp {{ number_format($course->price,0,',','.') }}</span>
+      <span id="priceRaw" class="font-medium text-slate-800">
+        Rp {{ number_format($course->price,0,',','.') }}
+      </span>
     </div>
-    <div id="rowDiscount" class="flex justify-between hidden">
+    <div id="rowDiscount" class="flex justify-between text-rose-600 hidden">
       <span>Diskon</span>
       <span id="discountText">- Rp 0</span>
     </div>
-    <hr class="my-2">
-    <div class="flex justify-between font-semibold">
+    <div class="border-t border-gray-200 my-3"></div>
+    <div class="flex justify-between text-base font-semibold text-slate-900">
       <span>Total</span>
       <span id="totalText">Rp {{ number_format($course->price,0,',','.') }}</span>
     </div>
   </div>
 
-  <button id="btnPay" class="mt-5 w-full px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700">
+  <button id="btnPay"
+          class="mt-6 w-full px-4 py-2.5 rounded-xl bg-blue-600 text-white font-semibold text-sm hover:bg-blue-700 focus:ring-2 focus:ring-offset-1 focus:ring-purple-500">
     Bayar Sekarang
   </button>
-  <p class="mt-3 text-xs text-gray-500">Dengan melanjutkan, Anda menyetujui syarat & ketentuan.</p>
+  <p class="mt-3 text-xs text-slate-500 leading-relaxed">
+    Dengan melanjutkan, Anda menyetujui syarat &amp; ketentuan.
+  </p>
 </aside>
+
 
 @php
   $clientKey = config('services.midtrans.client_key');
