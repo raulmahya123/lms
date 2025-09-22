@@ -3,7 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\{Membership, Plan, Payment};
+use App\Models\{Membership, Plan, Payment, Coupon, CouponRedemption};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -155,18 +155,21 @@ class MembershipController extends Controller
     }
 
     /**
-     * Buat Snap Token (tanpa webhook; finalisasi pakai /memberships/finish?order_id=...)
+     * Buat Snap Token (support kupon).
+     * - Re-validate kupon di server (@plan).
+     * - Sinkronkan amount/discount ke payments.
+     * - Regenerate token bila amount/kupon berubah.
      */
     public function startSnap(Request $r, Membership $membership)
     {
         $this->ensureOwner($membership);
         abort_if($membership->status !== 'pending', 400, 'Membership bukan pending');
 
-        $plan   = $membership->plan()->first(['id','name','price','period']);
-        $amount = (int) ($plan->price ?? 0);
+        $plan = $membership->plan()->first(['id','name','price','period']);
+        $baseAmount = (int) ($plan->price ?? 0);
 
         // Gratis → langsung aktif
-        if ($amount <= 0) {
+        if ($baseAmount <= 0) {
             $now = now();
             $expires = $plan?->period === 'yearly' ? $now->clone()->addYear() : $now->clone()->addMonth();
 
@@ -179,7 +182,75 @@ class MembershipController extends Controller
             return response()->json(['free' => true]);
         }
 
-        // Payment pending (reusable)
+        // ==== Kupon (opsional) ====
+        $couponId   = $r->input('coupon_id');
+        $couponCode = $r->input('coupon_code');
+
+        $appliedCoupon = null;
+        $discount      = 0;
+
+        if ($couponId || $couponCode) {
+            $appliedCoupon = $couponId
+                ? Coupon::find($couponId)
+                : Coupon::whereRaw('LOWER(code)=?', [strtolower($couponCode)])->first();
+
+            if ($appliedCoupon) {
+                $now = now();
+                if ($appliedCoupon->valid_from && $appliedCoupon->valid_from->gt($now)) $appliedCoupon = null;
+                if ($appliedCoupon && $appliedCoupon->valid_until && $appliedCoupon->valid_until->lt($now)) $appliedCoupon = null;
+                if ($appliedCoupon && $appliedCoupon->usage_limit && $appliedCoupon->redemptions()->count() >= $appliedCoupon->usage_limit) $appliedCoupon = null;
+
+                if ($appliedCoupon) {
+                    $already = CouponRedemption::where('coupon_id', $appliedCoupon->id)
+                        ->where('user_id', Auth::id())
+                        ->where('plan_id', $plan->id)
+                        ->exists();
+                    if ($already) $appliedCoupon = null;
+                }
+
+                if ($appliedCoupon) {
+                    $discount = (int) round($baseAmount * ($appliedCoupon->discount_percent / 100));
+                }
+            }
+        }
+
+        $finalAmount = max(0, $baseAmount - $discount);
+
+        // Full discount → langsung aktif + catat redemption
+        if ($finalAmount <= 0) {
+            DB::transaction(function () use ($membership, $plan, $appliedCoupon, $discount) {
+                // Aktifkan
+                $now     = now();
+                $expires = $plan?->period === 'yearly' ? $now->clone()->addYear() : $now->clone()->addMonth();
+
+                $membership->update([
+                    'status'       => 'active',
+                    'activated_at' => $now,
+                    'expires_at'   => $expires,
+                ]);
+
+                // Catat redemption (jika ada kupon)
+                if ($appliedCoupon) {
+                    CouponRedemption::firstOrCreate(
+                        [
+                            'coupon_id' => $appliedCoupon->id,
+                            'user_id'   => Auth::id(),
+                            'plan_id'   => $plan->id,
+                        ],
+                        [
+                            'used_at'           => now(),
+                            'amount_discounted' => $discount,
+                        ]
+                    );
+                }
+            });
+
+            return response()->json(['free' => true]);
+        }
+
+        // ==== Payment pending (reusable) ====
+        $newReference = 'MBR-' . now()->format('ymdHis') . '-' . Str::upper(Str::random(6));
+
         $payment = Payment::firstOrCreate(
             [
                 'user_id'       => auth()->id(),
@@ -189,25 +260,38 @@ class MembershipController extends Controller
                 'provider'      => 'midtrans',
             ],
             [
-                'amount'    => $amount,
-                'reference' => $this->makeOrderId($membership), // order_id < 50
+                'amount'    => $finalAmount,
+                'reference' => $newReference,
             ]
         );
 
+        // Sinkronisasi amount/discount/coupon
+        $amountChanged  = (int)$payment->amount !== (int)$finalAmount;
+        $couponChanged  = (string)$payment->coupon_id !== (string)($appliedCoupon->id ?? null);
+
+        $payment->amount          = $finalAmount;
+        $payment->discount_amount = $discount;
+        $payment->coupon_id       = $appliedCoupon?->id;
+
         // Pastikan reference aman
         if (!$payment->reference || strlen($payment->reference) > 50) {
-            $payment->reference         = $this->makeOrderId($membership);
+            $payment->reference = $newReference;
+        }
+
+        // Jika amount/kupon berubah, hapus snap_token supaya token baru dibuat
+        if ($amountChanged || $couponChanged) {
             $payment->snap_token        = null;
             $payment->snap_redirect_url = null;
-            $payment->save();
         }
+
+        $payment->save();
 
         // Reuse token jika masih ada
         if ($payment->snap_token) {
             return response()->json([
                 'snap_token'   => $payment->snap_token,
                 'redirect_url' => $payment->snap_redirect_url,
-                'order_id'     => $payment->reference, // PENTING untuk /finish
+                'order_id'     => $payment->reference,
             ]);
         }
 
@@ -252,7 +336,7 @@ class MembershipController extends Controller
             return response()->json([
                 'snap_token'   => $payment->snap_token,
                 'redirect_url' => $payment->snap_redirect_url,
-                'order_id'     => $payment->reference, // ← dikirim ke frontend
+                'order_id'     => $payment->reference,
             ]);
         } catch (\Throwable $e) {
             Log::error('Midtrans createTransaction failed (membership)', [
@@ -265,9 +349,7 @@ class MembershipController extends Controller
     }
 
     /**
-     * FINISH page: fallback tanpa webhook
-     * - Ambil status dari Midtrans berdasarkan order_id (payments.reference)
-     * - Update payments + aktifkan membership jika paid
+     * FINISH page: cek status Midtrans, update payment, aktifkan membership, catat kupon.
      */
     public function finish(Request $r)
     {
@@ -277,35 +359,30 @@ class MembershipController extends Controller
             return redirect()->route('app.memberships.index')->with('info', 'Kembali ke Membership.');
         }
 
-        // Cari payment berdasar reference
         $payment = Payment::where('reference', $orderId)->first();
         if (!$payment) {
             return redirect()->route('app.memberships.index')->with('info', 'Transaksi tidak ditemukan.');
         }
 
-        // Lindungi akses user
         if ($payment->user_id !== Auth::id()) {
             abort(403);
         }
 
-        // Midtrans config
         MidtransConfig::$serverKey    = config('services.midtrans.server_key');
         MidtransConfig::$isProduction = (bool) config('services.midtrans.is_production', false);
         MidtransConfig::$isSanitized  = true;
         MidtransConfig::$is3ds        = true;
 
         try {
-            // Ambil status transaksi dari Midtrans
             $statusResp = MidtransTransaction::status($orderId);
 
-            $trxStatus = (string) ($statusResp->transaction_status ?? ''); // settlement|capture|pending|expire|deny|cancel|failure
+            $trxStatus = (string) ($statusResp->transaction_status ?? '');
             $fraud     = (string) ($statusResp->fraud_status ?? '');
             $gross     = (string) ($statusResp->gross_amount ?? '');
             $ptype     = (string) ($statusResp->payment_type ?? '');
             $trxId     = (string) ($statusResp->transaction_id ?? '');
             $settledAt = (string) ($statusResp->settlement_time ?? '');
 
-            // Map status Midtrans -> lokal
             $newStatus = match ($trxStatus) {
                 'capture'    => ($fraud === 'challenge') ? 'pending' : 'paid',
                 'settlement' => 'paid',
@@ -315,19 +392,12 @@ class MembershipController extends Controller
             };
 
             DB::transaction(function () use ($payment, $newStatus, $gross, $ptype, $trxId, $settledAt) {
-                // Update payment
                 $payment->provider = 'midtrans';
                 $payment->status   = $newStatus;
 
-                if (is_numeric($gross)) {
-                    $payment->amount = (int) $gross;
-                }
-                if ($trxId && $this->schemaHas('payments','midtrans_transaction_id')) {
-                    $payment->midtrans_transaction_id = $trxId;
-                }
-                if ($ptype && $this->schemaHas('payments','midtrans_payment_type')) {
-                    $payment->midtrans_payment_type = $ptype;
-                }
+                if (is_numeric($gross))            $payment->amount = (int) $gross;
+                if ($trxId && $this->schemaHas('payments','midtrans_transaction_id'))  $payment->midtrans_transaction_id = $trxId;
+                if ($ptype && $this->schemaHas('payments','midtrans_payment_type'))     $payment->midtrans_payment_type   = $ptype;
                 if ($settledAt && $this->schemaHas('payments','midtrans_settlement_time')) {
                     try { $payment->midtrans_settlement_time = Carbon::parse($settledAt); } catch (\Throwable $e) {}
                 }
@@ -337,7 +407,6 @@ class MembershipController extends Controller
                 }
                 $payment->save();
 
-                // Aktifkan membership jika paid
                 if ($newStatus === 'paid' && $payment->membership_id) {
                     $membership = Membership::find($payment->membership_id);
                     $plan       = $payment->plan_id ? Plan::find($payment->plan_id) : null;
@@ -345,7 +414,6 @@ class MembershipController extends Controller
                     if ($membership && $plan) {
                         $now = now();
 
-                        // Jika sudah aktif & belum habis, extend dari expires_at; kalau tidak, start dari now
                         $from = ($membership->status === 'active' && $membership->expires_at && $membership->expires_at->isFuture())
                             ? $membership->expires_at
                             : $now;
@@ -357,6 +425,21 @@ class MembershipController extends Controller
                             'activated_at' => $membership->activated_at ?: $now,
                             'expires_at'   => $expires,
                         ]);
+
+                        // Catat kupon kalau ada
+                        if (!empty($payment->coupon_id) && (int)$payment->discount_amount > 0) {
+                            CouponRedemption::firstOrCreate(
+                                [
+                                    'coupon_id' => $payment->coupon_id,
+                                    'user_id'   => $payment->user_id,
+                                    'plan_id'   => $payment->plan_id,
+                                ],
+                                [
+                                    'used_at'           => now(),
+                                    'amount_discounted' => (int) $payment->discount_amount,
+                                ]
+                            );
+                        }
                     }
                 }
             });
@@ -366,7 +449,6 @@ class MembershipController extends Controller
                 'order_id' => $orderId,
                 'error'    => $e->getMessage(),
             ]);
-            // Jangan blokir user; tetap arahkan ke index
         }
 
         return redirect()->route('app.memberships.index');
@@ -375,7 +457,6 @@ class MembershipController extends Controller
     /** Generator order_id pendek (< 50 char, aman untuk Midtrans) */
     private function makeOrderId(Membership $membership): string
     {
-        // MBR-YYMMDDHHIISS-XXXXXXXX-ABCD → ±30 char
         return 'MBR-'
             . now()->format('ymdHis') . '-'
             . substr((string) $membership->id, 0, 8) . '-'

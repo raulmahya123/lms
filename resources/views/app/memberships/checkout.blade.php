@@ -1,6 +1,17 @@
 @extends('app.layouts.base')
 @section('title', 'Checkout Membership')
 
+@push('styles')
+<style>
+  .field{border:1px solid #e5e7eb;border-radius:12px;padding:.55rem .8rem}
+  .field:focus{outline:none;box-shadow:0 0 0 4px #bfdbfe;border-color:#60a5fa}
+  .btn{border-radius:12px;padding:.6rem 1rem;font-weight:600;transition:.15s ease}
+  .btn-primary{background:#7c3aed;color:#fff}
+  .btn-primary:hover{background:#6d28d9}
+  .chip{display:inline-flex;gap:.4rem;align-items:center;font-size:.8rem;border:1px solid #e5e7eb;border-radius:999px;padding:.25rem .6rem;background:#f8fafc}
+</style>
+@endpush
+
 @section('content')
 <div class="max-w-3xl mx-auto">
   {{-- Flash --}}
@@ -20,7 +31,7 @@
       <h1 class="text-2xl md:text-3xl font-semibold text-gray-900">Checkout Membership</h1>
       <a href="{{ route('app.memberships.index') }}" class="text-sm text-blue-700 hover:underline">Kembali</a>
     </div>
-    <p class="mt-1 text-sm text-gray-600">Selesaikan pembayaran. Setelah berhasil, status akan diperbarui otomatis saat kembali ke aplikasi (tanpa webhook).</p>
+    <p class="mt-1 text-sm text-gray-600">Masukkan kode kupon jika ada. Nominal akan dihitung otomatis.</p>
   </header>
 
   <div class="grid md:grid-cols-[1fr_18rem] gap-6 items-start">
@@ -37,13 +48,17 @@
             @if(($membership->plan->period ?? 'monthly') === 'yearly') 12 bulan @else 30 hari @endif
           </dd>
         </div>
-        <div class="flex items-center justify-between py-2">
-          <dt class="text-gray-600">Harga</dt>
-          <dd class="font-medium text-gray-900">
-            {{ isset($membership->plan->price) ? 'Rp '.number_format($membership->plan->price,0,',','.') : 'Gratis' }}
-          </dd>
-        </div>
       </dl>
+
+      {{-- Kupon --}}
+      <div class="mt-6">
+        <label class="block text-sm font-medium text-gray-700 mb-2">Kode Kupon</label>
+        <div class="flex gap-2">
+          <input id="couponCode" class="field flex-1" placeholder="contoh: HEMAT50">
+          <button id="btnApplyCoupon" class="btn btn-primary">Terapkan</button>
+        </div>
+        <div id="couponInfo" class="mt-2 text-sm text-gray-600 hidden"></div>
+      </div>
 
       <div class="mt-6 rounded border bg-gray-50 p-3">
         <div class="text-sm text-gray-700 mb-2 font-medium">Catatan</div>
@@ -53,12 +68,19 @@
 
     <aside class="p-5 rounded-lg border bg-white">
       <h2 class="text-base font-semibold text-gray-900">Total</h2>
-      <div class="mt-3 flex items-baseline gap-2">
-        <div class="text-3xl font-bold text-gray-900">
-          {{ isset($membership->plan->price) ? 'Rp '.number_format($membership->plan->price,0,',','.') : 'Gratis' }}
+
+      <div class="mt-3 space-y-1 text-sm text-gray-700">
+        <div class="flex items-center justify-between">
+          <span>Harga</span>
+          <span id="priceRaw">Rp {{ number_format($membership->plan->price ?? 0,0,',','.') }}</span>
         </div>
-        <div class="text-sm text-gray-500">
-          / {{ ($membership->plan->period ?? 'monthly') === 'yearly' ? '12 bulan' : '30 hari' }}
+        <div id="rowDiscount" class="flex items-center justify-between hidden">
+          <span>Diskon</span>
+          <span id="priceDiscount">- Rp 0</span>
+        </div>
+        <div class="flex items-center justify-between font-semibold text-gray-900 text-lg mt-2 pt-2 border-t">
+          <span>Bayar</span>
+          <span id="priceFinal">Rp {{ number_format($membership->plan->price ?? 0,0,',','.') }}</span>
         </div>
       </div>
 
@@ -75,6 +97,8 @@
 @php
   $clientKey = config('services.midtrans.client_key');
   $isSandbox = !config('services.midtrans.is_production');
+  $planId    = $membership->plan->id ?? null;
+  $amount    = (int) ($membership->plan->price ?? 0);
 @endphp
 <script type="text/javascript"
   src="https://app{{ $isSandbox ? '.sandbox' : '' }}.midtrans.com/snap/snap.js"
@@ -82,53 +106,124 @@
 
 <script>
 (function() {
-  const btn       = document.getElementById('btnPay');
-  const csrf      = '{{ csrf_token() }}';
-  const startUrl  = "{{ route('app.memberships.snap', $membership, false) }}";
-  const finishUrl = "{{ route('app.memberships.finish') }}";
+  const csrf          = '{{ csrf_token() }}';
+  const startUrl      = "{{ route('app.memberships.snap', $membership, false) }}";
+  const finishUrl     = "{{ route('app.memberships.finish') }}";
+  const validateUrl   = "{{ route('app.coupons.validate') }}"; // -> CouponController@validateCode
 
-  async function startSnap() {
-    const res  = await fetch(startUrl, {
-      method: 'POST',
-      headers: { 'X-CSRF-TOKEN': csrf, 'Accept':'application/json' },
-      credentials: 'same-origin'
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data?.message || 'Gagal membuat transaksi');
-    return data;
-  }
+  const priceRawEl    = document.getElementById('priceRaw');
+  const rowDiscountEl = document.getElementById('rowDiscount');
+  const priceDiscEl   = document.getElementById('priceDiscount');
+  const priceFinalEl  = document.getElementById('priceFinal');
+  const couponInfoEl  = document.getElementById('couponInfo');
 
-  btn.addEventListener('click', async function () {
-    const original = btn.textContent;
-    btn.disabled = true;
-    btn.textContent = 'Memproses…';
+  const btnApply      = document.getElementById('btnApplyCoupon');
+  const inputCode     = document.getElementById('couponCode');
+  const btnPay        = document.getElementById('btnPay');
+
+  const baseAmount    = {{ $amount }};
+  let appliedCouponId = null;
+  let finalAmount     = baseAmount;
+  let discountAmount  = 0;
+
+  function rupiah(n){ return 'Rp ' + (n||0).toLocaleString('id-ID'); }
+
+  async function applyCoupon() {
+    const code = (inputCode.value || '').trim();
+    if (!code) {
+      couponInfoEl.classList.remove('hidden');
+      couponInfoEl.textContent = 'Masukkan kode kupon terlebih dahulu.';
+      return;
+    }
 
     try {
-      const data = await startSnap();
-      if (data.free) return location.href = "{{ route('app.memberships.index') }}";
+      const res = await fetch(validateUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': csrf, 'Accept':'application/json' },
+        body: JSON.stringify({
+          code,
+          amount: baseAmount,
+          plan_id: "{{ $planId }}",
+        })
+      });
+      const data = await res.json();
 
-      const snapToken   = data.snap_token;
-      const redirectUrl = data.redirect_url;
-      const orderId     = data.order_id; // ← penting
+      if (!res.ok || !data.valid) {
+        appliedCouponId = null;
+        discountAmount  = 0;
+        finalAmount     = baseAmount;
 
-      // Jika script Snap tidak ada, fallback ke redirect_url
-      if (!window.snap || !snapToken) {
-        if (redirectUrl) return location.href = redirectUrl;
+        rowDiscountEl.classList.add('hidden');
+        priceDiscEl.textContent  = rupiah(0);
+        priceFinalEl.textContent = rupiah(finalAmount);
+
+        couponInfoEl.classList.remove('hidden');
+        couponInfoEl.textContent = (data && data.reason) ? data.reason : 'Kupon tidak valid.';
+        return;
+      }
+
+      appliedCouponId = data.coupon_id;
+      discountAmount  = data.discount_amount;
+      finalAmount     = data.final_amount;
+
+      rowDiscountEl.classList.remove('hidden');
+      priceDiscEl.textContent  = '- ' + rupiah(discountAmount);
+      priceFinalEl.textContent = rupiah(finalAmount);
+
+      couponInfoEl.classList.remove('hidden');
+      couponInfoEl.textContent = `Kupon diterapkan: potongan ${data.discount_percent}%`;
+    } catch (e) {
+      console.error(e);
+      couponInfoEl.classList.remove('hidden');
+      couponInfoEl.textContent = 'Gagal memvalidasi kupon.';
+    }
+  }
+
+  btnApply.addEventListener('click', applyCoupon);
+
+  btnPay.addEventListener('click', async function(){
+    const original = btnPay.textContent;
+    btnPay.disabled = true;
+    btnPay.textContent = 'Memproses…';
+
+    try {
+      const res = await fetch(startUrl, {
+        method: 'POST',
+        headers: { 'X-CSRF-TOKEN': csrf, 'Accept':'application/json', 'Content-Type': 'application/json' },
+        credentials: 'same-origin',
+        body: JSON.stringify({
+          coupon_id: appliedCouponId,
+          coupon_code: inputCode.value || null
+        })
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || 'Gagal membuat transaksi');
+
+      if (data.free) {
+        location.href = "{{ route('app.memberships.index') }}";
+        return;
+      }
+
+      const orderId = data.order_id;
+
+      if (!window.snap || !data.snap_token) {
+        // fallback: pakai redirect_url
+        if (data.redirect_url) { location.href = data.redirect_url; return; }
         throw new Error('Token pembayaran tidak tersedia.');
       }
 
-      window.snap.pay(snapToken, {
+      window.snap.pay(data.snap_token, {
         onSuccess: () => location.href = finishUrl + '?order_id=' + encodeURIComponent(orderId),
         onPending: () => location.href = finishUrl + '?order_id=' + encodeURIComponent(orderId),
         onError:   (e) => { console.error(e); alert('Pembayaran gagal.'); },
-        onClose:   ()  => alert('Popup ditutup sebelum bayar')
+        onClose:   ()  => alert('Popup ditutup sebelum bayar'),
       });
     } catch (e) {
       alert(e.message || 'Error memulai pembayaran');
       console.error(e);
     } finally {
-      btn.disabled  = false;
-      btn.textContent = original;
+      btnPay.disabled = false;
+      btnPay.textContent = original;
     }
   });
 })();
