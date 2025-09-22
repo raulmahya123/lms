@@ -26,6 +26,7 @@
   .table{min-width:100%}
   .table th{font-size:.75rem;font-weight:700;color:#6b7280;text-transform:none}
   .table td{font-size:.9rem}
+  .acts a, .acts button{font-size:.82rem}
 </style>
 @endpush
 
@@ -146,32 +147,37 @@
           @endif
         </div>
 
-        {{-- Actions --}}
+        {{-- Actions (current) --}}
         <div class="shrink-0 flex flex-col gap-2">
           @if($current)
             @if($current->status === 'pending')
-      <a href="{{ route('app.memberships.checkout', $current) }}" class="btn btn-primary text-center">
-        Lanjutkan Pembayaran
-      </a>
-      <button type="button" id="btnRefresh" class="btn btn-muted" onclick="location.reload()">Cek Status Sekarang</button>
-      <form method="POST" action="{{ route('app.memberships.cancel', $current) }}">
-        @csrf
-        <button class="btn btn-muted w-full" onclick="return confirm('Batalkan membership ini?')">
-          Batalkan
-        </button>
-      </form>
-    @elseif($current->status === 'active')
+              <a href="{{ route('app.memberships.checkout', $current) }}" class="btn btn-primary text-center">
+                Lanjutkan Pembayaran
+              </a>
+              <button type="button" id="btnRefresh" class="btn btn-muted" onclick="location.reload()">Cek Status Sekarang</button>
+
+              {{-- FORM BATALKAN (dengan modal izin) --}}
+              <form method="POST" action="{{ route('app.memberships.cancel', $current) }}" class="js-cancel-form">
+                @csrf
+                <input type="hidden" name="ack" value="0">
+                <button type="submit" class="btn btn-muted w-full">Batalkan</button>
+              </form>
+
+            @elseif($current->status === 'active')
+              @php $left = $daysLeft($current->expires_at); @endphp
               @if(($left ?? 0) <= 7 && $left !== null)
                 <a href="{{ route('app.memberships.plans') }}" class="btn btn-primary text-center">
                   Perpanjang / Upgrade
                 </a>
               @endif
-              <form method="POST" action="{{ route('app.memberships.cancel', $current) }}">
+
+              {{-- FORM NONAKTIFKAN (pakai modal izin yang sama) --}}
+              <form method="POST" action="{{ route('app.memberships.cancel', $current) }}" class="js-cancel-form">
                 @csrf
-                <button class="btn btn-muted" onclick="return confirm('Nonaktifkan membership sekarang?')">
-                  Nonaktifkan
-                </button>
+                <input type="hidden" name="ack" value="0">
+                <button type="submit" class="btn btn-muted">Nonaktifkan</button>
               </form>
+
             @else
               <a href="{{ route('app.memberships.plans') }}" class="btn btn-muted text-center">
                 Pilih Paket
@@ -214,11 +220,27 @@
                   <span class="chip">Aktif: {{ $m->activated_at ? Carbon::parse($m->activated_at)->format('d M Y H:i') : '—' }}</span>
                   <span class="chip">Berakhir: {{ $m->expires_at ? Carbon::parse($m->expires_at)->format('d M Y H:i') : '—' }}</span>
                 </div>
-              </div>
-              <div class="shrink-0">
-                @if($m->status === 'pending')
-                  <a href="{{ route('app.memberships.checkout', $m) }}" class="text-sm text-indigo-700 hover:underline">Checkout</a>
-                @endif
+
+                {{-- actions (mobile) --}}
+                <div class="mt-3 flex flex-wrap gap-2 acts">
+                  @if($m->status === 'pending')
+                    <a href="{{ route('app.memberships.checkout', $m) }}" class="text-indigo-700 hover:underline">Checkout</a>
+                    <button type="button" class="text-slate-700 hover:underline" onclick="location.reload()">Cek Status</button>
+
+                    <form method="POST" action="{{ route('app.memberships.cancel', $m) }}" class="js-cancel-form">
+                      @csrf
+                      <input type="hidden" name="ack" value="0">
+                      <button class="text-red-700 hover:underline" type="submit">Batalkan</button>
+                    </form>
+
+                  @elseif($m->status === 'active')
+                    <form method="POST" action="{{ route('app.memberships.cancel', $m) }}" class="js-cancel-form">
+                      @csrf
+                      <input type="hidden" name="ack" value="0">
+                      <button class="text-slate-700 hover:underline" type="submit">Nonaktifkan</button>
+                    </form>
+                  @endif
+                </div>
               </div>
             </div>
           </div>
@@ -234,7 +256,7 @@
               <th class="px-4 py-3">Status</th>
               <th class="px-4 py-3">Aktif</th>
               <th class="px-4 py-3">Berakhir</th>
-              <th class="px-4 py-3"></th>
+              <th class="px-4 py-3 text-right">Aksi</th>
             </tr>
           </thead>
           <tbody class="divide-y divide-gray-100">
@@ -257,10 +279,28 @@
                 <td class="px-4 py-3 text-slate-700">
                   {{ $m->expires_at ? Carbon::parse($m->expires_at)->format('d M Y H:i') : '—' }}
                 </td>
-                <td class="px-4 py-3 text-right">
-                  @if($m->status === 'pending')
-                    <a href="{{ route('app.memberships.checkout', $m) }}" class="text-indigo-700 hover:underline">Checkout</a>
-                  @endif
+                <td class="px-4 py-3">
+                  <div class="flex items-center gap-2 justify-end acts">
+                    @if($m->status === 'pending')
+                      <a href="{{ route('app.memberships.checkout', $m) }}" class="btn btn-primary">Checkout</a>
+                      <button type="button" class="btn btn-muted" onclick="location.reload()">Cek Status</button>
+
+                      <form method="POST" action="{{ route('app.memberships.cancel', $m) }}" class="js-cancel-form">
+                        @csrf
+                        <input type="hidden" name="ack" value="0">
+                        <button class="btn btn-muted" type="submit">Batalkan</button>
+                      </form>
+
+                    @elseif($m->status === 'active')
+                      <form method="POST" action="{{ route('app.memberships.cancel', $m) }}" class="js-cancel-form">
+                        @csrf
+                        <input type="hidden" name="ack" value="0">
+                        <button class="btn btn-muted" type="submit">Nonaktifkan</button>
+                      </form>
+                    @else
+                      <span class="text-slate-400">—</span>
+                    @endif
+                  </div>
                 </td>
               </tr>
             @endforeach
@@ -281,3 +321,55 @@
   </section>
 </div>
 @endsection
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  document.querySelectorAll('form.js-cancel-form').forEach((form) => {
+    form.addEventListener('submit', (e) => {
+      e.preventDefault();
+
+      Swal.fire({
+        icon: 'warning',
+        title: 'Batalkan membership?',
+        html: `
+          <div class="text-left leading-relaxed">
+            <ul class="list-disc pl-5 space-y-1">
+              <li>Membership akan <b>langsung dinonaktifkan</b>.</li>
+              <li>Akses materi premium <b>dicabut</b>.</li>
+              <li>Sisa masa aktif <b>hangus</b>.</li>
+              <li>Pembayaran bersifat <b>non-refundable</b>.</li>
+            </ul>
+            <label class="mt-4 flex items-start gap-2">
+              <input type="checkbox" id="ack-cancel" class="mt-1">
+              <span>Saya memahami dan setuju dengan semua konsekuensi di atas.</span>
+            </label>
+          </div>
+        `,
+        showCancelButton: true,
+        confirmButtonText: 'Saya setuju & batalkan',
+        cancelButtonText: 'Batal',
+        reverseButtons: true,
+        focusConfirm: false,
+        allowOutsideClick: () => !Swal.isLoading(),
+        preConfirm: () => {
+          const ok = document.getElementById('ack-cancel')?.checked;
+          if (!ok) {
+            Swal.showValidationMessage('Centang persetujuan terlebih dahulu.');
+            return false;
+          }
+          return true;
+        }
+      }).then((res) => {
+        if (res.isConfirmed) {
+          const ackInput = form.querySelector('input[name="ack"]');
+          if (ackInput) ackInput.value = '1';
+          form.submit();
+        }
+      });
+    });
+  });
+});
+</script>
+@endpush
