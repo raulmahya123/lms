@@ -3,12 +3,57 @@
 
 @push('styles')
 <style>
-  .field{border:1px solid #e5e7eb;border-radius:12px;padding:.55rem .8rem}
-  .field:focus{outline:none;box-shadow:0 0 0 4px #bfdbfe;border-color:#60a5fa}
-  .btn{border-radius:12px;padding:.6rem 1rem;font-weight:600;transition:.15s ease}
-  .btn-primary{background:#7c3aed;color:#fff}
-  .btn-primary:hover{background:#6d28d9}
-  .chip{display:inline-flex;gap:.4rem;align-items:center;font-size:.8rem;border:1px solid #e5e7eb;border-radius:999px;padding:.25rem .6rem;background:#f8fafc}
+  .field {
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: .55rem .8rem
+  }
+  .field:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px #bfdbfe;
+    border-color: #3b82f6
+  }
+  .btn {
+    border-radius: 12px;
+    padding: .6rem 1rem;
+    font-weight: 600;
+    transition: .15s ease
+  }
+  .btn-primary {
+    background: #2563eb;
+    color: #fff
+  }
+  .btn-primary:hover {
+    background: #1d4ed8
+  }
+  .chip {
+    display: inline-flex;
+    gap: .4rem;
+    align-items: center;
+    font-size: .8rem;
+    border: 1px solid #e5e7eb;
+    border-radius: 999px;
+    padding: .25rem .6rem;
+    background: #f8fafc
+  }
+  .card {
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 12px;
+    padding: 1.25rem;
+    box-shadow: 0 2px 6px rgba(0,0,0,.05);
+  }
+  #btnPay {
+    background: linear-gradient(to right, #2563eb, #4f46e5);
+    color: #fff;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: .7rem 1rem;
+    transition: .2s ease;
+  }
+  #btnPay:hover {
+    background: linear-gradient(to right, #1e40af, #4338ca);
+  }
 </style>
 @endpush
 
@@ -28,14 +73,15 @@
 
   <header class="mb-6">
     <div class="flex items-center justify-between">
-      <h1 class="text-2xl md:text-3xl font-semibold text-gray-900">Checkout Membership</h1>
+      <h1 class="text-3xl font-extrabold text-gray-900">Checkout Membership</h1>
       <a href="{{ route('app.memberships.index') }}" class="text-sm text-blue-700 hover:underline">Kembali</a>
     </div>
     <p class="mt-1 text-sm text-gray-600">Masukkan kode kupon jika ada. Nominal akan dihitung otomatis.</p>
   </header>
 
   <div class="grid md:grid-cols-[1fr_18rem] gap-6 items-start">
-    <div class="p-5 rounded-lg border bg-white">
+    {{-- Ringkasan --}}
+    <div class="card">
       <h2 class="text-base font-semibold text-gray-900">Ringkasan</h2>
       <dl class="mt-3 divide-y divide-gray-100 text-sm">
         <div class="flex items-center justify-between py-2">
@@ -66,7 +112,8 @@
       </div>
     </div>
 
-    <aside class="p-5 rounded-lg border bg-white">
+    {{-- Total --}}
+    <aside class="card">
       <h2 class="text-base font-semibold text-gray-900">Total</h2>
 
       <div class="mt-3 space-y-1 text-sm text-gray-700">
@@ -78,16 +125,13 @@
           <span>Diskon</span>
           <span id="priceDiscount">- Rp 0</span>
         </div>
-        <div class="flex items-center justify-between font-semibold text-gray-900 text-lg mt-2 pt-2 border-t">
+        <div class="flex items-center justify-between font-bold text-indigo-700 text-2xl mt-2 pt-2 border-t">
           <span>Bayar</span>
           <span id="priceFinal">Rp {{ number_format($membership->plan->price ?? 0,0,',','.') }}</span>
         </div>
       </div>
 
-      <button id="btnPay"
-          class="mt-5 w-full px-3 py-2 rounded-lg bg-purple-600 text-white hover:bg-purple-700">
-          Bayar Sekarang
-      </button>
+      <button id="btnPay" class="mt-5 w-full">Bayar Sekarang</button>
 
       <p class="mt-3 text-xs text-gray-500">Dengan melanjutkan, Anda menyetujui syarat & ketentuan yang berlaku.</p>
     </aside>
@@ -109,7 +153,7 @@
   const csrf          = '{{ csrf_token() }}';
   const startUrl      = "{{ route('app.memberships.snap', $membership, false) }}";
   const finishUrl     = "{{ route('app.memberships.finish') }}";
-  const validateUrl   = "{{ route('app.coupons.validate') }}"; // -> CouponController@validateCode
+  const validateUrl   = "{{ route('app.coupons.validate') }}";
 
   const priceRawEl    = document.getElementById('priceRaw');
   const rowDiscountEl = document.getElementById('rowDiscount');
@@ -207,7 +251,6 @@
       const orderId = data.order_id;
 
       if (!window.snap || !data.snap_token) {
-        // fallback: pakai redirect_url
         if (data.redirect_url) { location.href = data.redirect_url; return; }
         throw new Error('Token pembayaran tidak tersedia.');
       }

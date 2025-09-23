@@ -4,7 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
-use App\Models\TestIq; // <— tambahkan
+use App\Models\TestIq;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -12,22 +12,15 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 class RegisteredUserController extends Controller
 {
-    /**
-     * Display the registration view.
-     */
     public function create(): View
     {
         return view('auth.register');
     }
 
-    /**
-     * Handle an incoming registration request.
-     *
-     * @throws \Illuminate\Validation\ValidationException
-     */
     public function store(Request $request): RedirectResponse
     {
         $request->validate([
@@ -45,16 +38,34 @@ class RegisteredUserController extends Controller
         event(new Registered($user));
         Auth::login($user);
 
-        // Cari Test IQ aktif terbaru, lalu redirect
-        $test = TestIq::query()->where('is_active', true)->latest('id')->first();
+        // Ambil Tes IQ aktif terbaru (stabil untuk UUID)
+        $test = TestIq::query()
+            ->where('is_active', true)
+            ->orderByDesc('created_at')
+            ->first();
 
+        // Bangun URL tujuan; untuk route param gunakan route key (mendukung UUID/ULID/ID)
         if ($test) {
-            return redirect()
-                ->route('user.test-iq.show', $test) // route model binding {testIq}
-                ->with('status', 'Akun berhasil dibuat. Silakan mulai Tes IQ Anda.');
+            $nextUrl = route('user.test-iq.show', [
+                'testIq' => $test->getRouteKey(), // pakai key sesuai model (uuid/id)
+            ]);
+        } else {
+            $nextUrl = route('dashboard'); // route tanpa parameter
         }
 
-        // Fallback bila belum ada test aktif
-        return redirect()->route('user.test-iq.show')->with('status', 'Akun berhasil dibuat.');
+        // Jika perlu verifikasi email, arahkan ke notice dan simpan intended URL
+        if ($user instanceof MustVerifyEmail && ! $user->hasVerifiedEmail()) {
+            session(['url.intended' => $nextUrl]);
+
+            return redirect()
+                ->route('verification.notice')
+                ->with('status', 'Akun berhasil dibuat. Silakan verifikasi email Anda terlebih dahulu.');
+        }
+
+        // Tidak perlu verifikasi / sudah terverifikasi
+        return redirect()->intended($nextUrl)
+            ->with('status', $test
+                ? 'Akun berhasil dibuat. Silakan mulai Tes IQ Anda.'
+                : 'Akun berhasil dibuat.');
     }
 }

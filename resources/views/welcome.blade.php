@@ -797,17 +797,18 @@
 
                                     <div class="mt-5 flex items-center gap-2">
                                         @if ($canAccessPsi)
-                                            <a href="{{ route('user.test-iq.show', $t) }}"
-                                                class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-white
-                              bg-gradient-to-r from-emerald-500 to-teal-500
-                              hover:brightness-105 active:brightness-95 transition text-sm">
-                                                Mulai Tes
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-                                                    viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                    <path stroke-linecap="round" stroke-linejoin="round"
-                                                        d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                                                </svg>
-                                            </a>
+                                            <a href="{{ route('user.test-iq.show', ['testIq' => $t->getRouteKey()]) }}"
+   class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-white
+          bg-gradient-to-r from-emerald-500 to-teal-500
+          hover:brightness-105 active:brightness-95 transition text-sm">
+    Mulai Tes
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
+         viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round"
+              d="M13 7l5 5m0 0l-5 5m5-5H6" />
+    </svg>
+</a>
+
                                             @auth
                                                 @php
                                                     $last = collect($t->submissions ?? [])

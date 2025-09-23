@@ -174,8 +174,7 @@ Route::middleware(['auth', 'verified', EnsureCurrentSession::class, EnsureSameDe
     // Katalog & detail kursus
     Route::get('/courses', [CourseBrowseController::class, 'index'])->name('app.courses.index');
     Route::get('/courses/{course}', [CourseBrowseController::class, 'show'])
-    ->whereUuid('course')->name('app.courses.show');
-    // ->middleware('app.ensure.lesson.accessible')
+        ->whereUuid('course')->name('app.courses.show');
 
     // Kursus saya & enroll
     Route::get('/my/courses', [UserEnrollmentController::class, 'index'])->name('app.my.courses');
@@ -212,9 +211,7 @@ Route::middleware(['auth', 'verified', EnsureCurrentSession::class, EnsureSameDe
         ->whereUuid('lesson')->name('lessons.drive.request');
 
     // Kupon
-    Route::post('/coupons/validate', [UserCouponController::class, 'validateCode'])
-        ->name('app.coupons.validate');
-
+    Route::post('/coupons/validate', [UserCouponController::class, 'validateCode'])->name('app.coupons.validate');
 
     // Checkout plan & course + confirm
     Route::post('/checkout/plan/{plan}', [CheckoutController::class, 'checkoutPlan'])
@@ -319,44 +316,39 @@ Route::middleware(['auth', 'verified', EnsureCurrentSession::class, EnsureSameDe
     Route::delete('qa-replies/{reply}', [UserQaReplyController::class, 'destroy'])
         ->whereUuid('reply')->name('app.qa-replies.destroy');
 
-    // =====================
-    // IQ Test (USER) — EXISTING milikmu (biarin)
-    // =====================
-    // Route::get('/iq/{testIq}', [UserTestIqController::class, 'show'])
-    //     ->whereUuid('testIq')->name('user.test-iq.show');
 
-    // Route::post('/iq/{testIq}/submit', [UserTestIqController::class, 'submit'])
-    //     ->whereUuid('testIq')->name('user.test-iq.submit');
 
-    // Route::get('/iq/{testIq}/result', [UserTestIqController::class, 'result'])
-    //     ->whereUuid('testIq')->name('user.test-iq.result');
-
-    Route::prefix('iq/{testIq}')
+    // Landing / info tes
+    Route::get('/iq/{testIq}', [UserTestIqController::class, 'show'])
         ->whereUuid('testIq')
-        ->as('user.test-iq.')
-        ->group(function () {
+        ->name('user.test-iq.show');
 
-            // Landing / info tes
-            Route::get('/', [UserTestIqController::class, 'show'])->name('show');
+    // Mulai tes
+    Route::get('/iq/{testIq}/start', [UserTestIqController::class, 'start'])
+        ->whereUuid('testIq')
+        ->name('user.test-iq.start');
 
-            // Mulai tes (GET) — tombol "Mulai Tes" di Blade mengarah ke sini
-            Route::get('/start', [UserTestIqController::class, 'start'])->name('start');
+    // Tampilkan 1 soal (step)
+    Route::get('/iq/{testIq}/q/{step}', [UserTestIqController::class, 'showStep'])
+        ->whereUuid('testIq')
+        ->whereNumber('step')
+        ->name('user.test-iq.question');
 
-            // Tampilkan 1 soal (GET) — step bernomor
-            Route::get('/q/{step}', [UserTestIqController::class, 'showStep'])
-                ->whereNumber('step')->name('question');
+    // Simpan jawaban 1 soal
+    Route::post('/iq/{testIq}/q/{step}', [UserTestIqController::class, 'answer'])
+        ->whereUuid('testIq')
+        ->whereNumber('step')
+        ->name('user.test-iq.answer');
 
-            // Simpan jawaban 1 soal & navigasi (POST)
-            Route::post('/q/{step}', [UserTestIqController::class, 'answer'])
-                ->whereNumber('step')->name('answer');
+    // Submit akhir
+    Route::post('/iq/{testIq}/submit', [UserTestIqController::class, 'submit'])
+        ->whereUuid('testIq')
+        ->name('user.test-iq.submit');
 
-            // Submit akhir (POST)
-            Route::post('/submit', [UserTestIqController::class, 'submit'])->name('submit');
-
-            // Hasil
-            Route::get('/result', [UserTestIqController::class, 'result'])->name('result');
-        });
-
+    // Hasil
+    Route::get('/iq/{testIq}/result', [UserTestIqController::class, 'result'])
+        ->whereUuid('testIq')
+        ->name('user.test-iq.result');
     // =====================
     // IQ Test (USER) — TAMBAHAN: versi app.* (URI berbeda biar gak tabrakan)
     // =====================

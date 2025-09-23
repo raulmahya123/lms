@@ -231,11 +231,13 @@
     {{-- kosong --}}
     <div class="p-6 rounded-2xl border bg-white/70 backdrop-blur-xl shadow-sm">
       <p class="text-gray-600 mb-4">Belum ada hasil test untuk kamu.</p>
-      <a href="{{ route('user.test-iq.show', $test) }}"
-         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl
-                bg-gradient-to-r from-indigo-600 to-fuchsia-600 text-white shadow-md hover:opacity-95 transition">
-        Mulai Test
-      </a>
+     <a href="{{ route('user.test-iq.show', ['testIq' => $test->getRouteKey()]) }}"
+   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl
+          bg-gradient-to-r from-indigo-600 to-fuchsia-600 
+          text-white shadow-md hover:opacity-95 transition">
+    Mulai Tes
+</a>
+
     </div>
   @endif
 </div>
