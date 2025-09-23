@@ -62,8 +62,6 @@
         </div>
       </div>
       <div class="flex items-center gap-2 text-slate-600">
-        <span class="tag">Gen‑Z mode ✨</span>
-        <span class="tag">Blue vibes 💙</span>
         <button class="btn btn-ghost" @click="togglePrivacy()" :aria-pressed="privacyOn">
           <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 1C7 1 3 5 3 10v2a9 9 0 0 0 18 0v-2c0-5-4-9-9-9Z"/><path d="M8 12v-2a4 4 0 0 1 8 0v2"/><rect x="9" y="12" width="6" height="7" rx="1"/></svg>
           <span x-text="privacyOn ? 'Private ON' : 'Private OFF'"></span>
