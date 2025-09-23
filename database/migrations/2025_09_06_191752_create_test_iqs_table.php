@@ -19,7 +19,7 @@ return new class extends Migration
             $table->json('questions')->nullable();
             $table->boolean('is_active')->default(false);
             $table->integer('duration_minutes')->default(0);
-
+            $table->json('meta')->nullable(); 
             // === cool-down ===
             $table->unsignedSmallInteger('cooldown_value')->default(1); // 1,2,3 dst
             $table->string('cooldown_unit', 10)->default('month');      // day|week|month

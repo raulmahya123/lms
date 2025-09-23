@@ -10,13 +10,9 @@ class TestIq extends Model
 {
     use HasUuids;
 
-    /**
-     * PK UUID (string).
-     */
     public $incrementing = false;
     protected $keyType   = 'string';
-
-    protected $table = 'test_iq';
+    protected $table     = 'test_iq';
 
     protected $fillable = [
         'title',
@@ -27,6 +23,7 @@ class TestIq extends Model
         'cooldown_value',    // angka: 1, 2, 3, ...
         'cooldown_unit',     // 'day' | 'week' | 'month'
         'submissions',       // JSON hasil user (opsional)
+        'meta',              // <-- penting untuk norm_table, level, max_questions
     ];
 
     protected $casts = [
@@ -35,12 +32,11 @@ class TestIq extends Model
         'is_active'        => 'boolean',
         'duration_minutes' => 'integer',
         'cooldown_value'   => 'integer',
-        // cooldown_unit tetap string
+        'meta'             => 'array',
     ];
 
     /** ================= Helpers ================= */
 
-    /** Total jumlah soal */
     public function totalQuestions(): int
     {
         return count($this->questions ?? []);
@@ -56,26 +52,24 @@ class TestIq extends Model
             ->sortByDesc('submitted_at')
             ->first();
 
-        if (! $last || empty($last['submitted_at'])) {
+        if (!$last || empty($last['submitted_at'])) {
             return now(); // belum pernah ikut → boleh sekarang
         }
 
         $start = Carbon::parse($last['submitted_at']);
 
         return match ($this->cooldown_unit) {
-            'day'   => $start->copy()->addDays($this->cooldown_value),
-            'week'  => $start->copy()->addWeeks($this->cooldown_value),
-            default => $start->copy()->addMonths($this->cooldown_value), // 'month'
+            'day'   => $start->copy()->addDays((int)$this->cooldown_value),
+            'week'  => $start->copy()->addWeeks((int)$this->cooldown_value),
+            default => $start->copy()->addMonths((int)$this->cooldown_value), // 'month'
         };
     }
 
-    /** Apakah user boleh ikut tes sekarang? */
     public function canAttempt(string $userId): bool
     {
         return now()->greaterThanOrEqualTo($this->nextAvailableAtFor($userId));
     }
 
-    /** Ambil submission terakhir user ini untuk tes ini */
     public function lastSubmissionFor(string $userId): ?array
     {
         return collect($this->submissions ?? [])
@@ -84,3 +78,4 @@ class TestIq extends Model
             ->first() ?: null;
     }
 }
+    

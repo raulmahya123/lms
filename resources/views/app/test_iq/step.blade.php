@@ -48,13 +48,22 @@
       <div class="hidden sm:block text-xs text-slate-500">Progress</div>
     </div>
     <div class="w-full h-2 bg-slate-100 rounded overflow-hidden mb-4">
-      <div class="h-2 bg-blue-600" style="width: {{ (int)round(($index-1)/max(1,$total)*100) }}%"></div>
+      <div class="h-2 bg-blue-600" style="width: {{ (int)round(($index-1)/max(1,$total-1)*100) }}%"></div>
     </div>
 
     <!-- Kartu soal -->
     <section class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 sm:p-7">
+      @php
+        // Normalisasi struktur soal (compat q/text)
+        $questionText = $q['text'] ?? ($q['q'] ?? '—');
+        // Pastikan opsi berupa list string
+        $options = is_array($q['options'] ?? null) ? array_values($q['options']) : [];
+        // prevAnswer dari controller bisa INT (index) atau STRING (legacy)
+        $prev = $prevAnswer ?? null;
+      @endphp
+
       <h2 class="text-lg sm:text-xl font-semibold leading-snug mb-5">
-        {{ $q['q'] ?? '—' }}
+        {{ $questionText }}
       </h2>
 
       <form id="iq-step-form" method="POST" action="{{ route('user.test-iq.answer', [$test, $index]) }}" class="space-y-6">
@@ -62,19 +71,26 @@
 
         <!-- Opsi jawaban -->
         <div class="grid gap-2">
-          @foreach(($q['options'] ?? []) as $i => $opt)
+          @forelse($options as $i => $opt)
             @php
-              $checked = isset($prevAnswer) && $prevAnswer === $opt;
-              $letter  = chr(65 + $i);
-              $id      = 'opt_'.($i+1);
+              $optText = (string)$opt;
+              // tandai checked jika prev == index ATAU prev string = teks opsi (kompat lama)
+              $isChecked = (is_int($prev) && $prev === $i) || (!is_int($prev) && is_string($prev) && $prev === $optText);
+              $letter    = chr(65 + $i);
+              $id        = 'opt_'.$index.'_'.$i; // unik per step
             @endphp
             <label for="{{ $id }}" class="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition">
-              <input id="{{ $id }}" type="radio" name="answer" value="{{ $opt }}" class="peer sr-only" @checked($checked)>
+              <!-- value = INDEX (sinkron dengan controller yang menyimpan index) -->
+              <input id="{{ $id }}" type="radio" name="answer" value="{{ $i }}" class="peer sr-only" @checked($isChecked)>
               <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-700 font-semibold text-sm peer-checked:bg-blue-600 peer-checked:text-white">{{ $letter }}</span>
-              <span class="text-slate-800 leading-relaxed">{{ $opt }}</span>
+              <span class="text-slate-800 leading-relaxed">{{ $optText }}</span>
               <span class="ml-auto hidden sm:inline text-xs text-slate-400 peer-checked:text-blue-600">pilih</span>
             </label>
-          @endforeach
+          @empty
+            <div class="rounded-xl border bg-amber-50 text-amber-800 px-3 py-2 text-sm">
+              Opsi jawaban belum diset untuk soal ini.
+            </div>
+          @endforelse
         </div>
 
         <!-- Navigasi desktop -->
@@ -154,7 +170,7 @@
         secEl.textContent = pad(left % 60);
       }
       if (bar){
-        const pct = Math.max(0, Math.min(100, left/(durMin*60) * 100));
+        const pct = Math.max(0, Math.min(100, (left/(durMin*60)) * 100));
         bar.style.width = pct + '%';
       }
       if (box){

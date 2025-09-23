@@ -4,7 +4,6 @@
 
 @push('styles')
 <style>
-  /* animasi gradient & progress */
   @keyframes gradientShift { 0%{background-position:0% 50%} 50%{background-position:100% 50%} 100%{background-position:0% 50%} }
   .animated-gradient { background-size:200% 200%; animation: gradientShift 6s ease infinite; }
 </style>
@@ -13,7 +12,6 @@
 @section('content')
 <div class="max-w-4xl mx-auto py-10 px-4 sm:px-6">
 
-  {{-- Header --}}
   <div class="flex items-center justify-between mb-6">
     <div>
       <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium
@@ -29,7 +27,6 @@
       </h1>
     </div>
 
-    {{-- Ulangi Test (lock = disabled + gembok) --}}
     @if(empty($nextAt))
       <a href="{{ route('user.test-iq.start', $test) }}"
          class="group inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-indigo-200 text-indigo-700
@@ -44,7 +41,6 @@
       <button disabled
         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border bg-gray-50 text-gray-400 cursor-not-allowed
                border-gray-200">
-        {{-- icon gembok --}}
         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
              viewBox="0 0 24 24" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -55,49 +51,103 @@
     @endif
   </div>
 
-  {{-- Flash --}}
   @if(session('status'))
     <div class="mb-4 p-3 rounded-xl bg-emerald-50 text-emerald-700 border border-emerald-200">{{ session('status') }}</div>
   @endif
 
   @if($result)
     @php
-      // Data dasar
-      $questions = array_values($test->questions ?? []);
-      $total     = count($questions);
-      $score     = (int) ($result['score'] ?? 0);
-      $pct       = $total > 0 ? round($score / $total * 100) : 0;
+      // ===== ambil & batasi soal sesuai meta.max_questions =====
+      $allQuestions = array_values($test->questions ?? []);
+      $maxQ = (int) data_get($test, 'meta.max_questions', 0);
+      $questions = $maxQ > 0 ? array_slice($allQuestions, 0, $maxQ) : $allQuestions;
 
+      // ===== dasar dari submission =====
+      $total     = (int)($result['total'] ?? count($questions));
+      if ($total !== count($questions)) { $total = count($questions); } // konsistenkan dengan batas
+      $score     = (int)($result['raw_correct'] ?? 0);
+      $pct       = (int) round($total > 0 ? ($score / max(1,$total)) * 100 : 0);
+
+      // badge heuristik (UI): tidak mempengaruhi perhitungan IQ
       $badge =
         $pct >= 85 ? ['bg'=>'bg-emerald-100','text'=>'text-emerald-800','label'=>'Excellent ✨'] :
         ($pct >= 70 ? ['bg'=>'bg-blue-100','text'=>'text-blue-800','label'=>'Good 👍'] :
         ($pct >= 50 ? ['bg'=>'bg-amber-100','text'=>'text-amber-800','label'=>'Fair 🙂'] :
                       ['bg'=>'bg-rose-100','text'=>'text-rose-800','label'=>'Need Practice 💪']));
 
-      $answers = is_array($result['answers'] ?? null) ? $result['answers'] : [];
-      $qKey = function(array $q, int $step): string { return (string)($q['id'] ?? $q['uuid'] ?? $q['key'] ?? $step); };
+      // answers yang tersimpan (key: id/uuid/key/step) -> index integer/string/null
+      $answersMap = is_array($result['answers'] ?? null) ? $result['answers'] : [];
 
+      // generator key sama seperti controller
+      $qKey = function(array $q, int $step): string {
+        return (string)($q['id'] ?? $q['uuid'] ?? $q['key'] ?? $step);
+      };
+
+      // ===== build rows: bandingkan index vs index, render teks opsi =====
       $rows = [];
       foreach ($questions as $i => $q) {
-        $step     = $i + 1;
-        $key      = $qKey($q, $step);
-        $correct  = $q['answer'] ?? null;
-        $userAns  = $answers[$key] ?? null;
-        $isRight  = ($correct !== null && $userAns === $correct);
+        $step = $i + 1;
+        $key  = $qKey($q, $step);
+        $opts = array_values($q['options'] ?? []);
+
+        // kunci index (support data lama yang punya 'answer' string)
+        $rightIdx = array_key_exists('answer_index', $q) ? $q['answer_index'] : null;
+        if ($rightIdx === null && isset($q['answer']) && is_string($q['answer'])) {
+            $pos = array_search($q['answer'], $opts, true);
+            $rightIdx = ($pos !== false) ? (int)$pos : null;
+        }
+
+        // jawaban user (mungkin int/string/null) -> normalisasi ke index
+        $userIdx = $answersMap[$key] ?? null;
+        if (!is_null($userIdx) && !is_int($userIdx)) {
+          if (is_numeric($userIdx)) {
+            $userIdx = (int)$userIdx;
+          } else {
+            $pos = array_search((string)$userIdx, $opts, true);
+            $userIdx = ($pos !== false) ? (int)$pos : null;
+          }
+        }
+
+        $isRight   = (is_int($userIdx) && is_int($rightIdx) && $userIdx === $rightIdx);
+        $userText  = (is_int($userIdx)  && array_key_exists($userIdx, $opts))  ? (string)$opts[$userIdx]  : '—';
+        $rightText = (is_int($rightIdx) && array_key_exists($rightIdx, $opts)) ? (string)$opts[$rightIdx] : '—';
+
         $rows[] = [
           'step'     => $step,
-          'q'        => $q['q'] ?? ($q['text'] ?? null) ?? '—',
-          'answer'   => $userAns,
-          'correct'  => $correct,
+          'q'        => $q['q'] ?? ($q['text'] ?? '—'),
+          'answer'   => $userText,
+          'correct'  => $rightText,
           'is_right' => $isRight,
         ];
       }
+
+      // ===== IQ & band =====
+      // Prioritaskan nilai yang sudah disimpan controller (estimated_iq & band).
+      $iq      = $result['estimated_iq'] ?? null;
+      $iqLabel = $result['band'] ?? null;
+
+      if ($iq === null) {
+        // fallback linear dari config agar tidak hardcode
+        $base   = (float) (config('test_iq.iq.linear.base', 70));
+        $perPct = (float) (config('test_iq.iq.linear.per_percent', 0.75));
+        $minIQ  = (int) config('test_iq.iq.min', 55);
+        $maxIQ  = (int) config('test_iq.iq.max', 160);
+        $iq     = (int) max($minIQ, min($maxIQ, round($base + $perPct * $pct)));
+
+        // tentukan band dari config
+        $bands = (array) config('test_iq.iq.bands', []);
+        $iqLabel = 'Unspecified';
+        foreach ($bands as $b) {
+          if ($iq >= (int)($b['min'] ?? 0)) { $iqLabel = (string)($b['label'] ?? $iqLabel); break; }
+        }
+      }
+
+      $dur = (int) max(0, (int)($result['duration_sec'] ?? 0));
     @endphp
 
     <div class="grid gap-5 md:grid-cols-3 mb-6">
       {{-- Card Skor --}}
-      <div class="md:col-span-2 relative overflow-hidden rounded-2xl border
-                  bg-white/70 backdrop-blur-xl shadow-sm">
+      <div class="md:col-span-2 relative overflow-hidden rounded-2xl border bg-white/70 backdrop-blur-xl shadow-sm">
         <div class="absolute inset-0 opacity-40 pointer-events-none
                     animated-gradient bg-[linear-gradient(120deg,#c7d2fe_0%,#f5d0fe_50%,#c7d2fe_100%)]"></div>
         <div class="relative p-6">
@@ -111,34 +161,36 @@
             <div class="text-5xl font-extrabold tracking-tight">{{ $score }}</div>
             <div class="text-gray-600">/ {{ $total }}</div>
           </div>
-
-          {{-- Progress bar --}}
           <div class="mt-5">
             <div class="text-sm text-gray-600 mb-1">Persentase</div>
             <div class="w-full h-2.5 rounded-full bg-gray-200 overflow-hidden">
               <div class="h-2.5 rounded-full animated-gradient
-                          bg-[linear-gradient(90deg,#6366f1,#a855f7,#22d3ee)]
-                          shadow-inner" style="width: {{ $pct }}%"></div>
+                          bg-[linear-gradient(90deg,#6366f1,#a855f7,#22d3ee)]"
+                   style="width: {{ $pct }}%"></div>
             </div>
             <div class="text-right text-xs text-gray-500 mt-1">{{ $pct }}%</div>
           </div>
         </div>
       </div>
 
-      {{-- Card Ringkasan --}}
+      {{-- Ringkasan --}}
       <div class="rounded-2xl border bg-white/70 backdrop-blur-xl shadow-sm p-6">
         <div class="text-gray-600 mb-2">Ringkasan</div>
         <div class="space-y-2 text-sm">
           <div class="flex items-center gap-2">
-            <span class="inline-flex items-center justify-center h-6 w-6 rounded-lg bg-slate-100">
-              ⏱
-            </span>
-            <div><span class="text-gray-500">Waktu Kerja:</span> <span class="font-medium">{{ $result['duration_sec'] ?? '-' }} detik</span></div>
+            <span class="inline-flex items-center justify-center h-6 w-6 rounded-lg bg-indigo-100 text-indigo-700 font-semibold">IQ</span>
+            <div class="flex items-baseline gap-2">
+              <span class="text-gray-500">Skor IQ:</span>
+              <span class="text-2xl font-extrabold tabular-nums">{{ $iq }}</span>
+              <span class="text-xs px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-100">{{ $iqLabel }}</span>
+            </div>
           </div>
           <div class="flex items-center gap-2">
-            <span class="inline-flex items-center justify-center h-6 w-6 rounded-lg bg-slate-100">
-              📅
-            </span>
+            <span class="inline-flex items-center justify-center h-6 w-6 rounded-lg bg-slate-100">⏱</span>
+            <div><span class="text-gray-500">Waktu Kerja:</span> <span class="font-medium">{{ $dur }} detik</span></div>
+          </div>
+          <div class="flex items-center gap-2">
+            <span class="inline-flex items-center justify-center h-6 w-6 rounded-lg bg-slate-100">📅</span>
             <div>
               <span class="text-gray-500">Tanggal:</span>
               <span class="font-medium">
@@ -165,7 +217,6 @@
           @endif
         </div>
 
-        {{-- CTA Coba Lagi --}}
         @if(empty($nextAt))
           <a href="{{ route('user.test-iq.start', $test) }}"
              class="mt-4 inline-flex w-full items-center justify-center gap-2 px-4 py-2 rounded-xl
@@ -181,7 +232,6 @@
           <button disabled
             class="mt-4 inline-flex w-full items-center justify-center gap-2 px-4 py-2 rounded-xl
                    bg-gray-200 text-gray-500 cursor-not-allowed border border-gray-300">
-            {{-- gembok --}}
             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4"
                  fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -228,16 +278,14 @@
     </div>
 
   @else
-    {{-- kosong --}}
     <div class="p-6 rounded-2xl border bg-white/70 backdrop-blur-xl shadow-sm">
       <p class="text-gray-600 mb-4">Belum ada hasil test untuk kamu.</p>
-     <a href="{{ route('user.test-iq.show', ['testIq' => $test->getRouteKey()]) }}"
-   class="inline-flex items-center gap-2 px-4 py-2 rounded-xl
-          bg-gradient-to-r from-indigo-600 to-fuchsia-600 
-          text-white shadow-md hover:opacity-95 transition">
-    Mulai Tes
-</a>
-
+      <a href="{{ route('user.test-iq.show', ['testIq' => $test->getRouteKey()]) }}"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl
+                bg-gradient-to-r from-indigo-600 to-fuchsia-600
+                text-white shadow-md hover:opacity-95 transition">
+        Mulai Tes
+      </a>
     </div>
   @endif
 </div>

@@ -18,7 +18,7 @@
         <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 3.75A3.75 3.75 0 0 1 11.25 0h1.5A3.75 3.75 0 0 1 16.5 3.75v.39A3.75 3.75 0 0 1 21 7.5a3.75 3.75 0 0 1-1.76 3.18A3.75 3.75 0 0 1 18 18a3.75 3.75 0 0 1-3.75 3.75H9A3.75 3.75 0 0 1 5.25 18v-.39A3.75 3.75 0 0 1 3 13.5a3.75 3.75 0 0 1 1.76-3.18A3.75 3.75 0 0 1 7.5 4.14v-.39Z"/></svg>
         IQ Tests
       </h1>
-      <p class="text-sm opacity-70">Kelola bank tes IQ: status aktif, jumlah soal, dan durasi.</p>
+      <p class="text-sm opacity-70">Kelola bank tes IQ: status aktif, jumlah soal, durasi, cooldown, dan norma.</p>
     </div>
 
     <div class="flex items-center gap-2">
@@ -80,7 +80,7 @@
         <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M3.75 6A.75.75 0 0 1 4.5 5.25h15a.75.75 0 0 1 .6 1.2l-5.4 7.2v4.35a.75.75 0 0 1-1.065.683l-3-1.35A.75.75 0 0 1 10.5 16.5v-2.85l-5.4-7.2A.75.75 0 0 1 3.75 6Z"/></svg>
         Apply
       </button>
-      @if(request()->hasAny(['q','active']) && ($q!==null && $q!=='') || $active!=='')
+      @if(request()->hasAny(['q','active']) && (($q!==null && $q!=='') || ($active!==null && $active!=='')))
         <a href="{{ route('admin.test-iq.index') }}"
            class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border hover:bg-gray-50 transition">
           {{-- reset --}}
@@ -123,16 +123,49 @@
         <thead class="bg-gray-100 text-gray-700 sticky top-0">
           <tr>
             <th class="p-3 text-left">Judul</th>
-            <th class="p-3 text-left w-28">Aktif</th>
-            <th class="p-3 text-left w-28">Soal</th>
-            <th class="p-3 text-left w-28">Durasi</th>
-            <th class="p-3 text-center w-44">Aksi</th>
+            <th class="p-3 text-left w-24">Aktif</th>
+            <th class="p-3 text-left w-24">Soal</th>
+            <th class="p-3 text-left w-24">Durasi</th>
+            <th class="p-3 text-left w-32">Cooldown</th>     {{-- NEW --}}
+            <th class="p-3 text-left w-28">Submissions</th>  {{-- NEW --}}
+            <th class="p-3 text-left w-24">Norma</th>        {{-- NEW --}}
+            <th class="p-3 text-center w-52">Aksi</th>
           </tr>
         </thead>
         <tbody class="[&>tr:hover]:bg-gray-50">
           @forelse($tests as $t)
-            <tr class="border-t">
+            @php
+              // Soal
+              $qCount = is_array($t->questions ?? null) ? count($t->questions) : 0;
 
+              // Durasi
+              $min = (int)($t->duration_minutes ?? 0);
+              if ($min) {
+                if ($min >= 60) {
+                  $h = intdiv($min, 60);
+                  $m = $min % 60;
+                  $durText = $h.'h'.($m ? ' '.$m.'m' : '');
+                } else {
+                  $durText = $min.'m';
+                }
+              } else {
+                $durText = '—';
+              }
+
+              // Cooldown
+              $cdVal  = $t->cooldown_value ?? null;
+              $cdUnit = $t->cooldown_unit  ?? null;
+              $cdText = ($cdVal !== null && $cdUnit) ? ($cdVal.' '.$cdUnit) : '—';
+
+              // Submissions count
+              $subsArr = is_array($t->submissions ?? null) ? $t->submissions : [];
+              $subsCnt = is_array($subsArr) ? count($subsArr) : 0;
+
+              // Norma exist?
+              $hasNorm = !empty(data_get($t, 'meta.norm_table')) && is_array(data_get($t, 'meta.norm_table'));
+            @endphp
+
+            <tr class="border-t">
               <td class="p-3">
                 <div class="font-semibold">{{ $t->title }}</div>
                 @if(!empty($t->description))
@@ -147,7 +180,6 @@
                   @csrf
                   <button class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs {{ $t->is_active ? 'bg-emerald-100 text-emerald-800':'bg-gray-100 text-gray-700' }}"
                           title="Toggle aktif/nonaktif">
-                    {{-- status dot --}}
                     <span class="inline-block w-2 h-2 rounded-full {{ $t->is_active ? 'bg-emerald-600':'bg-gray-500' }}"></span>
                     {{ $t->is_active ? 'Aktif' : 'Nonaktif' }}
                   </button>
@@ -156,28 +188,41 @@
 
               <td class="p-3">
                 <div class="inline-flex items-center gap-2 rounded-xl border px-2 py-1 bg-white">
-                  {{-- stack icon --}}
                   <svg class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.75 2.75 7.5 12 12.25 21.25 7.5 12 2.75Zm0 9.5L2.75 17l9.25 4.75L21.25 17 12 12.25Z"/></svg>
-                  <span class="tabular-nums">{{ method_exists($t,'totalQuestions') ? $t->totalQuestions() : ($t->questions_count ?? '0') }}</span>
+                  <span class="tabular-nums">{{ $qCount }}</span>
                 </div>
               </td>
 
               <td class="p-3">
-                @php
-                  $min = $t->duration_minutes;
-                  if ($min) {
-                    if ($min >= 60) {
-                      $h = intdiv($min, 60);
-                      $m = $min % 60;
-                      $durText = $h.'h'.($m ? ' '.$m.'m' : '');
-                    } else {
-                      $durText = $min.'m';
-                    }
-                  } else {
-                    $durText = '—';
-                  }
-                @endphp
                 <span class="tabular-nums">{{ $durText }}</span>
+              </td>
+
+              <td class="p-3">
+                <span class="inline-flex items-center gap-2 rounded-xl border px-2 py-1 bg-white">
+                  {{-- clock --}}
+                  <svg class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.25a9.75 9.75 0 1 0 0 19.5 9.75 9.75 0 0 0 0-19.5Zm.75 5.25a.75.75 0 0 0-1.5 0v4.25c0 .2.08.39.22.53l2.5 2.5a.75.75 0 1 0 1.06-1.06l-2.28-2.28V7.5Z"/></svg>
+                  <span class="tabular-nums">{{ $cdText }}</span>
+                </span>
+              </td>
+
+              <td class="p-3">
+                <span class="inline-flex items-center gap-2 rounded-xl border px-2 py-1 bg-white">
+                  {{-- users --}}
+                  <svg class="w-4 h-4 opacity-70" viewBox="0 0 24 24" fill="currentColor"><path d="M7.5 6.75a3.75 3.75 0 1 1 7.5 0 3.75 3.75 0 0 1-7.5 0ZM3 18a5.25 5.25 0 0 1 10.5 0v.75H3V18Zm13.5-6a2.25 2.25 0 1 1 0 4.5 2.25 2.25 0 0 1 0-4.5Zm4.5 6a3 3 0 0 0-5.35-1.86 6.72 6.72 0 0 1 1.85 4.11V18.75H21V18Z"/></svg>
+                  <span class="tabular-nums">{{ $subsCnt }}</span>
+                </span>
+              </td>
+
+              <td class="p-3">
+                @if($hasNorm)
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-indigo-100 text-indigo-800">
+                    <span class="inline-block w-2 h-2 rounded-full bg-indigo-600"></span> Ada
+                  </span>
+                @else
+                  <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-gray-100 text-gray-700">
+                    <span class="inline-block w-2 h-2 rounded-full bg-gray-500"></span> Tidak
+                  </span>
+                @endif
               </td>
 
               <td class="p-3 text-center">
@@ -203,7 +248,7 @@
             </tr>
           @empty
             <tr>
-              <td colspan="6" class="p-10 text-center text-sm opacity-70">Belum ada data.</td>
+              <td colspan="8" class="p-10 text-center text-sm opacity-70">Belum ada data.</td>
             </tr>
           @endforelse
         </tbody>
