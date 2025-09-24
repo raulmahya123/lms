@@ -190,19 +190,6 @@
       <p class="mt-1 text-xs text-[color:var(--ink)]/50">*Data Anda aman. Tidak ada informasi yang dipublikasikan tanpa persetujuan eksplisit.</p>
     </div>
   </section>
-
-  {{-- CTA --}}
-  <div class="text-center">
-    <a href="{{ route('app.psy.tests.index') }}"
-       class="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white hover:opacity-95 transition"
-       style="background:linear-gradient(90deg,var(--blue-1),var(--blue-2));">
-      Jelajahi Tes Lainnya
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
-           viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-      </svg>
-    </a>
-  </div>
 </div>
 
 @push('scripts')
