@@ -4,7 +4,6 @@ namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
 use App\Models\PsyTest;
-use App\Models\PsyQuestion;
 use App\Models\PsyAttempt;
 use App\Models\PsyAnswer;
 use Illuminate\Http\Request;
@@ -14,10 +13,6 @@ use Carbon\Carbon;
 
 class PsyTestController extends Controller
 {
-    /** daftar nilai yang diizinkan (sinkron dgn Admin) */
-    private const TRACKS = ['backend','frontend','fullstack','qa','devops','pm','custom'];
-    private const TYPES  = ['likert','mcq','iq','disc','big5','custom'];
-
     public function __construct()
     {
         // Tes biasanya untuk user login; kalau mau publik, hapus middleware ini.
@@ -25,11 +20,12 @@ class PsyTestController extends Controller
     }
 
     /** Normalisasi & whitelist sort */
-    private function normalizeSort(Request $r): array
+    private function normalizeSort(Request $r): string
     {
-        $allowedSorts = ['latest','name','questions']; // latest=id desc, name asc, questions=questions_count desc
-        $sort = in_array($r->get('sort'), $allowedSorts, true) ? $r->get('sort') : 'latest';
-        return [$sort];
+        // latest = created_at desc, name = asc, questions = questions_count desc
+        $allowed = ['latest', 'name', 'questions'];
+        $sort = (string) $r->get('sort', 'latest');
+        return in_array($sort, $allowed, true) ? $sort : 'latest';
     }
 
     /** Ambil perPage aman (10..100) */
@@ -45,46 +41,53 @@ class PsyTestController extends Controller
      */
     public function index(Request $r)
     {
-        [$sort] = $this->normalizeSort($r);
+        $sort    = $this->normalizeSort($r);
         $perPage = $this->perPage($r);
 
         $q = PsyTest::query()
             ->where('is_active', true)
-            ->when($r->filled('q'), function ($q) use ($r) {
-                $term = trim($r->q);
-                $q->where(function ($qq) use ($term) {
-                    $qq->where('name', 'like', "%{$term}%")
-                       ->orWhere('slug', 'like', "%{$term}%");
+            ->when($r->filled('q'), function ($qb) use ($r) {
+                $term = trim((string) $r->q);
+                $qb->where(function ($w) use ($term) {
+                    $w->where('name', 'like', "%{$term}%")
+                      ->orWhere('slug', 'like', "%{$term}%");
                 });
             })
-            ->when($r->filled('track') && in_array($r->track, self::TRACKS, true),
-                fn($q) => $q->where('track', $r->track))
-            ->when($r->filled('type') && in_array($r->type, self::TYPES, true),
-                fn($q) => $q->where('type', $r->type))
+            ->when(
+                $r->filled('track') && in_array($r->track, PsyTest::TRACKS, true),
+                fn ($qb) => $qb->where('track', $r->track)
+            )
+            ->when(
+                $r->filled('type') && in_array($r->type, PsyTest::TYPES, true),
+                fn ($qb) => $qb->where('type', $r->type)
+            )
             ->withCount('questions');
 
-        // Sorting
+        // Sorting (UUID-friendly)
         if ($sort === 'name') {
-            $q->orderBy('name')->orderBy('id', 'desc');
+            $q->orderBy('name')->orderBy('created_at', 'desc');
         } elseif ($sort === 'questions') {
-            $q->orderBy('questions_count', 'desc')->orderBy('id', 'desc');
+            $q->orderBy('questions_count', 'desc')->orderBy('created_at', 'desc');
         } else {
-            $q->latest('id');
+            $q->orderBy('created_at', 'desc');
         }
 
         $tests = $q->paginate($perPage)->withQueryString();
 
-        // === Status attempt aktif per test (untuk tombol Resume/Start) ===
+        // === Status attempt aktif per test (Resume/Start) ===
         $testIds = collect($tests->items())->pluck('id')->all();
-        $activeAttempts = PsyAttempt::where('user_id', Auth::id())
+
+        $activeAttempts = PsyAttempt::query()
+            ->where('user_id', Auth::id())
             ->whereNull('submitted_at')
-            ->whereIn('test_id', $testIds)
-            ->get(['id','test_id','started_at']);
+            ->when(!empty($testIds), fn($qb) => $qb->whereIn('test_id', $testIds))
+            ->get(['id', 'test_id', 'started_at']);
 
         $attemptByTest = $activeAttempts->keyBy('test_id');
 
         // Hitung jumlah jawaban per attempt untuk indikasi progres
-        $answerCountsByAttempt = PsyAnswer::whereIn('attempt_id', $activeAttempts->pluck('id'))
+        $answerCountsByAttempt = PsyAnswer::query()
+            ->when($activeAttempts->isNotEmpty(), fn($qb) => $qb->whereIn('attempt_id', $activeAttempts->pluck('id')))
             ->selectRaw('attempt_id, COUNT(*) as c')
             ->groupBy('attempt_id')
             ->pluck('c', 'attempt_id');
@@ -93,14 +96,14 @@ class PsyTestController extends Controller
         $canStartByTest = [];
         $isOngoingByTest = [];
         foreach ($tests as $t) {
-            $canStartByTest[$t->id] = ($t->questions_count ?? 0) > 0;
+            $canStartByTest[$t->id] = (int) ($t->questions_count ?? 0) > 0;
             $isOngoingByTest[$t->id] = $attemptByTest->has($t->id);
         }
 
         return view('app.psy_tests.index', [
             'tests'                 => $tests,
-            'tracks'                => self::TRACKS,
-            'types'                 => self::TYPES,
+            'tracks'                => PsyTest::TRACKS,
+            'types'                 => PsyTest::TYPES,
 
             // filter state
             'q'                     => $r->q,
@@ -121,46 +124,52 @@ class PsyTestController extends Controller
      * GET /psy-tests/{slugOrId}
      * Tampilkan detail test (aktif) beserta daftar pertanyaan & options + CTA Start/Resume.
      */
-    public function show(Request $r, string|int $slugOrId)
+    public function show(Request $r, string $slugOrId)
     {
         $test = PsyTest::query()
             ->where('is_active', true)
-            ->where(function ($q) use ($slugOrId) {
-                $q->where('id', $slugOrId)->orWhere('slug', $slugOrId);
+            ->where(function ($qb) use ($slugOrId) {
+                $qb->where('id', $slugOrId)->orWhere('slug', $slugOrId);
             })
             ->withCount('questions')
             ->firstOrFail();
 
         // (opsional) tampilkan daftar soal di halaman detail
-        $test->load(['questions' => function ($q) {
-            $q->orderBy('ordering')->orderBy('id')
-              ->with(['options' => function ($qq) {
-                  $qq->orderBy('ordering')->orderBy('id');
-              }]);
+        $test->load(['questions' => function ($qb) {
+            $qb->orderBy('ordering')->orderBy('created_at')
+               ->with(['options' => function ($qq) {
+                    $qq->orderBy('ordering')->orderBy('created_at');
+               }]);
         }]);
 
         // Attempt aktif user (kalau ada) untuk tombol Resume + progress
-        $attempt = PsyAttempt::where('user_id', Auth::id())
+        $attempt = PsyAttempt::query()
+            ->where('user_id', Auth::id())
             ->where('test_id', $test->id)
             ->whereNull('submitted_at')
             ->first();
 
-        $answeredIds = [];
+        $answeredIds  = [];
         $resumeNextId = null;
-        $secondsLeft = null;
-        $startedAtMs = null;
+        $secondsLeft  = null;
+        $startedAtMs  = null;
         $timeLimitMin = (int) ($test->time_limit_min ?? 0);
 
         if ($attempt) {
-            $answeredIds = PsyAnswer::where('attempt_id', $attempt->id)->pluck('question_id')->all();
+            $answeredIds = PsyAnswer::query()
+                ->where('attempt_id', $attempt->id)
+                ->pluck('question_id')
+                ->all();
 
             // Next yang belum dijawab
-            $orderedQids = $test->questions->pluck('id')->all();
-            $resumeNextId = collect($orderedQids)->first(fn($id) => !in_array($id, $answeredIds, true)) ?? (count($orderedQids) ? $orderedQids[0] : null);
+            $orderedQids  = $test->questions->pluck('id')->all();
+            $resumeNextId = collect($orderedQids)
+                ->first(fn ($id) => !in_array($id, $answeredIds, true))
+                ?? (count($orderedQids) ? $orderedQids[0] : null);
 
-            // Hitung sisa waktu berdasarkan started_at attempt
+            // Hitung sisa waktu berdasar started_at
             if ($timeLimitMin > 0 && $attempt->started_at) {
-                $elapsed    = now()->diffInSeconds($attempt->started_at);
+                $elapsed     = now()->diffInSeconds($attempt->started_at);
                 $secondsLeft = max(0, $timeLimitMin * 60 - $elapsed);
                 $startedAtMs = $attempt->started_at->valueOf();
             }
@@ -186,21 +195,21 @@ class PsyTestController extends Controller
         $pct           = $total > 0 ? (int) floor(($answeredCount / $total) * 100) : 0;
 
         return view('app.psy_tests.show', [
-            'test'           => $test,
-            'firstQuestionId'=> $firstQuestionId,
+            'test'            => $test,
+            'firstQuestionId' => $firstQuestionId,
 
             // attempt status
-            'attempt'        => $attempt,
-            'answeredIds'    => $answeredIds,
-            'answeredCount'  => $answeredCount,
-            'total'          => $total,
-            'pct'            => $pct,
-            'resumeNextId'   => $resumeNextId,
+            'attempt'         => $attempt,
+            'answeredIds'     => $answeredIds,
+            'answeredCount'   => $answeredCount,
+            'total'           => $total,
+            'pct'             => $pct,
+            'resumeNextId'    => $resumeNextId,
 
             // waktu (untuk countdown di UI)
-            'timeLimitMin'   => $timeLimitMin,
-            'secondsLeft'    => $secondsLeft,
-            'startedAtMs'    => $startedAtMs,
+            'timeLimitMin'    => $timeLimitMin,
+            'secondsLeft'     => $secondsLeft,
+            'startedAtMs'     => $startedAtMs,
         ]);
     }
 }

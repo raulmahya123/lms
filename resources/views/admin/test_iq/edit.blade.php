@@ -36,9 +36,18 @@
       $initialNormJson = is_array($norm) ? json_encode($norm, JSON_PRETTY_PRINT|JSON_UNESCAPED_UNICODE) : '';
   }
 
-  // ---------- Cooldown ----------
+  // ---------- Cooldown (kolom model) ----------
   $cooldownValue = old('cooldown_value', $testIq->cooldown_value ?? 1);
   $cooldownUnit  = old('cooldown_unit',  $testIq->cooldown_unit  ?? 'month');
+
+  // ---------- Cooldown (META builder opsional) ----------
+  $metaCooldownRaw = [
+    'days'    => old('cooldown_days',    data_get($testIq, 'meta.cooldown_raw.days', 0)),
+    'hours'   => old('cooldown_hours',   data_get($testIq, 'meta.cooldown_raw.hours', 0)),
+    'minutes' => old('cooldown_minutes', data_get($testIq, 'meta.cooldown_raw.minutes', 0)),
+    'seconds' => old('cooldown_seconds', data_get($testIq, 'meta.cooldown_raw.seconds', null)),
+  ];
+  $metaCooldownSeconds = old('cooldown_seconds', data_get($testIq, 'meta.cooldown_seconds'));
 @endphp
 
 @section('content')
@@ -60,10 +69,10 @@
   </div>
 @endif
 
-<form method="POST" action="{{ route('admin.test-iq.update', $testIq) }}" class="max-w-4xl space-y-6">
+<form method="POST" action="{{ route('admin.test-iq.update', $testIq) }}" class="max-w-5xl space-y-6">
   @csrf @method('PUT')
 
-  {{-- ======================= Meta ======================= --}}
+  {{-- ======================= Meta Dasar ======================= --}}
   <div class="grid md:grid-cols-2 gap-4 rounded-2xl border bg-white p-5">
     <label class="grid gap-1">
       <span class="font-medium">Judul <span class="text-red-500">*</span></span>
@@ -81,24 +90,69 @@
     </label>
 
     <label class="flex items-center gap-2">
+      <input type="hidden" name="is_active" value="0">
       <input type="checkbox" name="is_active" value="1" {{ old('is_active', $testIq->is_active) ? 'checked' : '' }}>
       <span>Aktif</span>
     </label>
 
-    {{-- Cooldown --}}
+    {{-- Cooldown (kolom model) --}}
     <label class="grid gap-1">
-      <span class="font-medium">Cooldown Value</span>
+      <span class="font-medium">Cooldown Value (kolom)</span>
       <input type="number" name="cooldown_value" min="0" value="{{ $cooldownValue }}" class="border rounded-xl px-3 py-2">
+      <span class="text-xs text-gray-500">Dipakai oleh <code>nextAvailableAtFor()</code> via <code>cooldown_value</code>.</span>
     </label>
 
     <label class="grid gap-1">
-      <span class="font-medium">Cooldown Unit</span>
+      <span class="font-medium">Cooldown Unit (kolom)</span>
       <select name="cooldown_unit" class="border rounded-xl px-3 py-2">
         <option value="day"   {{ $cooldownUnit==='day'?'selected':'' }}>Day</option>
         <option value="week"  {{ $cooldownUnit==='week'?'selected':'' }}>Week</option>
         <option value="month" {{ $cooldownUnit==='month'?'selected':'' }}>Month</option>
       </select>
+      <span class="text-xs text-gray-500">day/week/month</span>
     </label>
+  </div>
+
+  {{-- ================= Cooldown (META opsional untuk UI) ================= --}}
+  <div class="rounded-2xl border bg-white">
+    <div class="px-5 py-4 border-b">
+      <h2 class="font-semibold text-lg">Cooldown (Meta Opsional)</h2>
+      <p class="text-sm opacity-70">Jika diisi, controller akan menyimpan <code>meta.cooldown_seconds</code> dan <code>meta.cooldown_raw</code> (days/hours/minutes/seconds) untuk keperluan UI.</p>
+    </div>
+    <div class="p-5 grid md:grid-cols-5 gap-4">
+      <label class="grid gap-1">
+        <span class="font-medium">Seconds (langsung)</span>
+        <input type="number" name="cooldown_seconds" min="0"
+               value="{{ is_null($metaCooldownSeconds) ? '' : $metaCooldownSeconds }}"
+               placeholder="e.g. 3600"
+               class="border rounded-xl px-3 py-2">
+        <span class="text-xs text-gray-500">Kalau kosong, sistem hitung dari D/H/M di kanan.</span>
+      </label>
+
+      <label class="grid gap-1">
+        <span class="font-medium">Days</span>
+        <input type="number" name="cooldown_days" min="0" value="{{ $metaCooldownRaw['days'] }}" class="border rounded-xl px-3 py-2">
+      </label>
+
+      <label class="grid gap-1">
+        <span class="font-medium">Hours</span>
+        <input type="number" name="cooldown_hours" min="0" value="{{ $metaCooldownRaw['hours'] }}" class="border rounded-xl px-3 py-2">
+      </label>
+
+      <label class="grid gap-1">
+        <span class="font-medium">Minutes</span>
+        <input type="number" name="cooldown_minutes" min="0" value="{{ $metaCooldownRaw['minutes'] }}" class="border rounded-xl px-3 py-2">
+      </label>
+
+      <label class="grid gap-1">
+        <span class="font-medium">Clear?</span>
+        <select name="cooldown_clear" class="border rounded-xl px-3 py-2">
+          <option value="">No</option>
+          <option value="1" {{ old('cooldown_clear') ? 'selected' : '' }}>Yes, remove</option>
+        </select>
+        <span class="text-xs text-gray-500">Jika “Yes”, <code>meta.cooldown_seconds</code> dihapus.</span>
+      </label>
+    </div>
   </div>
 
   {{-- ================= Norm Table (Meta, opsional) ================= --}}

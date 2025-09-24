@@ -4,35 +4,25 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
+return new class extends Migration {
+    public function up(): void {
         Schema::create('psy_questions', function (Blueprint $t) {
-            $t->uuid('id')->primary();   // ✅ PK pakai UUID
-
-            // FK ke psy_tests (UUID)
-            $t->foreignUuid('test_id')
-              ->constrained('psy_tests')
-              ->cascadeOnDelete();
+            $t->uuid('id')->primary();
+            $t->foreignUuid('test_id')->constrained('psy_tests')->cascadeOnDelete();
 
             $t->text('prompt');
-            $t->string('trait_key')->nullable(); // misal: logic, conscientiousness, etc.
+            $t->string('trait_key')->nullable();  // contoh: logic, system, ui, qa_mindset
             $t->enum('qtype', ['likert','mcq'])->default('likert');
             $t->unsignedSmallInteger('ordering')->default(0);
 
             $t->timestamps();
+
+            $t->index(['test_id','ordering']);
+            // (opsional) kalau mau pastikan unik urutan per test:
+            // $t->unique(['test_id','ordering']);
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
+    public function down(): void {
         Schema::dropIfExists('psy_questions');
     }
 };

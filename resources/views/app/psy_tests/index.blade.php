@@ -19,9 +19,13 @@
 
 @section('content')
 @php
-  $hasFilters = request()->hasAny(['q','track','type','sort','per_page']);
-  $sort = $sort ?? request('sort');      // dari controller versi advanced (opsional)
+  // fallback nilai filter supaya tidak undefined
+  $q       = $q       ?? request('q');
+  $track   = $track   ?? request('track');
+  $type    = $type    ?? request('type');
+  $sort    = $sort    ?? request('sort');
   $perPage = $perPage ?? request('per_page');
+  $hasFilters = request()->hasAny(['q','track','type','sort','per_page']);
 @endphp
 
 <div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
@@ -33,7 +37,7 @@
   </div>
 
   {{-- Filter Bar --}}
-  <form method="GET" class="grid md:grid-cols-5 gap-3">
+  <form method="GET" action="{{ route('app.psy.tests.index') }}" class="grid md:grid-cols-5 gap-3">
     <input name="q" value="{{ $q }}" placeholder="Cari tes…"
            class="border rounded-lg px-3 py-2 md:col-span-2">
 
@@ -51,18 +55,18 @@
       @endforeach
     </select>
 
-    {{-- Optional: sorting & per_page (kalau controllernya support) --}}
+    {{-- Optional: sorting & per_page --}}
     <div class="flex gap-3">
       <select name="sort" class="border rounded-lg px-3 py-2">
         <option value="">Urutkan</option>
-        <option value="latest" @selected($sort==='latest')>Terbaru</option>
-        <option value="name" @selected($sort==='name')>Nama A→Z</option>
+        <option value="latest"    @selected($sort==='latest')>Terbaru</option>
+        <option value="name"      @selected($sort==='name')>Nama A→Z</option>
         <option value="questions" @selected($sort==='questions')>Banyak Soal</option>
       </select>
       <select name="per_page" class="border rounded-lg px-3 py-2">
         <option value="">/Hal</option>
         @foreach([12,20,30,50] as $pp)
-          <option value="{{ $pp }}" @selected((int)$perPage === $pp)>{{ $pp }}</option>
+          <option value="{{ $pp }}" @selected((int)($perPage ?? 0) === $pp)>{{ $pp }}</option>
         @endforeach
       </select>
     </div>
@@ -70,7 +74,7 @@
     <div class="md:col-span-5 flex gap-2">
       <button class="btn btn-primary">Terapkan</button>
       @if($hasFilters)
-        <a href="{{ route('app.psytests.index') }}" class="btn btn-muted">Reset</a>
+        <a href="{{ route('app.psy.tests.index') }}" class="btn btn-muted">Reset</a>
       @endif
     </div>
   </form>
@@ -80,9 +84,9 @@
     @forelse($tests as $t)
       @php
         $slugId = $t->slug ?: $t->id;
-        $hasQ   = ($t->questions_count ?? 0) > 0;
+        $hasQ   = (int)($t->questions_count ?? 0) > 0;
 
-        // Opsi progres (jika controller kirim attemptByTest & answerCountsByAttempt)
+        // Progres (jika controller kirim attemptByTest & answerCountsByAttempt)
         $attempt   = isset($attemptByTest) ? ($attemptByTest[$t->id] ?? null) : null;
         $answered  = 0;
         if ($attempt && isset($answerCountsByAttempt)) {
@@ -102,11 +106,11 @@
           @endif
         </div>
 
-        <a href="{{ route('app.psytests.show', $slugId) }}" class="font-semibold text-lg hover:underline">
+        <a href="{{ route('app.psy.tests.show', $slugId) }}" class="font-semibold text-lg hover:underline">
           {{ $t->name }}
         </a>
 
-        @if($t->description)
+        @if(!empty(optional($t)->description))
           <p class="text-gray-600 mt-1 line-2">{{ $t->description }}</p>
         @endif
 
@@ -121,7 +125,7 @@
         @endif
 
         <div class="mt-4 flex items-center justify-between gap-2">
-          <a href="{{ route('app.psytests.show', $slugId) }}" class="btn btn-muted">Detail</a>
+          <a href="{{ route('app.psy.tests.show', $slugId) }}" class="btn btn-muted">Detail</a>
 
           @if($hasQ)
             <form method="POST" action="{{ route('app.psy.attempts.start', $slugId) }}">

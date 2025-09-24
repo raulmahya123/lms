@@ -253,42 +253,68 @@ Route::middleware(['auth', 'verified', EnsureCurrentSession::class, EnsureSameDe
     // =====================
     // Psy Tests (USER)
     // =====================
-    // =====================
-    // Psy Tests (USER) — simple & jelas
-    // =====================
-    Route::prefix('psy-tests')->group(function () {
-        // List & detail tes
-        Route::get('/', [UserPsyTestController::class, 'index'])->name('app.psytests.index');
-        Route::get('/{slugOrId}', [UserPsyTestController::class, 'show'])->name('app.psytests.show');
 
-        // Tampilkan 1 soal (pakai UUID question)
-        Route::get('/{slugOrId}/questions/{question}', [UserPsyQuestionController::class, 'show'])
-            ->whereUuid('question')
-            ->name('app.psytests.questions.show');
+    // List semua tes
+    Route::get('/psy-tests', [UserPsyTestController::class, 'index'])
+        ->name('app.psytests.index');
 
-        // Mulai / lanjut attempt (GET/POST)
-        Route::match(['GET', 'POST'], '/{slugOrId}/start', [UserPsyAttemptController::class, 'start'])
-            ->middleware('throttle:quiz')
-            ->name('app.psy.attempts.start');
+    // Detail 1 tes (slug atau UUID)
+    Route::get('/psy-tests/{slugOrId}', [UserPsyTestController::class, 'show'])
+        ->name('app.psytests.show');
 
-        // Simpan jawaban (POST)
-        Route::post('/{slugOrId}/q/{question}/answer', [UserPsyAttemptController::class, 'answer'])
-            ->whereUuid('question')
-            ->name('app.psy.attempts.answer');
+    // Tampilkan 1 soal (UUID question)
+    Route::get('/psy-tests/{slugOrId}/q/{question}', [UserPsyQuestionController::class, 'show'])
+        ->whereUuid('question')
+        ->name('app.psytests.questions.show');
 
-        // Kalau ada yang buka via GET, balikin ke halaman soal (biar gak 419)
-        Route::get('/{slugOrId}/q/{question}/answer', function ($slugOrId, $question) {
-            return redirect()->route('app.psytests.questions.show', [$slugOrId, $question]);
-        })->whereUuid('question');
+    // Mulai / lanjut attempt (GET/POST)
+    Route::match(['GET', 'POST'], '/psy-tests/{slugOrId}/start', [UserPsyAttemptController::class, 'start'])
+        ->middleware('throttle:quiz')
+        ->name('app.psy.attempts.start');
 
-        // Submit & hasil
-        Route::get('/{slugOrId}/submit', [UserPsyAttemptController::class, 'submit'])
-            ->name('app.psy.attempts.submit');
+    // Simpan jawaban 1 soal (POST)
+    Route::post('/psy-tests/{slugOrId}/q/{question}/answer', [UserPsyAttemptController::class, 'answer'])
+        ->whereUuid('question')
+        ->name('app.psy.attempts.answer');
 
-        Route::get('/{slugOrId}/result/{attempt}', [UserPsyAttemptController::class, 'result'])
-            ->whereUuid('attempt')
-            ->name('app.psy.attempts.result');
-    });
+    // (Jika ada yang akses GET ke /answer) → redirect ke halaman soal
+    Route::get('/psy-tests/{slugOrId}/q/{question}/answer', function ($slugOrId, $question) {
+        return redirect()->route('app.psytests.questions.show', [$slugOrId, $question]);
+    })->whereUuid('question');
+
+    // Submit attempt & hitung skor
+    Route::get('/psy-tests/{slugOrId}/submit', [UserPsyAttemptController::class, 'submit'])
+        ->name('app.psy.attempts.submit');
+
+    // Hasil tes
+    Route::get('/psy-tests/{slugOrId}/result/{attempt}', [UserPsyAttemptController::class, 'result'])
+        ->whereUuid('attempt')
+        ->name('app.psy.attempts.result');
+
+
+    // ---- Alias kompatibilitas: nama lama yang sempat dipakai di view/controller ----
+    // (Tidak bentrok URI: pakai prefix _alias agar aman)
+
+    // app.psy.tests.index -> redirect ke app.psytests.index
+    Route::get(
+        '/psy-tests/_alias',
+        fn() =>
+        redirect()->route('app.psytests.index')
+    )->name('app.psy.tests.index');
+
+    // app.psy.tests.show -> redirect ke app.psytests.show
+    Route::get(
+        '/psy-tests/_alias/{slugOrId}',
+        fn($slugOrId) =>
+        redirect()->route('app.psytests.show', $slugOrId)
+    )->name('app.psy.tests.show');
+
+    // app.psy.questions.show -> redirect ke app.psytests.questions.show
+    Route::get(
+        '/psy-tests/_alias/{slugOrId}/q/{question}',
+        fn($slugOrId, $question) =>
+        redirect()->route('app.psytests.questions.show', [$slugOrId, $question])
+    )->whereUuid('question')->name('app.psy.questions.show');
 
     // ⬇️ Sudah ada sebelumnya, dipertahankan
     Route::get('/certificates/{issue}', [CertificateController::class, 'show'])

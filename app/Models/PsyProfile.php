@@ -10,27 +10,17 @@ class PsyProfile extends Model
 {
     use HasUuids;
 
-    /**
-     * PK UUID (string).
-     */
     public $incrementing = false;
-    protected $keyType   = 'string';
+    protected $keyType = 'string';
 
     protected $fillable = [
-        'test_id',
-        'key',
-        'name',
-        'min_total',
-        'max_total',
-        'description',
+        'test_id','key','name','min_total','max_total','description',
     ];
 
     protected $casts = [
         'min_total' => 'integer',
         'max_total' => 'integer',
     ];
-
-    /** ================= Relations ================= */
 
     public function test(): BelongsTo
     {

@@ -4,46 +4,36 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class PsyTest extends Model
 {
     use HasUuids;
 
-    /**
-     * PK UUID (string).
-     */
     public $incrementing = false;
-    protected $keyType   = 'string';
+    protected $keyType = 'string';
 
     protected $fillable = [
-        'name',
-        'slug',
-        'track',
-        'type',
-        'time_limit_min',
-        'is_active',
+        'name','slug','track','type','time_limit_min','is_active',
     ];
 
     protected $casts = [
-        'is_active'      => 'boolean',
+        'is_active' => 'boolean',
         'time_limit_min' => 'integer',
     ];
 
-    /** ================= Relations ================= */
+    // allowed values (sinkron dengan UI/validation)
+    public const TRACKS = ['backend','frontend','fullstack','qa','devops','pm','custom'];
+    public const TYPES  = ['likert','mcq','iq','disc','big5','custom'];
 
-    public function questions(): HasMany
-    {
+    public function questions() {
         return $this->hasMany(PsyQuestion::class, 'test_id');
     }
 
-    public function profiles(): HasMany
-    {
+    public function profiles() {
         return $this->hasMany(PsyProfile::class, 'test_id');
     }
 
-    public function attempts(): HasMany
-    {
+    public function attempts() {
         return $this->hasMany(PsyAttempt::class, 'test_id');
     }
 }

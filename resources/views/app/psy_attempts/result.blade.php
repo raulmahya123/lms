@@ -5,36 +5,32 @@
 
 @push('styles')
 <style>
-  .party-emoji { animation: bounce 1.2s infinite; display:inline-block; }
-  @keyframes bounce {
-    0%,100%{ transform: translateY(0) rotate(0); }
-    30%{ transform: translateY(-4px) rotate(-3deg); }
-    60%{ transform: translateY(1px) rotate(3deg); }
+  :root{
+    --ink:#0E0E0E;
+
+    /* Blue palette */
+    --blue-1:#2563EB; /* utama */
+    --blue-2:#3B82F6; /* terang */
+    --blue-3:#1E40AF; /* gelap */
   }
-  .wiggle { animation: wiggle .6s ease-in-out infinite; }
-  @keyframes wiggle {
-    0%,100%{ transform: rotate(0deg) }
-    25%{ transform: rotate(2deg) }
-    75%{ transform: rotate(-2deg) }
-  }
-  .confetti {
-    position: absolute; inset: 0; pointer-events: none; overflow: hidden;
-  }
-  .confetti span {
-    position: absolute; top:-10px; font-size: 18px; animation: fall linear forwards;
-  }
-  @keyframes fall { to { transform: translateY(110vh) rotate(360deg); } }
+
+  .party-emoji{animation:bounce 1.2s infinite;display:inline-block}
+  @keyframes bounce{0%,100%{transform:translateY(0)}30%{transform:translateY(-4px)}60%{transform:translateY(1px)}}
+
+  .confetti{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+  .confetti span{position:absolute;top:-10px;font-size:16px;animation:fall linear forwards}
+  @keyframes fall{to{transform:translateY(110vh) rotate(360deg)}}
 </style>
 @endpush
 
 @section('content')
 @php
-  $scores = $scores ?? [];
-  $total  = (int)($total ?? 0);
-  $profileKey = $profile ?? null;
-  $recoText   = $reco ?? 'Profil belum terdefinisi, tapi semangat selalu! 😄';
+  $scores      = $scores ?? [];
+  $total       = (int)($total ?? 0);
+  $profileKey  = $profileKey ?? ($profile ?? null);
+  $profileName = $profileName ?? null;
+  $recoText    = $recoText ?? ($reco ?? 'Profil belum terdefinisi. Tetap semangat untuk terus berkembang!');
 
-  // Pilih emoji lucu berdasarkan total
   $emoji = '🤓';
   if ($total >= 80)      $emoji = '🧠✨';
   elseif ($total >= 60)  $emoji = '🚀😎';
@@ -42,181 +38,189 @@
   elseif ($total >= 20)  $emoji = '🌱🤗';
   else                   $emoji = '🐢💤';
 
-  // Hitung persen buat "Kocak Meter" berdasarkan total kalau mau fun (clamp 0..100)
-  $funPercent = max(0, min(100, $total));
+  // Gunakan persentil jika tersedia; jika tidak, gunakan total yang dibatasi 0–100
+  $funPercent = is_numeric($percentile ?? null) ? (int)$percentile : max(0, min(100, $total));
+
+  // Hilangkan _total dari rincian
+  $traits = collect($scores)->except('_total');
 @endphp
 
-<div class="relative">
-  {{-- confetti container --}}
-  <div id="confetti" class="confetti"></div>
-</div>
+{{-- Confetti (ringan) --}}
+<div id="confetti" class="confetti"></div>
 
-<div class="max-w-4xl mx-auto px-4 py-10 space-y-8">
-  {{-- Header --}}
-  <div class="text-center">
-    <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-xs font-medium">
-      <span class="h-2 w-2 rounded-full bg-blue-600"></span> Hasil Tes Tersaji Hangat
-    </div>
-    <h1 class="mt-3 text-3xl sm:text-4xl font-extrabold text-slate-900">
-      {{ $emoji }} Hasil Tes: <span class="party-emoji">🎉</span>
+<div class="max-w-5xl mx-auto px-4 py-10 space-y-8">
+  {{-- Hero --}}
+  <header class="text-center">
+    <span class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-medium
+                  bg-[color:var(--blue-1)]/10 text-[color:var(--blue-1)] ring-1 ring-[color:var(--blue-1)]/20">
+      <span class="h-1.5 w-1.5 rounded-full bg-[color:var(--blue-1)]"></span>
+      Hasil Tes Siap
+    </span>
+    <h1 class="mt-3 text-3xl sm:text-4xl font-extrabold tracking-tight text-[color:var(--ink)]">
+      {{ $emoji }} Hasil: <span class="party-emoji">🎉</span>
     </h1>
-    <p class="mt-2 text-slate-600">
-      {{ $test->name }} — selamat, kamu berhasil melewati lika-liku pertanyaan.
+    <p class="mt-2 text-sm sm:text-base text-[color:var(--ink)]/70">
+      {{ $test->name }} — selamat, Anda telah menuntaskan tes ini.
     </p>
-  </div>
+  </header>
 
-  {{-- Kartu Hasil Utama --}}
-  <div class="grid md:grid-cols-2 gap-4">
-    <div class="bg-white border rounded-2xl p-5">
-      <div class="text-sm text-slate-500">Total Skor</div>
-      <div class="mt-1 text-4xl font-extrabold text-slate-900 flex items-center gap-2">
-        {{ $total }}
-        <span class="text-2xl wiggle">✨</span>
+  {{-- Ringkasan Utama --}}
+  <section class="grid md:grid-cols-2 gap-4">
+    {{-- Kartu Skor --}}
+    <div class="rounded-2xl border border-black/10 bg-white p-5">
+      <div class="text-xs uppercase tracking-wide text-[color:var(--ink)]/50">Total Skor</div>
+      <div class="mt-1 flex items-end gap-2">
+        <div class="text-4xl font-extrabold text-[color:var(--ink)]">{{ $total }}</div>
+        <span class="text-lg">✨</span>
       </div>
-      <div class="mt-4">
-        <div class="text-sm text-slate-600 mb-1 flex justify-between">
-          <span>Kocak Meter</span>
-          <span>{{ $funPercent }}%</span>
+
+      <div class="mt-5">
+        <div class="flex items-center justify-between text-sm text-[color:var(--ink)]/70 mb-1">
+          <span>Indeks Pencapaian</span>
+          <span class="font-medium">{{ $funPercent }}%</span>
         </div>
-        <div class="h-2.5 bg-slate-200 rounded-full overflow-hidden">
-          <div class="h-full bg-gradient-to-r from-blue-500 via-indigo-500 to-fuchsia-500"
-               style="width: {{ $funPercent }}%"></div>
+        <div class="h-2.5 rounded-full bg-slate-200 overflow-hidden">
+          <div class="h-full"
+               style="width: {{ $funPercent }}%;
+                      background: linear-gradient(90deg, var(--blue-1), var(--blue-2));">
+          </div>
         </div>
-        <p class="mt-2 text-xs text-slate-500">
-          *Kocak Meter™ adalah pengukuran tidak ilmiah yang sepenuhnya dibuat-buat untuk menambah keceriaan. 😜
-        </p>
+
+        <div class="mt-3 space-y-1 text-xs text-[color:var(--ink)]/60">
+          @isset($percentile)
+            <p>≈ Estimasi persentil: <span class="font-semibold text-[color:var(--ink)]">{{ $percentile }}%</span></p>
+          @endisset
+          @isset($durationSec)
+            <p>Durasi: <span class="font-semibold text-[color:var(--ink)]">{{ gmdate('i\m s\d', (int)$durationSec) }}</span></p>
+          @endisset
+        </div>
       </div>
     </div>
 
-    <div class="bg-white border rounded-2xl p-5">
-      <div class="text-sm text-slate-500">Profil</div>
-      <div class="mt-1 text-xl font-bold text-slate-900 flex items-center gap-2">
-        {{ $profileKey ?? '—' }}
-        <span>🥳</span>
+    {{-- Kartu Profil --}}
+    <div class="rounded-2xl border border-black/10 bg-white p-5">
+      <div class="text-xs uppercase tracking-wide text-[color:var(--ink)]/50">Profil</div>
+      <div class="mt-1 flex items-center gap-2 text-xl font-bold text-[color:var(--ink)]">
+        {{ $profileName ?? $profileKey ?? '—' }} <span>🥳</span>
       </div>
 
-      <div class="mt-4 text-sm text-slate-700">
+      <p class="mt-3 text-sm leading-relaxed text-[color:var(--ink)]/80">
         {!! nl2br(e($recoText)) !!}
-      </div>
+      </p>
 
       <div class="mt-5 flex flex-wrap items-center gap-2">
-        <a href="{{ route('app.psytests.show', $test->slug ?: $test->id) }}"
-           class="px-4 py-2 rounded-xl border text-slate-700 hover:bg-slate-50">
-          Lihat Tes
+        <a href="{{ route('app.psy.tests.show', $test->slug ?: $test->id) }}"
+           class="px-4 py-2 rounded-xl border border-black/10 text-[color:var(--ink)] bg-white hover:bg-gray-50 transition">
+          Tinjau Tes
         </a>
-        <a href="{{ route('app.psytests.index') }}"
-           class="px-4 py-2 rounded-xl border text-slate-700 hover:bg-slate-50">
-          Coba Tes Lain
-        </a>
-        {{-- tombol share/salin --}}
-        <button id="copyBtn" class="px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
+
+        <button id="copyBtn"
+                class="px-4 py-2 rounded-xl text-white hover:opacity-95 transition"
+                style="background:linear-gradient(90deg,var(--blue-1),var(--blue-2));">
           Salin Ringkasan
         </button>
-        <button id="shareBtn" class="px-4 py-2 rounded-xl bg-indigo-600 text-white hover:bg-indigo-700">
-          Bagikan Hasil
+        <button id="shareBtn"
+                class="px-4 py-2 rounded-xl bg-black text-white hover:bg-black/90 transition">
+          Bagikan
         </button>
       </div>
     </div>
-  </div>
+  </section>
 
-  {{-- Breakdown Trait --}}
-  <div class="bg-white border rounded-2xl p-5">
+  {{-- Breakdown Aspek --}}
+  <section class="rounded-2xl border border-black/10 bg-white p-5">
     <div class="flex items-center justify-between">
-      <h2 class="text-lg font-semibold text-slate-900">Rata-rata per Trait</h2>
-      <span class="text-xs text-slate-500">Semakin tinggi, semakin “kamu banget”.</span>
+      <h2 class="text-lg font-semibold text-[color:var(--ink)]">Rata-rata per Aspek</h2>
+      <span class="text-xs text-[color:var(--ink)]/50">Semakin tinggi, kian merepresentasikan karakteristik Anda.</span>
     </div>
 
-    @php
-      $traits = collect($scores)->except('_total');
-    @endphp
-
     @if($traits->isEmpty())
-      <div class="mt-4 p-4 rounded-xl bg-slate-50 text-slate-600">
-        Tidak ada breakdown trait. Tapi kamu tetap spesial di hati sistem. 💖
+      <div class="mt-4 p-4 rounded-xl bg-slate-50 text-[color:var(--ink)]/70">
+        Belum tersedia perincian aspek.
       </div>
     @else
       <div class="mt-4 grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
         @foreach($traits as $k => $v)
           @php
-            $val = is_numeric($v) ? round($v,2) : $v;
-            // normalisasi 0..100 kalau skala -2..+2 / 1..5; heuristik ringan
+            $val  = is_numeric($v) ? round($v,2) : $v;
             $norm = 50;
             if (is_numeric($v)) {
-              // coba tebak skala
-              if ($v <= 5 && $v >= 1) { // 1..5
-                $norm = intval((($v-1) / 4) * 100);
-              } elseif ($v <= 2 && $v >= -2) { // -2..+2
-                $norm = intval((($v+2) / 4) * 100);
-              } else {
-                // fallback ke rasio terhadap total absolute max 100
-                $norm = max(0, min(100, intval(($v / max(abs($v), 1)) * 100)));
-              }
+              if ($v <= 5 && $v >= 1) { $norm = intval((($v-1) / 4) * 100); }
+              elseif ($v <= 2 && $v >= -2) { $norm = intval((($v+2) / 4) * 100); }
+              else { $norm = max(0, min(100, intval(($v / max(abs($v), 1)) * 100))); }
             }
           @endphp
-          <div class="rounded-xl border p-4">
+          <div class="rounded-xl border border-black/10 p-4">
             <div class="flex items-center justify-between">
-              <div class="text-sm font-medium text-slate-700">{{ strtoupper($k) }}</div>
-              <div class="text-sm text-slate-500">Skor: <span class="font-semibold">{{ $val }}</span></div>
+              <div class="text-sm font-medium text-[color:var(--ink)]/80">{{ strtoupper($k) }}</div>
+              <div class="text-sm text-[color:var(--ink)]/50">Skor:
+                <span class="font-semibold text-[color:var(--ink)]">{{ $val }}</span>
+              </div>
             </div>
             <div class="mt-3 h-2.5 bg-slate-200 rounded-full overflow-hidden">
-              <div class="h-full bg-gradient-to-r from-emerald-500 to-teal-500" style="width: {{ $norm }}%"></div>
+              <div class="h-full" style="width: {{ $norm }}%;
+                   background:linear-gradient(90deg,var(--blue-2),var(--blue-1));"></div>
             </div>
-            <p class="mt-2 text-xs text-slate-500">
-              Interpretasi santai: <em>{{ $norm >= 66 ? 'Wah, ini kamu banget!' : ($norm >= 33 ? 'Cukup terasa vibes-nya.' : 'Masih malu-malu kucing.') }}</em>
+            <p class="mt-2 text-xs text-[color:var(--ink)]/60">
+              Interpretasi: <em>{{ $norm >= 66 ? 'Tinggi' : ($norm >= 33 ? 'Sedang' : 'Rendah') }}</em>
             </p>
           </div>
         @endforeach
       </div>
     @endif
-  </div>
+  </section>
 
   {{-- Aksi Lanjutan --}}
-  <div class="grid md:grid-cols-2 gap-4">
-    <div class="rounded-2xl border p-5 bg-gradient-to-br from-amber-50 to-rose-50">
-      <h3 class="text-lg font-semibold text-slate-900">Tips Lanjutan 🎯</h3>
-      <ul class="mt-2 text-sm text-slate-700 list-disc pl-5 space-y-1">
-        <li>Ambil tes lain untuk perspektif yang berbeda.</li>
-        <li>Jangan overthinking — ini buat fun + insight ringan.</li>
-        <li>Coba ulang minggu depan buat lihat konsistensi hasil.</li>
+  <section class="grid md:grid-cols-2 gap-4">
+    <div class="rounded-2xl border border-black/10 p-5"
+         style="background:linear-gradient(135deg,#f7fbff,#eef4ff)">
+      <h3 class="text-lg font-semibold text-[color:var(--ink)]">Langkah Berikutnya 🎯</h3>
+      <ul class="mt-2 text-sm text-[color:var(--ink)]/80 space-y-1 list-disc pl-5">
+        <li>Lakukan tes lain untuk memperkaya sudut pandang.</li>
+        <li>Gunakan hasil sebagai wawasan pengembangan diri, bukan penilaian yang mutlak.</li>
+        <li>Ulangi tes setelah beberapa waktu untuk menilai konsistensi jawaban.</li>
       </ul>
     </div>
-    <div class="rounded-2xl border p-5 bg-gradient-to-br from-sky-50 to-indigo-50">
-      <h3 class="text-lg font-semibold text-slate-900">Mau Pamer Dikit? 😏</h3>
-      <p class="mt-2 text-sm text-slate-700">
-        Klik <strong>Bagikan Hasil</strong> biar temanmu tahu seberapa mantap “kocak meter”-mu.
+    <div class="rounded-2xl border border-black/10 p-5"
+         style="background:linear-gradient(135deg,#f5f9ff,#f2f6ff)">
+      <h3 class="text-lg font-semibold text-[color:var(--ink)]">Bagikan Hasil</h3>
+      <p class="mt-2 text-sm text-[color:var(--ink)]/80">
+        Tekan <b>Bagikan</b> untuk membagikan hasil kepada rekan atau kolega.
       </p>
-      <p class="mt-1 text-xs text-slate-500">*Kami tidak akan mem-posting apa pun tanpa persetujuanmu.</p>
+      <p class="mt-1 text-xs text-[color:var(--ink)]/50">*Data Anda aman. Tidak ada informasi yang dipublikasikan tanpa persetujuan eksplisit.</p>
     </div>
-  </div>
+  </section>
 
+  {{-- CTA --}}
   <div class="text-center">
-    <a href="{{ route('app.psytests.index') }}"
-       class="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
-      Lihat Semua Tes
-      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-           stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round"
-           d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+    <a href="{{ route('app.psy.tests.index') }}"
+       class="inline-flex items-center gap-2 px-5 py-3 rounded-xl text-white hover:opacity-95 transition"
+       style="background:linear-gradient(90deg,var(--blue-1),var(--blue-2));">
+      Jelajahi Tes Lainnya
+      <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+           viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
+      </svg>
     </a>
   </div>
 </div>
 
 @push('scripts')
 <script>
-  // Confetti emoji ringan (tanpa library)
+  // Confetti ringan (auto-off setelah 4s)
   (function makeConfetti(){
-    const el = document.getElementById('confetti');
-    if (!el) return;
-    const pieces = 40;
-    const icons = ['🎉','✨','🎈','🥳','💥','🌟'];
-    for(let i=0;i<pieces;i++){
+    const el = document.getElementById('confetti'); if(!el) return;
+    const pieces = 28; const icons = ['🎉','✨','🎈','🥳','🌟'];
+    for (let i=0;i<pieces;i++){
       const s = document.createElement('span');
       s.textContent = icons[Math.floor(Math.random()*icons.length)];
       s.style.left = Math.random()*100+'%';
-      s.style.animationDuration = (2 + Math.random()*2)+'s';
-      s.style.animationDelay = (Math.random()*0.8)+'s';
+      s.style.animationDuration = (2+Math.random()*2)+'s';
+      s.style.animationDelay = (Math.random()*0.6)+'s';
       el.appendChild(s);
-      setTimeout(()=> s.remove(), 4000);
+      setTimeout(()=> s.remove(), 3800);
     }
+    setTimeout(()=> el.innerHTML='', 4000);
   })();
 
   // Copy summary
@@ -224,7 +228,8 @@
     const data = {
       test: @json($test->name),
       total: @json($total),
-      profile: @json($profileKey),
+      profileKey: @json($profileKey),
+      profileName: @json($profileName),
       reco: @json($recoText),
       traits: @json(collect($scores ?? [])->except('_total')),
       url: window.location.href
@@ -232,33 +237,26 @@
     const lines = [];
     lines.push(`Hasil Tes: ${data.test}`);
     lines.push(`Total Skor: ${data.total}`);
-    lines.push(`Profil: ${data.profile ?? '-'}`);
-    if (Object.keys(data.traits || {}).length) {
-      lines.push('Trait:');
-      Object.entries(data.traits).forEach(([k,v]) => lines.push(`- ${k.toUpperCase()}: ${v}`));
+    lines.push(`Profil: ${data.profileName ?? data.profileKey ?? '-'}`);
+    if (Object.keys(data.traits || {}).length){
+      lines.push('Aspek:');
+      Object.entries(data.traits).forEach(([k,v]) => lines.push(`- ${String(k).toUpperCase()}: ${v}`));
     }
     lines.push(`Rekomendasi: ${data.reco}`);
     lines.push(data.url);
-    try {
+    try{
       await navigator.clipboard.writeText(lines.join('\n'));
-      alert('Ringkasan disalin. Tempelkan di chat/notes-mu!');
-    } catch(e) {
-      alert('Gagal menyalin. Coba manual ya 😅');
-    }
+      alert('Ringkasan disalin. Silakan tempel pada catatan Anda.');
+    }catch(e){ alert('Gagal menyalin. Silakan coba kembali.'); }
   });
 
   // Share API
   document.getElementById('shareBtn')?.addEventListener('click', async () => {
     const title = 'Hasil Tes Psikologi — BERKEMAH';
-    const text  = `Aku baru selesai tes: {{ $test->name }} — Skor: {{ $total }} (Profil: {{ $profileKey ?? "-" }})`;
+    const text  = `Saya baru menyelesaikan tes: {{ $test->name }} — Skor: {{ $total }} (Profil: {{ $profileName ?? $profileKey ?? "-" }})`;
     const url   = window.location.href;
-    if (navigator.share) {
-      try {
-        await navigator.share({ title, text, url });
-      } catch(e) { /* user cancel */ }
-    } else {
-      alert('Fitur share tidak tersedia. Pakai tombol "Salin Ringkasan" ya! 🙏');
-    }
+    if (navigator.share) { try { await navigator.share({ title, text, url }); } catch(e){} }
+    else { alert('Fitur bagikan tidak tersedia. Gunakan tombol "Salin Ringkasan".'); }
   });
 </script>
 @endpush

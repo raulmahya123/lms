@@ -4,43 +4,27 @@ use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
 
-return new class extends Migration
-{
-    /**
-     * Run the migrations.
-     */
-    public function up(): void
-    {
+return new class extends Migration {
+    public function up(): void {
         Schema::create('psy_attempts', function (Blueprint $t) {
-            $t->uuid('id')->primary();   // ✅ PK pakai UUID
-
-            // FK ke psy_tests (UUID)
-            $t->foreignUuid('test_id')
-              ->constrained('psy_tests')
-              ->cascadeOnDelete();
-
-            // FK ke users (UUID)
-            $t->foreignUuid('user_id')
-              ->constrained('users')
-              ->cascadeOnDelete();
+            $t->uuid('id')->primary();
+            $t->foreignUuid('test_id')->constrained('psy_tests')->cascadeOnDelete();
+            $t->foreignUuid('user_id')->constrained('users')->cascadeOnDelete();
 
             $t->timestamp('started_at')->nullable();
-            $t->timestamp('submitted_at')->nullable();
+            $t->timestamp('submitted_at')->nullable()->index();
 
-            $t->json('score_json')->nullable();   // per trait
-            $t->integer('total_score')->nullable();
-            $t->string('result_key')->nullable();
+            $t->json('score_json')->nullable();     // rata-rata per trait + _total
+            $t->integer('total_score')->nullable(); // denormalized _total (cepat untuk filter)
+            $t->string('result_key')->nullable()->index();
             $t->text('recommendation_text')->nullable();
 
             $t->timestamps();
+
+            $t->index(['user_id','test_id']);
         });
     }
-
-    /**
-     * Reverse the migrations.
-     */
-    public function down(): void
-    {
+    public function down(): void {
         Schema::dropIfExists('psy_attempts');
     }
 };
