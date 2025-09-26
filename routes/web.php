@@ -559,11 +559,12 @@ Route::middleware(['auth', 'can:backoffice', EnsureCurrentSession::class, Ensure
 
         // Nested PSY (per test): index/create/store
         // /admin/psy-tests/{psy_test}/questions
+        // Nested PSY (per test): index/create/store + show/destroy
         Route::resource('psy-tests.questions', \App\Http\Controllers\Admin\PsyQuestionController::class)
-            ->only(['index', 'create', 'store'])
+            ->only(['index', 'create', 'store', 'show', 'destroy'])   // ⬅️ tambah show & destroy
             ->names('psy-tests.questions')
             ->parameters(['psy-tests' => 'psy_test', 'questions' => 'psy_question'])
-            ->whereUuid(['psy_test']);
+            ->whereUuid(['psy_test', 'psy_question']); // ⬅️ sekalian enforce UUID untuk question juga
 
         // PSY single (flat): show/edit/update/destroy di /admin/psy-questions/{psy_question}
         Route::resource('psy-questions', \App\Http\Controllers\Admin\PsyQuestionController::class)
