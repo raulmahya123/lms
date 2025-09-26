@@ -91,6 +91,7 @@ use App\Http\Controllers\MidtransWebhookController;
 // User Controllers
 // =====================
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\PsyProfileController;
 use App\Http\Controllers\User\{
     DashboardController      as UserDashboardController,
     CourseBrowseController,
@@ -326,6 +327,11 @@ Route::middleware(['auth', 'verified', EnsureCurrentSession::class, EnsureSameDe
     Route::get('/certificates/{issue}/download', [CertificateController::class, 'download'])
         ->whereUuid('issue')->name('app.certificates.download');
 
+
+    // CRUD Psych Profiles
+     Route::resource('admin/psy-profiles', PsyProfileController::class)
+        ->parameters(['psy-profiles' => 'psy_profile'])
+        ->names('admin.psy-profiles');
     // Q&A (USER)
     Route::resource('qa-threads', UserQaThreadController::class)
         ->names('app.qa-threads')
