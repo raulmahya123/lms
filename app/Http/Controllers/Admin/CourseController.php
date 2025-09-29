@@ -19,22 +19,14 @@ class CourseController extends Controller
 
         $courses = Course::query()
             ->withCount('modules')
-            ->when($r->filled('q'), fn($q) => $q->where('title', 'like', '%' . $r->q . '%'))
+            ->when($r->filled('q'), fn($q) => $q->where('title', 'like', '%'.$r->q.'%'))
             ->when($r->filled('published'), function ($q) use ($r) {
                 if ($r->published === '1') $q->where('is_published', 1);
                 if ($r->published === '0') $q->where('is_published', 0);
             })
-            // non admin/mentor → hanya milik sendiri
             ->when(!$this->isAdminOrMentor(), function ($q) use ($user) {
                 $q->where('created_by', $user->id);
             })
-            // mentor-only (opsional pivot):
-            // ->when($this->isMentorOnly(), function ($q) use ($user) {
-            //     $q->where(function ($qq) use ($user) {
-            //         $qq->where('created_by', $user->id)
-            //            ->orWhereHas('mentors', fn($qm) => $qm->whereKey($user->id));
-            //     });
-            // })
             ->latest()
             ->paginate(12)
             ->withQueryString();
@@ -44,7 +36,6 @@ class CourseController extends Controller
 
     public function create()
     {
-        // siapa pun yang login boleh create (akan jadi created_by dirinya)
         return view('admin.courses.create');
     }
 
@@ -57,6 +48,7 @@ class CourseController extends Controller
             'title'        => 'required|string|max:255',
             'description'  => 'nullable|string',
             'cover'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
+            // Konsisten: izinkan http/https ATAU path lokal /storage/...
             'cover_url'    => ['nullable', 'regex:/^(https?:\/\/.+|\/[A-Za-z0-9_\-\/\.]+)$/'],
             'is_published' => 'nullable',
             'is_free'      => 'nullable|boolean',
@@ -65,16 +57,18 @@ class CourseController extends Controller
 
         $isFree = $r->boolean('is_free');
         if (!$isFree && !isset($data['price'])) {
-            return back()->withErrors(['price' => 'Harga wajib diisi untuk kursus berbayar.'])->withInput();
+            return back()
+                ->withErrors(['price' => 'Harga wajib diisi untuk kursus berbayar.'])
+                ->withInput();
         }
 
-        // cover
+        // Cover handling
         $finalCoverUrl = null;
         if ($r->hasFile('cover')) {
             $path = $r->file('cover')->store('covers', 'public');
-            $finalCoverUrl = Storage::disk('public')->url($path);
+            $finalCoverUrl = Storage::disk('public')->url($path); // → /storage/covers/xxx
         } elseif (!empty($data['cover_url'])) {
-            $finalCoverUrl = $data['cover_url'];
+            $finalCoverUrl = $data['cover_url']; // bisa http/https atau /storage/...
         }
 
         Course::create([
@@ -93,7 +87,6 @@ class CourseController extends Controller
     public function edit(Request $r, Course $course)
     {
         $this->authorizeCourse($course, $r->user());
-
         $course->load('modules');
         return view('admin.courses.edit', compact('course'));
     }
@@ -106,7 +99,8 @@ class CourseController extends Controller
             'title'        => 'required|string|max:255',
             'description'  => 'nullable|string',
             'cover'        => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048',
-            'cover_url'    => 'nullable|url',
+            // FIX: samakan validasi dengan store, jangan pakai 'url' agar /storage/... lolos
+            'cover_url'    => ['nullable', 'regex:/^(https?:\/\/.+|\/[A-Za-z0-9_\-\/\.]+)$/'],
             'is_published' => 'nullable',
             'is_free'      => 'nullable|boolean',
             'price'        => 'nullable|numeric|min:0',
@@ -114,10 +108,12 @@ class CourseController extends Controller
 
         $isFree = $r->boolean('is_free');
         if (!$isFree && !isset($data['price'])) {
-            return back()->withErrors(['price' => 'Harga wajib diisi untuk kursus berbayar.'])->withInput();
+            return back()
+                ->withErrors(['price' => 'Harga wajib diisi untuk kursus berbayar.'])
+                ->withInput();
         }
 
-        // cover
+        // Cover handling
         $finalCoverUrl = $course->cover_url;
 
         if ($r->hasFile('cover')) {
@@ -125,11 +121,15 @@ class CourseController extends Controller
             $path = $r->file('cover')->store('covers', 'public');
             $finalCoverUrl = Storage::disk('public')->url($path);
         } elseif (array_key_exists('cover_url', $data)) {
+            // User mengosongkan field → hapus cover lama (jika lokal)
             if (empty($data['cover_url'])) {
                 $this->deleteOldLocalCoverIfAny($course->cover_url);
                 $finalCoverUrl = null;
             } else {
-                $this->deleteOldLocalCoverIfAny($course->cover_url);
+                // Ganti cover URL → hapus file lama jika lokal
+                if ($data['cover_url'] !== $course->cover_url) {
+                    $this->deleteOldLocalCoverIfAny($course->cover_url);
+                }
                 $finalCoverUrl = $data['cover_url'];
             }
         }
@@ -156,7 +156,6 @@ class CourseController extends Controller
         return redirect()->route('admin.courses.index')->with('ok', 'Course dihapus');
     }
 
-    // Opsional: API daftar modules untuk course tertentu
     public function modules(Request $r, Course $course)
     {
         $this->authorizeCourse($course, $r->user());
@@ -169,9 +168,7 @@ class CourseController extends Controller
         );
     }
 
-    /**
-     * Hapus file lama jika cover_url menunjuk ke berkas lokal di disk 'public' (/storage/...).
-     */
+    /** Hapus file lama jika cover_url menunjuk ke /storage/... */
     protected function deleteOldLocalCoverIfAny(?string $coverUrl): void
     {
         if (!$coverUrl) return;
@@ -180,32 +177,22 @@ class CourseController extends Controller
 
         if (Str::startsWith($pathPart, ['/storage/', 'storage/'])) {
             $relative = ltrim(Str::after($pathPart, '/storage/'), '/');
-
             if ($relative && Storage::disk('public')->exists($relative)) {
                 Storage::disk('public')->delete($relative);
             }
         }
     }
 
-    /** =========================
-     * Helpers (Akses)
-     * ========================= */
+    /** ========================= Helpers (Akses) ========================= */
     protected function authorizeCourse(Course $course, $user): void
     {
         if (!$user) abort(403);
 
-        // admin/mentor bebas
         if ($this->isAdminOrMentor()) {
-            // Mentor khusus course yang ditugaskan? (opsional pivot)
-            // if ($this->isMentorOnly()) {
-            //     $assigned = $course->mentors()->whereKey($user->id)->exists()
-            //               || $course->created_by === $user->id;
-            //     if (!$assigned) abort(403, 'Course ini bukan tanggung jawab Anda.');
-            // }
+            // (Opsional) jika ingin mentor hanya boleh course yang ditugaskan, aktifkan blok pivot di sini
             return;
         }
 
-        // user biasa: hanya boleh jika dia pembuat course
         if ($course->created_by !== $user->id) {
             abort(403, 'Anda tidak berhak mengelola course ini.');
         }

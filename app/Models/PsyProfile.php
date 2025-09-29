@@ -13,14 +13,14 @@ class PsyProfile extends Model
     public $incrementing = false;
     protected $keyType = 'string';
 
-    protected $fillable = [
+     protected $fillable = [
         'test_id',
-        'user_id',
         'key',
         'name',
         'min_total',
         'max_total',
         'description',
+        'user_id', 
     ];
 
 

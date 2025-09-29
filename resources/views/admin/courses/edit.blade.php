@@ -4,7 +4,6 @@
 
 @section('content')
 <div x-data class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-  <!-- Page Header -->
   <div class="mb-6 sm:mb-8">
     <div class="flex items-center justify-between gap-4">
       <div>
@@ -19,7 +18,6 @@
     </div>
   </div>
 
-  <!-- Error Summary -->
   @if ($errors->any())
     <div class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
       <div class="flex items-start gap-3">
@@ -42,17 +40,13 @@
     @csrf
     @method('PUT')
 
-    {{-- Hidden: publish state (disinkronkan dari toggle / tombol aksi) --}}
     <input type="hidden" name="is_published" id="publishField" value="{{ old('is_published', $course->is_published) ? 1 : 0 }}">
 
-    {{-- Basic Info --}}
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
       <div class="sm:col-span-2">
         <label class="mb-1.5 block text-sm font-medium">Title <span class="text-red-500">*</span></label>
-        <input type="text" name="title"
-               value="{{ old('title',$course->title) }}"
-               class="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-blue-600"
-               required>
+        <input type="text" name="title" value="{{ old('title',$course->title) }}"
+               class="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-blue-600" required>
         @error('title') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
       </div>
 
@@ -64,9 +58,7 @@
       </div>
     </div>
 
-    {{-- Media & Cover --}}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <!-- Upload: drag & drop -->
       <div
         x-data="{
           preview: null,
@@ -85,8 +77,7 @@
           @dragover.prevent="isDropping = true"
           @dragleave.prevent="isDropping = false"
           @drop.prevent="isDropping=false; handleFiles($event.dataTransfer.files)"
-          class="relative rounded-2xl border-2 border-dashed p-4 transition
-                 hover:border-blue-500 hover:bg-ivory-50"
+          class="relative rounded-2xl border-2 border-dashed p-4 transition hover:border-blue-500 hover:bg-ivory-50"
           :class="isDropping ? 'border-blue-600 bg-blue-50' : 'border-coal-200'"
         >
           <input type="file" name="cover" accept="image/*" x-ref="input"
@@ -98,12 +89,11 @@
             </div>
             <div class="text-sm">
               <p class="font-medium">Seret & letakkan gambar di sini, atau klik untuk pilih</p>
-              <p class="text-coal-500">PNG/JPG, max sesuai konfigurasi server</p>
+              <p class="text-coal-500">PNG/JPG/WEBP, max 2 MB</p>
             </div>
           </div>
         </div>
 
-        <!-- Preview baru -->
         <template x-if="preview">
           <div class="mt-3">
             <img :src="preview" alt="Preview baru" class="h-44 w-full rounded-xl border object-cover">
@@ -113,12 +103,11 @@
         @error('cover') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
       </div>
 
-      <!-- URL fallback + Preview lama -->
       <div>
         <label class="mb-1.5 block text-sm font-medium">Atau pakai Cover URL (opsional)</label>
-        <input type="url" name="cover_url"
-               value="{{ old('cover_url',$course->cover_url) }}"
-               placeholder="https://example.com/image.jpg"
+        {{-- TYPE=TEXT supaya /storage/... tidak ditolak --}}
+        <input type="text" name="cover_url" value="{{ old('cover_url',$course->cover_url) }}"
+               placeholder="https://example.com/image.jpg atau /storage/covers/file.webp"
                class="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-blue-600">
         <p class="mt-1 text-xs text-coal-500">Jika upload file & URL diisi, sistem akan memakai file upload.</p>
         @error('cover_url') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
@@ -133,9 +122,7 @@
       </div>
     </div>
 
-    {{-- Status & Pricing --}}
     <div class="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      <!-- Published (toggle visual → sinkron ke #publishField) -->
       <div class="rounded-2xl border p-4">
         <div class="flex items-center justify-between">
           <div>
@@ -151,20 +138,14 @@
         </div>
       </div>
 
-      <!-- Pricing -->
-      <div
-        x-data="{ isFree: {{ old('is_free', $course->is_free ?? 1) ? 'true' : 'false' }} }"
-        class="rounded-2xl border p-4"
-      >
+      <div x-data="{ isFree: {{ old('is_free', $course->is_free ?? 1) ? 'true' : 'false' }} }" class="rounded-2xl border p-4">
         <div class="flex items-start justify-between gap-3">
           <div>
             <p class="text-sm font-medium">Pricing</p>
             <p class="text-xs text-coal-500">Centang “Gratis” atau tentukan harga.</p>
           </div>
 
-          <!-- hidden agar 0 terkirim saat unchecked -->
           <input type="hidden" name="is_free" value="0">
-
           <label class="inline-flex items-center gap-2">
             <input type="checkbox" name="is_free" value="1" class="h-4 w-4 rounded"
                    @change="isFree = !isFree" :checked="isFree">
@@ -187,24 +168,19 @@
       </div>
     </div>
 
-    {{-- Actions --}}
     <div class="flex flex-wrap items-center justify-end gap-3">
       <a href="{{ route('admin.courses.index') }}"
-         class="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm hover:bg-ivory-100">
-        Batal
-      </a>
+         class="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm hover:bg-ivory-100">Batal</a>
 
-      {{-- Save as Draft (set is_published = 0) --}}
       <button type="submit"
               @click="document.getElementById('publishField').value = 0"
               class="inline-flex items-center gap-2 rounded-xl border px-4 py-2 text-sm font-medium hover:bg-ivory-100">
         Save Draft
       </button>
 
-      {{-- Publish Now (set is_published = 1) --}}
       <button type="submit"
               @click="document.getElementById('publishField').value = 1"
-              class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-600">
+              class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700">
         <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h7l-1 8 11-14h-7l1-6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
         Publish Now
       </button>
