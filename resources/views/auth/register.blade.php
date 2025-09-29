@@ -56,44 +56,86 @@
       </p>
     </div>
 
+    <!-- Flash status umum -->
+    @if(session('status'))
+      <div class="mb-5 rounded-xl border border-bluecamp-300/40 bg-bluecamp-800/40 px-4 py-3 text-sm">
+        {{ session('status') }}
+      </div>
+    @endif
+
     <!-- Form -->
-    <form method="POST" action="{{ route('register') }}" class="space-y-5 sm:space-y-6">
+    <form method="POST" action="{{ route('register') }}" class="space-y-5 sm:space-y-6" novalidate>
       @csrf
 
       <!-- Nama -->
       <div>
         <label for="name" class="block text-sm sm:text-base mb-2">Nama Lengkap</label>
-        <input id="name" name="name" type="text" required
-          class="w-full rounded-xl bg-bluecamp-950/60 border border-bluecamp-700 text-ivory-100
-                 placeholder-ivory-100/50 focus:border-aqua focus:ring-aqua
-                 px-4 py-3 sm:py-4 text-base sm:text-lg">
+        <input
+          id="name"
+          name="name"
+          type="text"
+          value="{{ old('name') }}"
+          required
+          autocomplete="name"
+          inputmode="text"
+          class="w-full rounded-xl bg-bluecamp-950/60 border {{ $errors->has('name') ? 'border-red-500 focus:border-red-400 focus:ring-red-400' : 'border-bluecamp-700 focus:border-aqua focus:ring-aqua' }} text-ivory-100 placeholder-ivory-100/50 px-4 py-3 sm:py-4 text-base sm:text-lg"
+          @error('name') aria-invalid="true" aria-describedby="name-error" @enderror
+        >
+        @error('name')
+          <p id="name-error" class="mt-2 text-sm text-red-400">{{ $message }}</p>
+        @enderror
       </div>
 
       <!-- Email -->
       <div>
         <label for="email" class="block text-sm sm:text-base mb-2">Email</label>
-        <input id="email" name="email" type="email" required
-          class="w-full rounded-xl bg-bluecamp-950/60 border border-bluecamp-700 text-ivory-100
-                 placeholder-ivory-100/50 focus:border-aqua focus:ring-aqua
-                 px-4 py-3 sm:py-4 text-base sm:text-lg">
+        <input
+          id="email"
+          name="email"
+          type="email"
+          value="{{ old('email') }}"
+          required
+          autocomplete="email"
+          class="w-full rounded-xl bg-bluecamp-950/60 border {{ $errors->has('email') ? 'border-red-500 focus:border-red-400 focus:ring-red-400' : 'border-bluecamp-700 focus:border-aqua focus:ring-aqua' }} text-ivory-100 placeholder-ivory-100/50 px-4 py-3 sm:py-4 text-base sm:text-lg"
+          @error('email') aria-invalid="true" aria-describedby="email-error" @enderror
+        >
+        @error('email')
+          <p id="email-error" class="mt-2 text-sm text-red-400">{{ $message }}</p>
+        @enderror
       </div>
 
       <!-- Password -->
       <div>
         <label for="password" class="block text-sm sm:text-base mb-2">Password</label>
-        <input id="password" name="password" type="password" required
-          class="w-full rounded-xl bg-bluecamp-950/60 border border-bluecamp-700 text-ivory-100
-                 placeholder-ivory-100/50 focus:border-aqua focus:ring-aqua
-                 px-4 py-3 sm:py-4 text-base sm:text-lg">
+        <input
+          id="password"
+          name="password"
+          type="password"
+          required
+          autocomplete="new-password"
+          class="w-full rounded-xl bg-bluecamp-950/60 border {{ $errors->has('password') ? 'border-red-500 focus:border-red-400 focus:ring-red-400' : 'border-bluecamp-700 focus:border-aqua focus:ring-aqua' }} text-ivory-100 placeholder-ivory-100/50 px-4 py-3 sm:py-4 text-base sm:text-lg"
+          @error('password') aria-invalid="true" aria-describedby="password-error" @enderror
+        >
+        @error('password')
+          <p id="password-error" class="mt-2 text-sm text-red-400">{{ $message }}</p>
+        @enderror
       </div>
 
       <!-- Konfirmasi Password -->
       <div>
         <label for="password_confirmation" class="block text-sm sm:text-base mb-2">Konfirmasi Password</label>
-        <input id="password_confirmation" name="password_confirmation" type="password" required
-          class="w-full rounded-xl bg-bluecamp-950/60 border border-bluecamp-700 text-ivory-100
-                 placeholder-ivory-100/50 focus:border-aqua focus:ring-aqua
-                 px-4 py-3 sm:py-4 text-base sm:text-lg">
+        <input
+          id="password_confirmation"
+          name="password_confirmation"
+          type="password"
+          required
+          autocomplete="new-password"
+          class="w-full rounded-xl bg-bluecamp-950/60 border {{ $errors->has('password_confirmation') ? 'border-red-500 focus:border-red-400 focus:ring-red-400' : 'border-bluecamp-700 focus:border-aqua focus:ring-aqua' }} text-ivory-100 placeholder-ivory-100/50 px-4 py-3 sm:py-4 text-base sm:text-lg"
+          @error('password_confirmation') aria-invalid="true" aria-describedby="password_confirmation-error" @enderror
+        >
+        @error('password_confirmation')
+          <p id="password_confirmation-error" class="mt-2 text-sm text-red-400">{{ $message }}</p>
+        @enderror
       </div>
 
       <!-- Tombol -->

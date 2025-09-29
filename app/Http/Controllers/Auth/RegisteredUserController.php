@@ -10,6 +10,7 @@ use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules;
 use Illuminate\View\View;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
@@ -23,37 +24,51 @@ class RegisteredUserController extends Controller
 
     public function store(Request $request): RedirectResponse
     {
+        // Validasi:
+        // - name: wajib string, max 255, dan TIDAK BOLEH pola email (not_regex)
+        //   Pola email sederhana: ^[^@\s]+@[^@\s]+\.[^@\s]+$
         $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'email'    => ['required', 'string', 'lowercase', 'email', 'max:255', 'unique:'.User::class],
+            'name'     => [
+                'required',
+                'string',
+                'max:255',
+                'not_regex:/^[^@\s]+@[^@\s]+\.[^@\s]+$/i',
+            ],
+            'email'    => [
+                'required',
+                'string',
+                'lowercase',
+                'email',
+                'max:255',
+                Rule::unique(User::class, 'email'),
+            ],
             'password' => ['required', 'confirmed', Rules\Password::defaults()],
+        ], [
+            'name.not_regex' => 'Nama tidak boleh berformat email.',
+            'email.unique'   => 'Email ini sudah terdaftar. Silakan gunakan email lain atau login.',
         ]);
 
         $user = User::create([
-            'name'     => $request->name,
-            'email'    => $request->email,
-            'password' => Hash::make($request->password),
+            'name'     => $request->string('name'),
+            'email'    => $request->string('email')->lower(),
+            'password' => Hash::make($request->string('password')),
         ]);
 
         event(new Registered($user));
         Auth::login($user);
 
-        // Ambil Tes IQ aktif terbaru (stabil untuk UUID)
+        // Ambil Tes IQ aktif terbaru
         $test = TestIq::query()
             ->where('is_active', true)
             ->orderByDesc('created_at')
             ->first();
 
-        // Bangun URL tujuan; untuk route param gunakan route key (mendukung UUID/ULID/ID)
-        if ($test) {
-            $nextUrl = route('user.test-iq.show', [
-                'testIq' => $test->getRouteKey(), // pakai key sesuai model (uuid/id)
-            ]);
-        } else {
-            $nextUrl = route('dashboard'); // route tanpa parameter
-        }
+        // Tujuan berikutnya
+        $nextUrl = $test
+            ? route('user.test-iq.show', ['testIq' => $test->getRouteKey()])
+            : route('dashboard');
 
-        // Jika perlu verifikasi email, arahkan ke notice dan simpan intended URL
+        // Jika butuh verifikasi email
         if ($user instanceof MustVerifyEmail && ! $user->hasVerifiedEmail()) {
             session(['url.intended' => $nextUrl]);
 
