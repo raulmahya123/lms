@@ -8,7 +8,7 @@
 @endphp
 
 <div class="max-w-4xl mx-auto space-y-6"
-     x-data="{
+      x-data="{
         options: @js($question->options->map(fn($o)=>[
           'id'=>$o->id,
           'label'=>$o->label,
@@ -16,7 +16,7 @@
         ])),
         addOption() { this.options.push({id:null,label:'',value:null}) },
         removeOption(i) { this.options.splice(i,1) }
-     }">
+      }">
 
   {{-- Header --}}
   <div class="flex items-start justify-between gap-4">
@@ -24,8 +24,8 @@
       <h1 class="text-3xl font-bold tracking-tight text-blue-900">Edit Question</h1>
       <p class="text-sm text-blue-700/70">Ubah detail pertanyaan & opsi jawaban.</p>
     </div>
-    <a href="{{ route('admin.psy-questions.show',$question) }}"
-       class="px-3 py-2 rounded-xl border border-blue-200 text-blue-700 hover:bg-blue-50 transition">
+      <a href="{{ route('admin.psy-questions.show',$question) }}"
+        class="px-3 py-2 rounded-xl border border-blue-200 text-blue-700 hover:bg-blue-50 transition">
       ← Back
     </a>
   </div>
@@ -93,13 +93,13 @@
       </template>
     </div>
 
-    {{-- Submit --}}
+    {{-- Submits --}}
     <div class="flex items-center gap-3">
       <button class="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
         Save Changes
       </button>
       <a href="{{ route('admin.psy-questions.show',$question) }}"
-         class="px-5 py-2 rounded-xl border hover:bg-gray-50">Cancel</a>
+          class="px-5 py-2 rounded-xl border hover:bg-gray-50">Cancel</a>
     </div>
   </form>
 </div>

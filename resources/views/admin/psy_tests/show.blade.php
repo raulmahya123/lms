@@ -45,15 +45,6 @@
           </div>
         </div>
       </div>
-
-      @if(!empty($psy_test->description))
-        <div>
-          <div class="text-xs text-gray-500 mb-1">Deskripsi</div>
-          <div class="border rounded-xl p-4 leading-relaxed">
-            {!! nl2br(e($psy_test->description)) !!}
-          </div>
-        </div>
-      @endif
     </div>
 
     <div class="px-6 py-4 border-t bg-gray-50 flex items-center justify-between">
