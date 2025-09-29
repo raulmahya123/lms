@@ -109,11 +109,11 @@ class PsyQuestionController extends Controller
     {
         $data = $r->validate([
             'prompt'   => ['required', 'string'],
-            'trait_key'=> ['nullable', 'string', 'max:50'],
-            'qtype'    => ['required', Rule::in(['likert','mcq'])],
-            'ordering' => ['nullable','integer'],
+            'trait_key' => ['nullable', 'string', 'max:50'],
+            'qtype'    => ['required', Rule::in(['likert', 'mcq'])],
+            'ordering' => ['nullable', 'integer'],
             'options'  => ['array'],
-            'options.*.label'=> ['required_with:options','string'],
+            'options.*.label' => ['required_with:options', 'string'],
         ]);
 
         $q = PsyQuestion::create([
@@ -127,25 +127,36 @@ class PsyQuestionController extends Controller
         if (!empty($data['options'])) {
             foreach ($data['options'] as $i => $opt) {
                 $q->options()->create([
-                    'label'=>$opt['label'],
-                    'value'=>$opt['value'] ?? null,
-                    'ordering'=>$i+1,
+                    'label' => $opt['label'],
+                    'value' => $opt['value'] ?? null,
+                    'ordering' => $i + 1,
                 ]);
             }
         }
 
-        return redirect()->route('admin.psy-tests.questions.index',$psy_test);
+        return redirect()->route('admin.psy-tests.questions.index', $psy_test);
     }
 
     public function show(PsyTest $psy_test, PsyQuestion $psy_question)
     {
         abort_if($psy_question->test_id !== $psy_test->id, 404);
 
-        $psy_question->load('test:id,name','options');
+        $psy_question->load('test:id,name', 'options');
 
         return view('admin.psy_questions.show', [
-            'question'=>$psy_question,
-            'currentTest'=>$psy_test,
+            'question'    => $psy_question,
+            'currentTest' => $psy_test,
+        ]);
+    }
+
+
+    public function showFlat(PsyQuestion $psy_question)
+    {
+        $psy_question->load('test:id,name', 'options');
+
+        return view('admin.psy_questions.show', [
+            'question'    => $psy_question,
+            'currentTest' => $psy_question->test,
         ]);
     }
 
@@ -155,7 +166,7 @@ class PsyQuestionController extends Controller
 
         $psy_question->delete();
 
-        return redirect()->route('admin.psy-tests.questions.index',$psy_test);
+        return redirect()->route('admin.psy-tests.questions.index', $psy_test);
     }
 
     /* =========================
@@ -163,64 +174,67 @@ class PsyQuestionController extends Controller
      * ========================= */
     public function edit(PsyQuestion $psy_question)
     {
-        $psy_question->load('test:id,name','options');
+        $psy_question->load('test:id,name', 'options');
 
         return view('admin.psy_questions.edit', [
-            'question'=>$psy_question,
+            'question' => $psy_question,
         ]);
     }
 
     public function update(Request $r, PsyQuestion $psy_question)
     {
         $data = $r->validate([
-            'prompt'   => ['required','string'],
-            'trait_key'=> ['nullable','string','max:50'],
-            'qtype'    => ['required', Rule::in(['likert','mcq'])],
-            'ordering' => ['nullable','integer'],
+            'prompt'   => ['required', 'string'],
+            'trait_key' => ['nullable', 'string', 'max:50'],
+            'qtype'    => ['required', Rule::in(['likert', 'mcq'])],
+            'ordering' => ['nullable', 'integer'],
             'options'  => ['array'],
-            'options.*.id'    => ['nullable','uuid', Rule::exists('psy_options','id')],
-            'options.*.label' => ['required_with:options','string'],
-            'options.*.value' => ['nullable','integer'],
+            'options.*.id'    => ['nullable', 'uuid', Rule::exists('psy_options', 'id')],
+            'options.*.label' => ['required_with:options', 'string'],
+            'options.*.value' => ['nullable', 'integer'],
             'options_delete'  => ['array'],
-            'options_delete.*'=> ['uuid', Rule::exists('psy_options','id')],
+            'options_delete.*' => ['uuid', Rule::exists('psy_options', 'id')],
         ]);
 
         $psy_question->update([
-            'prompt'=>$data['prompt'],
-            'trait_key'=>$data['trait_key'] ?? null,
-            'qtype'=>$data['qtype'],
-            'ordering'=>$data['ordering'] ?? 0,
+            'prompt' => $data['prompt'],
+            'trait_key' => $data['trait_key'] ?? null,
+            'qtype' => $data['qtype'],
+            'ordering' => $data['ordering'] ?? 0,
         ]);
 
         if (!empty($data['options_delete'])) {
-            PsyOption::whereIn('id',$data['options_delete'])
-                ->where('question_id',$psy_question->id)
+            PsyOption::whereIn('id', $data['options_delete'])
+                ->where('question_id', $psy_question->id)
                 ->delete();
         }
 
         if (!empty($data['options'])) {
-            $i=1;
-            foreach($data['options'] as $opt){
-                if(!empty($opt['id'])){
-                    PsyOption::where('id',$opt['id'])
-                        ->where('question_id',$psy_question->id)
+            $i = 1;
+            foreach ($data['options'] as $opt) {
+                if (!empty($opt['id'])) {
+                    PsyOption::where('id', $opt['id'])
+                        ->where('question_id', $psy_question->id)
                         ->update([
-                            'label'=>$opt['label'],
-                            'value'=>$opt['value'] ?? null,
-                            'ordering'=>$i,
+                            'label' => $opt['label'],
+                            'value' => $opt['value'] ?? null,
+                            'ordering' => $i,
                         ]);
                 } else {
                     $psy_question->options()->create([
-                        'label'=>$opt['label'],
-                        'value'=>$opt['value'] ?? null,
-                        'ordering'=>$i,
+                        'label' => $opt['label'],
+                        'value' => $opt['value'] ?? null,
+                        'ordering' => $i,
                     ]);
                 }
                 $i++;
             }
         }
 
-        return redirect()->route('admin.psy-questions.show',$psy_question);
+        return redirect()->route(
+            'admin.psy-tests.questions.show',
+            ['psy_test' => $psy_question->test_id, 'psy_question' => $psy_question->id]
+        );
     }
 
     public function destroyFlat(PsyQuestion $psy_question)
@@ -228,6 +242,6 @@ class PsyQuestionController extends Controller
         $testId = $psy_question->test_id;
         $psy_question->delete();
 
-        return redirect()->route('admin.psy-questions.index',['psy_test_id'=>$testId]);
+        return redirect()->route('admin.psy-questions.index', ['psy_test_id' => $testId]);
     }
 }

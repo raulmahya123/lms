@@ -24,10 +24,10 @@
       <h1 class="text-3xl font-bold tracking-tight text-blue-900">Edit Question</h1>
       <p class="text-sm text-blue-700/70">Ubah detail pertanyaan & opsi jawaban.</p>
     </div>
-      <a href="{{ route('admin.psy-questions.show',$question) }}"
-        class="px-3 py-2 rounded-xl border border-blue-200 text-blue-700 hover:bg-blue-50 transition">
+      <a href="{{ route('admin.psy-tests.questions.show', ['psy_test'=>$question->test_id,'psy_question'=>$question->id]) }}"
+      class="px-3 py-2 rounded-xl border border-blue-200 text-blue-700 hover:bg-blue-50 transition">
       ← Back
-    </a>
+      </a>
   </div>
 
   {{-- Form --}}
@@ -98,8 +98,10 @@
       <button class="px-5 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
         Save Changes
       </button>
-      <a href="{{ route('admin.psy-questions.show',$question) }}"
-          class="px-5 py-2 rounded-xl border hover:bg-gray-50">Cancel</a>
+      <a href="{{ route('admin.psy-tests.questions.show', ['psy_test'=>$question->test_id,'psy_question'=>$question->id]) }}"
+      class="px-5 py-2 rounded-xl border hover:bg-gray-50">
+      Cancel
+      </a>
     </div>
   </form>
 </div>

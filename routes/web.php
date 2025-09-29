@@ -13,6 +13,9 @@ use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
 use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Http\Middleware\EnsureCurrentSession;
 use App\Http\Middleware\EnsureSameDevice;
+use App\Http\Controllers\Admin\PsyTestController;
+use App\Http\Controllers\Admin\PsyQuestionController;
+
 // =====================
 // Public
 // =====================
@@ -329,7 +332,7 @@ Route::middleware(['auth', 'verified', EnsureCurrentSession::class, EnsureSameDe
 
 
     // CRUD Psych Profiles
-     Route::resource('admin/psy-profiles', PsyProfileController::class)
+    Route::resource('admin/psy-profiles', PsyProfileController::class)
         ->parameters(['psy-profiles' => 'psy_profile'])
         ->names('admin.psy-profiles');
     // Q&A (USER)
@@ -567,17 +570,47 @@ Route::middleware(['auth', 'can:backoffice', EnsureCurrentSession::class, Ensure
         // /admin/psy-tests/{psy_test}/questions
         // Nested PSY (per test): index/create/store + show/destroy
         Route::resource('psy-tests.questions', \App\Http\Controllers\Admin\PsyQuestionController::class)
-            ->only(['index', 'create', 'store', 'show', 'destroy'])   // ⬅️ tambah show & destroy
+            ->only(['index', 'create', 'store', 'update', 'show', 'destroy'])   // ⬅️ tambah show & destroy
             ->names('psy-tests.questions')
             ->parameters(['psy-tests' => 'psy_test', 'questions' => 'psy_question'])
             ->whereUuid(['psy_test', 'psy_question']); // ⬅️ sekalian enforce UUID untuk question juga
 
+
+        // TEST
+        Route::resource('psy-tests', PsyTestController::class)
+            ->parameters(['psy-tests' => 'psy_test'])
+            ->whereUuid(['psy_test']);
         // PSY single (flat): show/edit/update/destroy di /admin/psy-questions/{psy_question}
-        Route::resource('psy-questions', \App\Http\Controllers\Admin\PsyQuestionController::class)
-            ->only(['show', 'edit', 'update', 'destroy'])
-            ->names('psy-questions')
-            ->parameters(['psy-questions' => 'psy_question'])
+        // ==== FLAT QUESTION ==== 
+        // 1) index/create/store pakai global*()
+        Route::get('psy-questions', [PsyQuestionController::class, 'globalIndex'])
+            ->name('psy-questions.index');
+
+        Route::get('psy-questions/create', [PsyQuestionController::class, 'globalCreate'])
+            ->name('psy-questions.create');
+
+        Route::post('psy-questions', [PsyQuestionController::class, 'globalStore'])
+            ->name('psy-questions.store');
+
+        // 2) show FLAT → arahkan ke showFlat (bukan show nested)
+        Route::get('psy-questions/{psy_question}', [PsyQuestionController::class, 'showFlat'])
+            ->name('psy-questions.show')
             ->whereUuid(['psy_question']);
+
+        // 3) edit/update/destroy FLAT tetap
+        Route::get('psy-questions/{psy_question}/edit', [PsyQuestionController::class, 'edit'])
+            ->name('psy-questions.edit')
+            ->whereUuid(['psy_question']);
+
+        Route::put('psy-questions/{psy_question}', [PsyQuestionController::class, 'update'])
+            ->name('psy-questions.update')
+            ->whereUuid(['psy_question']);
+
+        Route::delete('psy-questions/{psy_question}', [PsyQuestionController::class, 'destroyFlat'])
+            ->name('psy-questions.destroy')
+            ->whereUuid(['psy_question']);
+
+
 
         // GLOBAL PSY (opsional) — daftar lintas tes, create/store global
         Route::get('psy-questions', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalIndex'])
