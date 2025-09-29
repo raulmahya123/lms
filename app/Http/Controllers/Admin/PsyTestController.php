@@ -76,7 +76,7 @@ class PsyTestController extends Controller
     public function edit(PsyTest $psy_test)
     {
         return view('admin.psy_tests.edit', [
-            'psy_test' => $psy_test,       // ⬅️ konsisten kirim 'psy_test'
+            'psy_test' => $psy_test,      
             'tracks'   => self::TRACKS,
             'types'    => self::TYPES,
         ]);
