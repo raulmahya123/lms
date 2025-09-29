@@ -10,8 +10,8 @@ use Illuminate\Support\Str;
 class PsyTestController extends Controller
 {
     /** daftar nilai yang diizinkan */
-    private const TRACKS = ['backend','frontend','fullstack','qa','devops','pm','custom'];
-    private const TYPES  = ['likert','mcq','iq','disc','big5','custom'];
+    private const TRACKS = ['backend', 'frontend', 'fullstack', 'qa', 'devops', 'pm', 'custom'];
+    private const TYPES  = ['likert', 'mcq', 'iq', 'disc', 'big5', 'custom'];
 
     public function index(Request $r)
     {
@@ -20,7 +20,7 @@ class PsyTestController extends Controller
                 $term = trim($r->q);
                 $q->where(function ($qq) use ($term) {
                     $qq->where('name', 'like', "%{$term}%")
-                       ->orWhere('slug', 'like', "%{$term}%");
+                        ->orWhere('slug', 'like', "%{$term}%");
                 });
             })
             ->when($r->filled('track'), fn($q) => $q->where('track', $r->track))
@@ -47,12 +47,12 @@ class PsyTestController extends Controller
     public function store(Request $r)
     {
         $data = $r->validate([
-            'name'           => ['required','string','max:160'],
-            'slug'           => ['nullable','alpha_dash','unique:psy_tests,slug'],
-            'track'          => ['required','in:'.implode(',', self::TRACKS)],
-            'type'           => ['required','in:'.implode(',', self::TYPES)],
-            'time_limit_min' => ['nullable','integer','min:1','max:600'],
-            'is_active'      => ['nullable','boolean'],
+            'name'           => ['required', 'string', 'max:160'],
+            'slug'           => ['nullable', 'alpha_dash', 'unique:psy_tests,slug'],
+            'track'          => ['required', 'in:' . implode(',', self::TRACKS)],
+            'type'           => ['required', 'in:' . implode(',', self::TYPES)],
+            'time_limit_min' => ['nullable', 'integer', 'min:1', 'max:600'],
+            'is_active'      => ['nullable', 'boolean'],
         ]);
 
         // default slug dari name kalau kosong
@@ -85,12 +85,12 @@ class PsyTestController extends Controller
     public function update(Request $r, PsyTest $psy_test)
     {
         $data = $r->validate([
-            'name'           => ['required','string','max:160'],
-            'slug'           => ['nullable','alpha_dash','unique:psy_tests,slug,'.$psy_test->id],
-            'track'          => ['required','in:'.implode(',', self::TRACKS)],
-            'type'           => ['required','in:'.implode(',', self::TYPES)],
-            'time_limit_min' => ['nullable','integer','min:1','max:600'],
-            'is_active'      => ['nullable','boolean'],
+            'name'           => ['required', 'string', 'max:160'],
+            'slug'           => ['nullable', 'alpha_dash', 'unique:psy_tests,slug,' . $psy_test->id],
+            'track'          => ['required', 'in:' . implode(',', self::TRACKS)],
+            'type'           => ['required', 'in:' . implode(',', self::TYPES)],
+            'time_limit_min' => ['nullable', 'integer', 'min:1', 'max:600'],
+            'is_active'      => ['nullable', 'boolean'],
         ]);
 
         $data['slug'] = $data['slug'] ?: Str::slug($data['name']);
@@ -101,14 +101,5 @@ class PsyTestController extends Controller
         return redirect()
             ->route('admin.psy-tests.show', $psy_test)
             ->with('ok', 'Test updated');
-    }
-
-    public function destroy(PsyTest $psy_test)
-    {
-        $psy_test->delete();
-
-        return redirect()
-            ->route('admin.psy-tests.index')
-            ->with('ok', 'Test deleted');
     }
 }

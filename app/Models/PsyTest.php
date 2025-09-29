@@ -13,7 +13,12 @@ class PsyTest extends Model
     protected $keyType = 'string';
 
     protected $fillable = [
-        'name','slug','track','type','time_limit_min','is_active',
+        'name',
+        'slug',
+        'track',
+        'type',
+        'time_limit_min',
+        'is_active',
     ];
 
     protected $casts = [
@@ -22,18 +27,21 @@ class PsyTest extends Model
     ];
 
     // allowed values (sinkron dengan UI/validation)
-    public const TRACKS = ['backend','frontend','fullstack','qa','devops','pm','custom'];
-    public const TYPES  = ['likert','mcq','iq','disc','big5','custom'];
+    public const TRACKS = ['backend', 'frontend', 'fullstack', 'qa', 'devops', 'pm', 'custom'];
+    public const TYPES  = ['likert', 'mcq', 'iq', 'disc', 'big5', 'custom'];
 
-    public function questions() {
+    public function questions()
+    {
         return $this->hasMany(PsyQuestion::class, 'test_id');
     }
 
-    public function profiles() {
+    public function profiles()
+    {
         return $this->hasMany(PsyProfile::class, 'test_id');
     }
 
-    public function attempts() {
+    public function attempts()
+    {
         return $this->hasMany(PsyAttempt::class, 'test_id');
     }
 }
