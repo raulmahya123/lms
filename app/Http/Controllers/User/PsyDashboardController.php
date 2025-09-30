@@ -18,8 +18,6 @@ class PsyDashboardController extends Controller
         $uid = Auth::id();
 
         // === Riwayat attempt (paginate) ===
-        // Ambil attempts user yang sudah submit + load test.
-        // total_score diambil dari accessor (ORM murni).
         $attempts = PsyAttempt::with(['test:id,name,slug'])
             ->where('user_id', $uid)
             ->whereNotNull('submitted_at')
@@ -34,7 +32,7 @@ class PsyDashboardController extends Controller
             return $a;
         });
 
-        // === Daftar tes aktif + statistik per user (tanpa SQL raw) ===
+        // === Daftar tes aktif + statistik per user ===
         $tests = PsyTest::where('is_active', true)
             ->withCount('questions')
             ->orderByDesc('id')
@@ -46,17 +44,15 @@ class PsyDashboardController extends Controller
             $t->locked     = false;   // atur kalau ada rule membership
             $t->is_premium = false;
 
-            // Ambil semua attempts user utk test ini (ORM murni)
             $userAttempts = PsyAttempt::where('user_id', $uid)
                 ->where('test_id', $t->id)
                 ->whereNotNull('submitted_at')
                 ->get();
 
             $attemptsCnt = $userAttempts->count();
-            // Gunakan accessor total_score (tanpa raw SQL)
             $scores      = $userAttempts->map(fn($a) => (int) $a->total_score);
 
-            $avg = $scores->count() ? round($scores->avg(), 2) : 0;
+            $avg  = $scores->count() ? round($scores->avg(), 2) : 0;
             $best = $scores->count() ? (int) $scores->max() : 0;
 
             $stats[$t->id] = (object) [
@@ -66,7 +62,7 @@ class PsyDashboardController extends Controller
             ];
         }
 
-        // === Rekomendasi profil dari attempt terakhir (ORM murni) ===
+        // === Rekomendasi profil dari attempt terakhir ===
         $last = PsyAttempt::where('user_id', $uid)
             ->whereNotNull('submitted_at')
             ->latest('submitted_at')
@@ -74,18 +70,18 @@ class PsyDashboardController extends Controller
 
         $recommendation = null;
         if ($last) {
-            $total = (int) $last->total_score; // dari accessor
+            $total = (int) $last->total_score;
 
-            // Cari profil berdasar rentang min_total..max_total (ORM murni)
-            $prof = PsyProfile::where('test_id', $last->test_id)
-                ->where('user_id', $uid) // <= penting
+            // Cari profil berdasar rentang min_total..max_total (tanpa user_id)
+            $prof = PsyProfile::query()
+                ->where('test_id', (string) $last->test_id)
                 ->where('min_total', '<=', $total)
                 ->where(function ($q) use ($total) {
-                    $q->whereNull('max_total')->orWhere('max_total', '>=', $total);
+                    $q->whereNull('max_total')
+                      ->orWhere('max_total', '>=', $total);
                 })
                 ->orderByDesc('min_total')
                 ->first();
-
 
             if ($prof) {
                 $recommendation = [
