@@ -164,18 +164,6 @@
                                 <td class="p-3 text-gray-500">{{ optional($p->updated_at)->diffForHumans() }}</td>
                                 <td class="p-3 text-center">
                                     <div class="flex items-center justify-center gap-2">
-                                        @if (Route::has('admin.psy-profiles.show'))
-                                            <a href="{{ route('admin.psy-profiles.show', $p) }}"
-                                               class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition"
-                                               title="View">
-                                                {{-- eye icon --}}
-                                                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                                                    <path d="M12 5C7 5 2.73 8.11 1 12c1.73 3.89 6 7 11 7s9.27-3.11 11-7c-1.73-3.89-6-7-11-7Zm0 11a4 4 0 1 1 0-8 4 4 0 0 1 0 8Z"/>
-                                                </svg>
-                                                View
-                                            </a>
-                                        @endif
-
                                         <a href="{{ route('admin.psy-profiles.edit', $p) }}"
                                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition"
                                            title="Edit">
