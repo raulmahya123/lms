@@ -62,7 +62,7 @@
       text-align: left;
     }
     .certificate-body .program {
-      font-size: .45in;
+      font-size: .35in;
       margin: 0;
       font-weight: bold;
       text-transform: uppercase;
