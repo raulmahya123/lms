@@ -12,17 +12,14 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('courses', function (Blueprint $table) {
-            $table->uuid('id')->primary();   // ✅ PK UUID
+            $table->uuid('id')->primary();
             $table->string('title');
             $table->text('description')->nullable();
-            $table->string('cover_url')->nullable();
+            $table->string('cover')->nullable();          // ← satu kolom cover (relative path)
+            $table->boolean('is_free')->default(true);    // ← gratis/berbayar
+            $table->decimal('price', 12, 2)->nullable();  // ← harga
             $table->boolean('is_published')->default(false);
-
-            // users.id sudah UUID → pakai foreignUuid
-            $table->foreignUuid('created_by')
-                  ->constrained('users')
-                  ->cascadeOnDelete();
-
+            $table->foreignUuid('created_by')->constrained('users')->cascadeOnDelete();
             $table->timestamps();
         });
     }

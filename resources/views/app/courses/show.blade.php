@@ -39,6 +39,11 @@
             $effectiveAccess = true;
         }
     }
+
+    // ==== COVER: pakai kolom 'cover' (relative path ke storage) ====
+    $cover = $course->cover
+        ? asset('storage/' . ltrim($course->cover, '/'))
+        : asset('assets/images/placeholder-course.png');
 @endphp
 
 <div class="flex items-start gap-6">
@@ -52,7 +57,7 @@
       </div>
     @endif
 
-    <img src="{{ $course->cover_url }}" class="w-full rounded border" alt="{{ $course->title }}">
+    <img src="{{ $cover }}" class="w-full rounded border object-cover" alt="{{ $course->title }}">
     <h1 class="text-2xl font-semibold mt-4">{{ $course->title }}</h1>
     <p class="mt-2 text-gray-700">{{ $course->description }}</p>
 
@@ -89,10 +94,6 @@
     <div class="p-4 bg-white border rounded space-y-3">
       @if($effectiveAccess)
         <div class="text-emerald-700 font-medium">Kamu sudah terdaftar</div>
-        {{-- <a href="{{ route('app.my.courses') }}"
-           class="w-full block text-center px-4 py-2 bg-emerald-600 text-white rounded hover:bg-emerald-700">
-          Buka "My Courses"
-        </a> --}}
       @else
         @if($hasMembership)
           {{-- Membership aktif → enroll gratis via membership (POST ke enroll) --}}
@@ -104,7 +105,7 @@
           </form>
           <p class="text-xs text-gray-500">Selama membership aktif, akses course mengikuti masa aktif membership.</p>
         @else
-          {{-- Membership tidak aktif → bayar per course --}}
+          {{-- Membership tidak aktif → bayar per course / free --}}
           @if(($course->price ?? 0) > 0)
             <a href="{{ route('app.courses.checkout', $course) }}"
                class="w-full block text-center px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700">
@@ -118,6 +119,7 @@
               </button>
             </form>
           @endif
+
           @if($enr && $enr->access_via === 'membership')
             <a href="{{ route('app.memberships.plans') }}"
                class="w-full block text-center px-4 py-2 bg-gray-200 text-gray-700 rounded">

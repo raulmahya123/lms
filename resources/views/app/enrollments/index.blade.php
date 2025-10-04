@@ -50,7 +50,10 @@
           $done   = (int)($enr->done_lessons ?? 0);
           $total  = (int)($enr->total_lessons ?? 0);
           $status = $enr->status ?? 'active';
-          $cover  = $course->cover_url ?? asset('assets/images/placeholder.png');
+          // === pakai kolom 'cover' (relative path ke storage) ===
+          $cover  = ($course && $course->cover)
+                      ? asset('storage/' . ltrim($course->cover, '/'))
+                      : asset('assets/images/placeholder.png');
           $pctClamped = max(0, min(100, $pct));
         @endphp
 

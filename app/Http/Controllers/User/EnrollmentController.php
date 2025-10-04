@@ -5,7 +5,6 @@ namespace App\Http\Controllers\User;
 use App\Http\Controllers\Controller;
 use App\Models\{Course, Enrollment, Membership};
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 
 class EnrollmentController extends Controller
@@ -15,33 +14,33 @@ class EnrollmentController extends Controller
         $uid = Auth::id();
 
         $enrollments = Enrollment::query()
-            ->with(['course:id,title,cover_url'])
+            ->with(['course:id,title,cover'])
             ->where('user_id', $uid)
             ->select('enrollments.*')
 
             // ===== total lessons per course (join lessons -> modules -> courses) =====
             ->selectSub(function ($q) {
                 $q->from('lessons as l')
-                    ->join('modules as m', 'm.id', '=', 'l.module_id')
-                    ->whereColumn('m.course_id', 'enrollments.course_id')
-                    ->selectRaw('COUNT(*)');
+                  ->join('modules as m', 'm.id', '=', 'l.module_id')
+                  ->whereColumn('m.course_id', 'enrollments.course_id')
+                  ->selectRaw('COUNT(*)');
             }, 'total_lessons')
 
             // ===== lessons selesai oleh user ini (completed_at not null) =====
             ->selectSub(function ($q) use ($uid) {
                 $q->from('lesson_progresses as lp')
-                    ->join('lessons as l', 'l.id', '=', 'lp.lesson_id')
-                    ->join('modules as m', 'm.id', '=', 'l.module_id')
-                    ->where('lp.user_id', $uid)
-                    ->whereNotNull('lp.completed_at')
-                    ->whereColumn('m.course_id', 'enrollments.course_id')
-                    ->selectRaw('COUNT(DISTINCT lp.lesson_id)');
+                  ->join('lessons as l', 'l.id', '=', 'lp.lesson_id')
+                  ->join('modules as m', 'm.id', '=', 'l.module_id')
+                  ->where('lp.user_id', $uid)
+                  ->whereNotNull('lp.completed_at')
+                  ->whereColumn('m.course_id', 'enrollments.course_id')
+                  ->selectRaw('COUNT(DISTINCT lp.lesson_id)');
             }, 'done_lessons')
 
             ->latest('activated_at')
             ->paginate(20);
 
-        // Tambahkan properti progress_percent agar langsung siap di Blade
+        // Tambahkan progress_percent utk langsung dipakai di Blade
         $enrollments->getCollection()->transform(function ($e) {
             $total = (int) ($e->total_lessons ?? 0);
             $done  = (int) ($e->done_lessons  ?? 0);
@@ -52,7 +51,7 @@ class EnrollmentController extends Controller
         return view('app.enrollments.index', compact('enrollments'));
     }
 
-     public function store(Request $request, Course $course)
+    public function store(Request $request, Course $course)
     {
         abort_unless($course->is_published, 404);
 
@@ -66,28 +65,23 @@ class EnrollmentController extends Controller
             return redirect()->route('app.my.courses')->with('ok', 'Kamu sudah ter-enroll.');
         }
 
-        // Membership aktif?
-        $hasActiveMembership = Membership::where('user_id', Auth::id())
+        // Membership aktif? (ambil satu yang masih valid)
+        $activeMembership = Membership::where('user_id', Auth::id())
             ->where('status', 'active')
             ->where(function ($q) {
                 $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
             })
-            ->exists();
+            ->orderByDesc('expires_at')
+            ->first();
 
-        // Dapatkan membership untuk copy expires_at bila perlu
-        $activeMembership = null;
-        if ($hasActiveMembership) {
-            $activeMembership = Membership::where('user_id', Auth::id())
-                ->where('status', 'active')
-                ->where(function ($q) {
-                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                })
-                ->orderByDesc('expires_at')
-                ->first();
-        }
+        $hasActiveMembership = (bool) $activeMembership;
 
-        // Free if membership or price 0
-        if ($hasActiveMembership || (int)($course->price ?? 0) <= 0) {
+        // Kursus gratis jika: punya membership ATAU is_free true ATAU price <= 0/null
+        $isCourseFree = $course->is_free
+            || is_null($course->price)
+            || (float) $course->price <= 0;
+
+        if ($hasActiveMembership || $isCourseFree) {
             $via = $hasActiveMembership ? 'membership' : 'free';
             $exp = $hasActiveMembership ? ($activeMembership?->expires_at) : null;
 
@@ -112,7 +106,7 @@ class EnrollmentController extends Controller
             return redirect()->route('app.my.courses')->with('ok', 'Berhasil enroll.');
         }
 
-        // Kalau tidak memenuhi → arahkan ke checkout (kalau kamu punya halaman checkout course)
+        // Tidak gratis → ke checkout
         return redirect()
             ->route('app.courses.checkout', $course)
             ->with('info', 'Silakan lanjutkan pembayaran untuk course ini.');

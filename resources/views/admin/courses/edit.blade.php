@@ -12,7 +12,9 @@
       </div>
       <a href="{{ route('admin.courses.index') }}"
          class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-ivory-100">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+          <path d="M15 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         Kembali
       </a>
     </div>
@@ -21,7 +23,9 @@
   @if ($errors->any())
     <div class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
       <div class="flex items-start gap-3">
-        <svg class="mt-0.5 h-5 w-5 text-red-600" viewBox="0 0 24 24" fill="none"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="mt-0.5 h-5 w-5 text-red-600" viewBox="0 0 24 24" fill="none">
+          <path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         <div>
           <p class="font-semibold text-red-800">Silakan periksa kembali isian Anda:</p>
           <ul class="mt-2 list-disc pl-5 text-sm text-red-700 space-y-1">
@@ -40,7 +44,8 @@
     @csrf
     @method('PUT')
 
-    <input type="hidden" name="is_published" id="publishField" value="{{ old('is_published', $course->is_published) ? 1 : 0 }}">
+    <input type="hidden" name="is_published" id="publishField"
+           value="{{ old('is_published', $course->is_published) ? 1 : 0 }}">
 
     <div class="grid grid-cols-1 gap-6 sm:grid-cols-2">
       <div class="sm:col-span-2">
@@ -85,7 +90,10 @@
                  class="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
           <div class="pointer-events-none flex items-center gap-3">
             <div class="rounded-xl border p-2">
-              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none"><path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M16 12l-4-4-4 4M12 8v9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none">
+                <path d="M4 16v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2M16 12l-4-4-4 4M12 8v9"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+              </svg>
             </div>
             <div class="text-sm">
               <p class="font-medium">Seret & letakkan gambar di sini, atau klik untuk pilih</p>
@@ -101,21 +109,11 @@
           </div>
         </template>
         @error('cover') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-      </div>
 
-      <div>
-        <label class="mb-1.5 block text-sm font-medium">Atau pakai Cover URL (opsional)</label>
-        {{-- TYPE=TEXT supaya /storage/... tidak ditolak --}}
-        <input type="text" name="cover_url" value="{{ old('cover_url',$course->cover_url) }}"
-               placeholder="https://example.com/image.jpg atau /storage/covers/file.webp"
-               class="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-blue-600">
-        <p class="mt-1 text-xs text-coal-500">Jika upload file & URL diisi, sistem akan memakai file upload.</p>
-        @error('cover_url') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-
-        @if($course->cover_url_resolved)
+        @if($course->cover)
           <div class="mt-4">
             <p class="mb-1 text-sm font-medium">Cover saat ini</p>
-            <img src="{{ $course->cover_url_resolved }}" alt="Current Cover"
+            <img src="{{ asset('storage/' . ltrim($course->cover, '/')) }}" alt="Current Cover"
                  class="h-44 w-full rounded-xl border object-cover">
           </div>
         @endif
@@ -181,7 +179,9 @@
       <button type="submit"
               @click="document.getElementById('publishField').value = 1"
               class="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-medium text-white shadow hover:bg-blue-700">
-        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none"><path d="M13 2L3 14h7l-1 8 11-14h-7l1-6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none">
+          <path d="M13 2L3 14h7l-1 8 11-14h-7l1-6z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
         Publish Now
       </button>
     </div>

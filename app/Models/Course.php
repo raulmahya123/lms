@@ -5,68 +5,47 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasManyThrough};
-use Illuminate\Support\Str;
 
 class Course extends Model
 {
     use HasUuids;
 
-    /**
-     * PK UUID (string).
-     */
+    /** PK UUID (string) */
     public $incrementing = false;
     protected $keyType   = 'string';
 
-    /**
-     * Mass assignable fields.
-     */
+    /** Mass assignable fields */
     protected $fillable = [
         'title',
         'description',
-        'cover_url',
+        'cover',        // ← cukup satu kolom cover
         'is_published',
         'created_by',
         'is_free',
         'price',
     ];
 
-    /**
-     * Casts.
-     */
+    /** Casts */
     protected $casts = [
         'is_published' => 'boolean',
         'is_free'      => 'boolean',
         'price'        => 'decimal:2',
     ];
 
-    /**
-     * Helper: apakah course berbayar.
-     */
+    /** Helper: apakah course berbayar */
     public function getIsPaidAttribute(): bool
     {
         return !$this->is_free;
     }
 
-    /**
-     * Helper: resolve cover URL jadi absolute.
-     */
-    public function getCoverUrlResolvedAttribute(): ?string
+    /** Helper: resolve cover jadi URL penuh */
+    public function getCoverUrlAttribute(): ?string
     {
-        $url = $this->cover_url;
-        if (!$url) return null;
-
-        if (Str::startsWith($url, ['http://', 'https://'])) {
-            return $url;
-        }
-
-        if (Str::startsWith($url, ['/storage/', 'storage/'])) {
-            return url(ltrim($url, '/'));
-        }
-
-        return $url;
+        if (!$this->cover) return null;
+        return asset('storage/'.$this->cover);
     }
 
-    /** ================= Relations ================= */
+    /* ================= Relations ================= */
 
     public function creator(): BelongsTo
     {
@@ -88,16 +67,14 @@ class Course extends Model
         return $this->hasMany(PlanCourse::class, 'course_id', 'id');
     }
 
-    /**
-     * Total lessons lewat modules (courses -> modules -> lessons).
-     */
+    /** Total lessons lewat modules (courses -> modules -> lessons) */
     public function lessons(): HasManyThrough
     {
         return $this->hasManyThrough(
-            Lesson::class,  // model tujuan
-            Module::class,  // model perantara
-            'course_id',    // FK di modules -> courses
-            'module_id',    // FK di lessons -> modules
+            Lesson::class,
+            Module::class,
+            'course_id',    // FK di modules
+            'module_id',    // FK di lessons
             'id',           // PK di courses
             'id'            // PK di modules
         );

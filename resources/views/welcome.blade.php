@@ -69,29 +69,20 @@
 
 {{-- ===================== HERO ===================== --}}
 <section class="relative overflow-hidden bg-gradient-to-b from-sky-50 via-white to-white">
-  <!-- === Dekor: ring + arc + grid titik (lebih kelihatan) === -->
+  <!-- Dekor -->
   <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
-    <!-- grid titik halus -->
     <div class="absolute inset-0 opacity-[.06]"
          style="background-size:22px 22px;
                 background-image:radial-gradient(circle at 1px 1px, rgba(2,6,23,.45) 1px, transparent 0);">
     </div>
-
-    <!-- glow lembut -->
     <div class="absolute left-1/3 top-[280px] -translate-x-1/2 w-[780px] h-[780px] rounded-full blur-3xl
                 bg-[radial-gradient(circle_at_center,_rgba(96,165,250,0.30),_transparent_60%)]"></div>
-
-    <!-- concentric rings -->
     <div class="absolute left-[54%] top-[320px] -translate-x-1/2 w-[600px] h-[600px] rounded-full border border-blue-300/60"></div>
     <div class="absolute left-[54%] top-[320px] -translate-x-1/2 w-[480px] h-[480px] rounded-full border border-blue-300/40"></div>
     <div class="absolute left-[54%] top-[320px] -translate-x-1/2 w-[360px] h-[360px] rounded-full border border-blue-300/30"></div>
-
-    <!-- arc solid (lingkaran sepotong) -->
     <div class="absolute left-[54%] top-[320px] -translate-x-1/2 -translate-y-1/2 w-[520px] h-[220px]
-                rounded-b-[520px] bg-gradient-to-b from-sky-100 to-blue-100 shadow-[0_24px_80px_rgba(2,6,23,.08)]">
-    </div>
+                rounded-b-[520px] bg-gradient-to-b from-sky-100 to-blue-100 shadow-[0_24px_80px_rgba(2,6,23,.08)]"></div>
   </div>
-  <!-- === /Dekor === -->
 
   <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20 grid lg:grid-cols-2 gap-10 z-10">
     <div class="flex flex-col justify-center">
@@ -109,7 +100,6 @@
         sampai pro yang butuh naik level cepat.
       </p>
 
-      <!-- value bullets -->
       <ul class="mt-4 grid grid-cols-2 gap-2 max-w-md text-sm text-slate-700">
         <li class="flex items-center gap-2"><span class="text-blue-700">✓</span> Roadmap jelas</li>
         <li class="flex items-center gap-2"><span class="text-blue-700">✓</span> Project portfolio</li>
@@ -162,11 +152,10 @@
     <div class="relative">
       <img src="{{ asset('assets/images/KKN.jpeg') }}" alt="Belajar"
            class="w-full h-72 sm:h-96 object-cover rounded-2xl shadow-2xl border border-blue-100" />
-      <!-- overlay 'Total Pembelajar' dihapus sesuai permintaan -->
     </div>
   </div>
 
-  {{-- LOGO TICKER (statis, tidak looping/animasi) --}}
+  {{-- LOGO TICKER --}}
   <div class="py-6 border-t">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       @php $logos = ['laravel.png','vue.png']; @endphp
@@ -180,7 +169,6 @@
     </div>
   </div>
 </section>
-
 
 <section class="py-4 bg-white border-y">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center gap-2 text-sm">
@@ -254,7 +242,6 @@
         </p>
       </div>
 
-      <!-- micro-CTA -->
       <a href="#kursus-baru"
          class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 hover-lift">
         Lihat Kelas Baru
@@ -266,7 +253,6 @@
     </div>
 
     <div class="grid sm:grid-cols-3 gap-5">
-      <!-- 1 -->
       <div class="card p-6 hover-lift">
         <div class="flex items-center gap-3">
           <div class="h-10 w-10 rounded-2xl bg-sky-100 flex items-center justify-center text-sky-700 text-lg">⚡</div>
@@ -285,7 +271,6 @@
         </ul>
       </div>
 
-      <!-- 2 -->
       <div class="card p-6 hover-lift">
         <div class="flex items-center gap-3">
           <div class="h-10 w-10 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-700 text-lg">🧩</div>
@@ -304,7 +289,6 @@
         </ul>
       </div>
 
-      <!-- 3 -->
       <div class="card p-6 hover-lift">
         <div class="flex items-center gap-3">
           <div class="h-10 w-10 rounded-2xl bg-sky-100 flex items-center justify-center text-sky-700 text-lg">🎯</div>
@@ -324,7 +308,6 @@
       </div>
     </div>
 
-    <!-- mobile CTA -->
     <div class="sm:hidden mt-6">
       <a href="#kursus-baru"
          class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 hover-lift">
@@ -337,7 +320,6 @@
     </div>
   </div>
 </section>
-
 
 {{-- ===================== KELAS TERBARU ===================== --}}
 <section id="kursus-baru" class="py-12 bg-white">
@@ -354,7 +336,9 @@
     <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
       @forelse ($latestCourses as $course)
         @php
-          $cover = $course->cover_url ?? asset('assets/images/placeholder-course.png');
+          $cover = $course->cover
+              ? asset('storage/' . ltrim($course->cover, '/'))
+              : asset('assets/images/placeholder-course.png');
           $level = trim($course->level ?? '') ?: 'All Levels';
           $modules = (int) ($course->modules_count ?? 0);
           $students = (int) ($course->enrollments_count ?? 0);
@@ -440,7 +424,9 @@
     <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
       @forelse ($popularCourses as $course)
         @php
-          $cover = $course->cover_url ?? asset('assets/images/placeholder-course.png');
+          $cover = $course->cover
+              ? asset('storage/' . ltrim($course->cover, '/'))
+              : asset('assets/images/placeholder-course.png');
           $pp = (int) ($course->progress_percent ?? 0);
           $pd = (int) ($course->progress_done ?? 0);
           $pt = max(1, (int) ($course->progress_total ?? 0));
@@ -635,7 +621,7 @@
         'mcq'    => 'from-sky-600 to-blue-700',
         'iq'     => 'from-emerald-500 to-teal-500',
         'disc'   => 'from-amber-500 to-orange-500',
-        'big5'   => 'from-blue-700 to-indigo-800', /* tetap di keluarga biru */
+        'big5'   => 'from-blue-700 to-indigo-800',
         'custom' => 'from-slate-500 to-slate-700',
       ];
     @endphp
@@ -814,7 +800,7 @@
           <div class="flex items-baseline justify-between">
             <h3 class="text-xl font-semibold">{{ $plan->name ?? 'Plan' }}</h3>
             @if ($plan->is_recommended ?? false)
-              <span class="text-xs px-2 py-1 rounded-full bg-white/20">Rekomendasi</span>
+              <span class="text-xs px-2 py-1 rounded-full bg:white/20 bg-white/20">Rekomendasi</span>
             @endif
           </div>
 
@@ -833,7 +819,6 @@
 
           <div class="mt-6">
             @auth
-              {{-- arahkan ke MembershipController@subscribe --}}
               <form method="POST" action="{{ route('app.memberships.subscribe', $plan) }}">
                 @csrf
                 <button class="shine w-full px-4 py-2 rounded-xl bg-white text-blue-800 font-semibold hover:bg-blue-50">
@@ -900,7 +885,6 @@
     </div>
   </div>
 
-  {{-- Auto-scroll halus ke alert saat kembali dari validasi --}}
   @push('scripts')
   <script>
     if (location.hash === '#alerts') {

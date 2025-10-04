@@ -8,7 +8,7 @@
     <div class="flex items-center justify-between gap-4">
       <div>
         <h1 class="text-2xl sm:text-3xl font-semibold tracking-tight text-coal-900">Create Course</h1>
-        <p class="mt-1 text-sm text-coal-500">Lengkapi detail kursus di bawah. Anda bisa unggah cover atau pakai URL.</p>
+        <p class="mt-1 text-sm text-coal-500">Lengkapi detail kursus di bawah. Anda bisa unggah cover.</p>
       </div>
       <a href="{{ route('admin.courses.index') }}"
          class="inline-flex items-center gap-2 rounded-xl border px-3 py-2 text-sm hover:bg-ivory-100">
@@ -101,16 +101,6 @@
           </div>
         </template>
         @error('cover') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
-      </div>
-
-      <div>
-        <label class="mb-1.5 block text-sm font-medium">Atau pakai Cover URL (opsional)</label>
-        {{-- TYPE=TEXT supaya /storage/... tidak ditolak oleh browser --}}
-        <input type="text" name="cover_url" value="{{ old('cover_url') }}"
-               placeholder="https://example.com/image.jpg atau /storage/covers/file.webp"
-               class="w-full rounded-xl border px-3 py-2 outline-none focus:ring-2 focus:ring-blue-600">
-        <p class="mt-1 text-xs text-coal-500">Jika upload file & URL diisi, sistem akan memakai file upload.</p>
-        @error('cover_url') <p class="mt-1 text-sm text-red-600">{{ $message }}</p> @enderror
       </div>
     </div>
 
