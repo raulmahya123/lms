@@ -784,8 +784,10 @@
 </section>
 
 {{-- ===================== PLANS ===================== --}}
+{{-- resources/views/partials/plans.blade.php --}}
 <section id="plans" class="py-12 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white">
   <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
     <div class="flex items-end justify-between gap-4">
       <div>
         <div class="divider"></div>
@@ -796,37 +798,107 @@
 
     <div class="mt-8 grid md:grid-cols-3 gap-6">
       @forelse ($plans as $plan)
-        <div class="rounded-2xl border border-white/15 p-6 bg-white/10 backdrop-blur hover-lift">
+        @php
+          // ===== Harga & Periode
+          $price       = (int) ($plan->price ?? 0);
+          $period      = (string) ($plan->period ?? 'monthly');
+          $periodLabel = $period === 'yearly' ? 'tahun' : 'bulan';
+
+          // ===== Normalisasi fitur
+          // 1) Relasi: $plan->features()->pluck('label')
+          // 2) Kolom JSON string: $plan->features
+          // 3) Array langsung / string multiline
+          $featureItems = collect();
+
+          try {
+            if (method_exists($plan, 'features')) {
+              // kalau relasi ada, pakai label-nya
+              $featureItems = collect($plan->features()->pluck('label')->all());
+            }
+          } catch (\Throwable $e) {}
+
+          if ($featureItems->isEmpty()) {
+            $raw = $plan->features
+                 ?? $plan->feature_list
+                 ?? $plan->plan_features
+                 ?? null;
+
+            if (is_iterable($raw)) {
+              $featureItems = collect($raw);
+            } elseif (is_string($raw)) {
+              // coba decode JSON
+              $decoded = json_decode($raw, true);
+              if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
+                $featureItems = collect($decoded);
+              } else {
+                // anggap string multi-baris
+                $featureItems = collect(preg_split('/\r\n|\r|\n/', trim($raw)) ?: []);
+              }
+            }
+          }
+
+          // Fallback jika kosong
+          if ($featureItems->filter(fn($v)=>filled($v))->isEmpty()) {
+            $featureItems = collect([
+              'Akses 1 kelas terpilih',
+              'Kuis & sertifikat',
+              'Pelacakan progres',
+              'Dukungan komunitas',
+            ]);
+          }
+
+          $coursesCount = $plan->plan_courses_count ?? ($plan->courses_count ?? null);
+          $recommended  = (bool) ($plan->is_recommended ?? false);
+        @endphp
+
+        <div class="relative rounded-2xl border border-white/15 p-6 bg-white/10 backdrop-blur hover:-translate-y-1 hover:shadow-lg transition
+                    @if($recommended) ring-2 ring-yellow-300/60 @endif">
+
+          {{-- Badge Rekomendasi --}}
+          @if($recommended)
+            <span class="absolute -top-3 right-4 text-[11px] px-2 py-1 rounded-full bg-yellow-300 text-blue-900 font-semibold shadow">
+              Rekomendasi
+            </span>
+          @endif
+
+          {{-- Header --}}
           <div class="flex items-baseline justify-between">
-            <h3 class="text-xl font-semibold">{{ $plan->name ?? 'Plan' }}</h3>
-            @if ($plan->is_recommended ?? false)
-              <span class="text-xs px-2 py-1 rounded-full bg:white/20 bg-white/20">Rekomendasi</span>
+            <h3 class="text-xl font-semibold truncate">{{ $plan->name ?? 'Plan' }}</h3>
+          </div>
+
+          {{-- Harga --}}
+          <div class="mt-3">
+            <div class="text-3xl font-extrabold">Rp {{ number_format($price, 0, ',', '.') }}</div>
+            <div class="text-xs text-blue-100 mt-1">/ {{ $periodLabel }}</div>
+            @if(!is_null($coursesCount))
+              <div class="text-xs text-blue-100 mt-1">Termasuk akses {{ (int) $coursesCount }} kelas</div>
             @endif
           </div>
 
-          <div class="mt-3">
-            @php $price = (int) ($plan->price ?? 0); @endphp
-            <div class="text-3xl font-extrabold">Rp {{ number_format($price, 0, ',', '.') }}</div>
-            <div class="text-xs text-blue-100 mt-1">/ {{ ($plan->period ?? 'monthly') === 'yearly' ? 'tahun' : 'bulan' }}</div>
-          </div>
-
+          {{-- Fitur --}}
           <ul class="mt-4 space-y-2 text-sm">
-            <li>✓ Akses {{ $plan->plan_courses_count ?? 0 }} kelas terpilih</li>
-            <li>✓ Kuis & Sertifikat</li>
-            <li>✓ Pelacakan Progres</li>
-            <li>✓ Dukungan Komunitas</li>
+            @foreach($featureItems->filter(fn($v)=>filled($v)) as $feat)
+              <li class="flex gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-none mt-0.5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 0 1 0 1.414l-7.5 7.5a1 1 0 0 1-1.414 0l-3-3a1 1 0 1 1 1.414-1.414L8.5 12.086l6.793-6.793a1 1 0 0 1 1.414 0z" clip-rule="evenodd"/>
+                </svg>
+                <span class="text-blue-100/95">{{ is_array($feat) ? ($feat['label'] ?? json_encode($feat)) : $feat }}</span>
+              </li>
+            @endforeach
           </ul>
 
+          {{-- CTA --}}
           <div class="mt-6">
             @auth
               <form method="POST" action="{{ route('app.memberships.subscribe', $plan) }}">
                 @csrf
-                <button class="shine w-full px-4 py-2 rounded-xl bg-white text-blue-800 font-semibold hover:bg-blue-50">
+                <button class="w-full px-4 py-2 rounded-xl bg-white text-blue-800 font-semibold hover:bg-blue-50">
                   Pilih Paket
                 </button>
               </form>
             @else
-              <a href="{{ route('register') }}" class="shine w-full inline-flex justify-center px-4 py-2 rounded-xl bg-white text-blue-800 font-semibold hover:bg-blue-50">
+              <a href="{{ route('register') }}"
+                 class="w-full inline-flex justify-center px-4 py-2 rounded-xl bg-white text-blue-800 font-semibold hover:bg-blue-50">
                 Daftar untuk Memilih
               </a>
             @endauth
@@ -840,6 +912,7 @@
     </div>
   </div>
 </section>
+
 
 {{-- ===================== COUPONS ===================== --}}
 <section id="kupon" class="py-12 bg-white">
