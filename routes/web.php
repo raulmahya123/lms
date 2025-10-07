@@ -529,6 +529,8 @@ Route::middleware(['auth', 'can:backoffice', EnsureCurrentSession::class, Ensure
         Route::resource('options', AdminOptionController::class)
             ->parameters(['options' => 'option'])
             ->whereUuid(['option']);
+        Route::post('options/bulk-store', [\App\Http\Controllers\Admin\OptionController::class, 'bulkStore'])
+            ->name('options.bulk-store');
 
         // =====================
         // Plans & Membership & Payments & Enrollments & Coupons
