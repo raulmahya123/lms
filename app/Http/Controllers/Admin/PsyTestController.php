@@ -76,7 +76,7 @@ class PsyTestController extends Controller
     public function edit(PsyTest $psy_test)
     {
         return view('admin.psy_tests.edit', [
-            'psy_test' => $psy_test,      
+            'psy_test' => $psy_test,
             'tracks'   => self::TRACKS,
             'types'    => self::TYPES,
         ]);
@@ -101,5 +101,22 @@ class PsyTestController extends Controller
         return redirect()
             ->route('admin.psy-tests.show', $psy_test)
             ->with('ok', 'Test updated');
+    }
+
+    public function destroy(PsyTest $psy_test)
+    {
+        // Opsional: cegah hapus jika sudah ada attempt
+        if (method_exists($psy_test, 'attempts')) {
+            $psy_test->loadCount('attempts');
+            if ($psy_test->attempts_count > 0) {
+                return back()->with('err', 'Tidak bisa hapus: sudah ada attempts pada test ini.');
+            }
+        }
+
+        $psy_test->delete();
+
+        return redirect()
+            ->route('admin.psy-tests.index')
+            ->with('ok', 'Test deleted.');
     }
 }
