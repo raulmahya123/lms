@@ -1,10 +1,10 @@
-{{-- resources/views/app/layouts/base.blade.php — Tosca Enterprise --}}
+﻿{{-- resources/views/app/layouts/base.blade.php â€” Tosca Enterprise --}}
 <!doctype html>
 <html lang="id" class="scroll-smooth">
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>@yield('title', 'App') — BERKEMAH</title>
+  <title>@yield('title', 'App') â€” BERKEMAH</title>
 
   {{-- Tailwind CDN --}}
   <script src="https://cdn.tailwindcss.com"></script>
@@ -18,21 +18,21 @@
           },
           colors: {
             tosca: {
-              light: '#DFF5F1',
-              DEFAULT: '#0F9D8A',
-              dark: '#087A6C',
-              deep: '#075E54',
+              light: '#F3E8FF',
+              DEFAULT: '#7C3AED',
+              dark: '#6D28D9',
+              deep: '#4C1D95',
             },
-            softbg: '#F4FBF9',
+            softbg: '#FAF7FF',
             text: {
               main: '#1F2937',
               soft: '#6B7280'
             }
           },
           boxShadow: {
-            glow:'0 0 0 3px rgba(15,157,138,0.15)',
+            glow:'0 0 0 3px rgba(124,58,237,0.15)',
             card:'0 8px 30px rgba(0,0,0,.04)',
-            'card-hover':'0 20px 60px rgba(15,157,138,.1)',
+            'card-hover':'0 20px 60px rgba(124,58,237,.1)',
           },
           borderRadius:{ '2xl':'1rem','3xl':'1.25rem','4xl':'2rem'},
         }
@@ -53,13 +53,13 @@
     [x-cloak]{display:none!important}
     /* Smooth nav link underline */
     .nav-link{position:relative;transition:color .2s}
-    .nav-link::after{content:'';position:absolute;left:50%;bottom:-4px;height:2px;width:0;background:linear-gradient(90deg,#0F9D8A,#087A6C);transition:all .25s ease;transform:translateX(-50%);border-radius:2px}
+    .nav-link::after{content:'';position:absolute;left:50%;bottom:-4px;height:2px;width:0;background:linear-gradient(90deg,#7C3AED,#6D28D9);transition:all .25s ease;transform:translateX(-50%);border-radius:2px}
     .nav-link:hover::after,.nav-link.active::after{width:70%}
-    .nav-link:hover,.nav-link.active{color:#0F9D8A}
-    .dark body{background:#071511;color:#e8f7f4}
+    .nav-link:hover,.nav-link.active{color:#7C3AED}
+    .dark body{background:#12091F;color:#F4EDFF}
     .dark header{background:rgba(7,21,17,.88);border-color:rgba(255,255,255,.08)}
-    .dark footer{background:linear-gradient(180deg,#071511,#0b211c);border-color:rgba(255,255,255,.08)}
-    .dark .landing-shell{background:#071511;color:#e8f7f4}
+    .dark footer{background:linear-gradient(180deg,#12091F,#1E1233);border-color:rgba(255,255,255,.08)}
+    .dark .landing-shell{background:#12091F;color:#F4EDFF}
     .dark .soft-card{background:rgba(12,32,27,.86);border-color:rgba(148,220,209,.16);box-shadow:0 18px 60px rgba(0,0,0,.28)}
     .dark .nav-link{color:#b8d6d1}
   </style>
@@ -284,7 +284,7 @@
           <span class="text-xl font-extrabold text-text-main">BERKE<span class="text-tosca">MAH</span></span>
         </a>
         <p class="mt-4 text-sm text-text-soft leading-relaxed max-w-sm">
-          Platform belajar teknologi & coding modern. Materi ringkas, interaktif, dan langsung praktik — bikin skillmu naik level. 🚀
+          Platform belajar teknologi & coding modern. Materi ringkas, interaktif, dan langsung praktik â€” bikin skillmu naik level. ðŸš€
         </p>
         <div class="mt-6 flex gap-2">
           <a href="#" class="w-9 h-9 rounded-xl bg-softbg border border-gray-100 flex items-center justify-center text-text-soft hover:bg-tosca hover:text-white hover:border-tosca transition-all">
@@ -339,7 +339,7 @@
   {{-- Copyright --}}
   <div class="border-t border-gray-100">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-wrap items-center justify-between gap-3 text-sm text-text-soft">
-      <p>© {{ date('Y') }} BERKEMAH. All rights reserved.</p>
+      <p>Â© {{ date('Y') }} BERKEMAH. All rights reserved.</p>
       <div class="flex items-center gap-4">
         <a href="#" class="hover:text-tosca transition-colors">Changelog</a>
         <a href="#" class="hover:text-tosca transition-colors">Status</a>

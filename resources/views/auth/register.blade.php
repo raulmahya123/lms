@@ -1,4 +1,4 @@
-@extends('layouts.auth-modern')
+﻿@extends('layouts.auth-modern')
 
 @section('title', 'Register')
 @section('visual_order', 'lg:order-2')
@@ -106,7 +106,7 @@
 
 <p class="mt-7 text-center text-sm font-semibold text-slate-500 dark:text-white/62">
   Sudah punya akun?
-  <a href="{{ route('login') }}" class="font-black text-tosca-dark hover:text-tosca dark:text-[#9df4e7]">Masuk</a>
+  <a href="{{ route('login') }}" class="font-black text-tosca-dark hover:text-tosca dark:text-[#DDD6FE]">Masuk</a>
 </p>
 @endsection
 
@@ -138,7 +138,7 @@
       },
       get labelClass() {
         if (!this.password) return 'text-slate-400';
-        return this.score <= 1 ? 'text-red-500' : (this.score === 2 ? 'text-amber-500' : 'text-tosca-dark dark:text-[#9df4e7]');
+        return this.score <= 1 ? 'text-red-500' : (this.score === 2 ? 'text-amber-500' : 'text-tosca-dark dark:text-[#DDD6FE]');
       }
     };
   }

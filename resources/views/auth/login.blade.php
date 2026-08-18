@@ -1,4 +1,4 @@
-@extends('layouts.auth-modern')
+﻿@extends('layouts.auth-modern')
 
 @section('title', 'Login')
 @section('visual_kicker', 'Welcome back')
@@ -11,7 +11,7 @@
   <div class="rounded-3xl border border-white/12 bg-white/12 p-5 backdrop-blur">
     <p class="text-xs font-bold uppercase tracking-wider text-white/60">Progress kelas</p>
     <p class="mt-2 text-2xl font-black">72%</p>
-    <div class="mt-4 h-2 rounded-full bg-white/15"><div class="h-2 w-[72%] rounded-full bg-[#9df4e7]"></div></div>
+    <div class="mt-4 h-2 rounded-full bg-white/15"><div class="h-2 w-[72%] rounded-full bg-[#DDD6FE]"></div></div>
   </div>
   <div class="rounded-3xl border border-white/12 bg-white/12 p-5 backdrop-blur">
     <p class="text-xs font-bold uppercase tracking-wider text-white/60">Sertifikat</p>
@@ -46,7 +46,7 @@
     <div class="mb-2 flex items-center justify-between gap-3">
       <label for="password" class="block text-sm font-bold text-slate-700 dark:text-white/82">Password</label>
       @if (Route::has('password.request'))
-        <a href="{{ route('password.request') }}" class="text-xs font-bold text-tosca-dark hover:text-tosca dark:text-[#9df4e7]">Forgot Password?</a>
+        <a href="{{ route('password.request') }}" class="text-xs font-bold text-tosca-dark hover:text-tosca dark:text-[#DDD6FE]">Forgot Password?</a>
       @endif
     </div>
     <div class="relative">
@@ -88,6 +88,6 @@
 
 <p class="mt-7 text-center text-sm font-semibold text-slate-500 dark:text-white/62">
   Belum punya akun?
-  <a href="{{ route('register') }}" class="font-black text-tosca-dark hover:text-tosca dark:text-[#9df4e7]">Daftar Gratis</a>
+  <a href="{{ route('register') }}" class="font-black text-tosca-dark hover:text-tosca dark:text-[#DDD6FE]">Daftar Gratis</a>
 </p>
 @endsection

@@ -1,4 +1,4 @@
-@extends('layouts.auth-modern')
+﻿@extends('layouts.auth-modern')
 
 @section('title', 'Lupa Password')
 @section('visual_kicker', 'Recovery')
@@ -34,6 +34,6 @@
 </form>
 
 <p class="mt-7 text-center text-sm font-semibold">
-  <a href="{{ route('login') }}" class="text-tosca-dark hover:text-tosca dark:text-[#9df4e7]">Kembali ke Login</a>
+  <a href="{{ route('login') }}" class="text-tosca-dark hover:text-tosca dark:text-[#DDD6FE]">Kembali ke Login</a>
 </p>
 @endsection

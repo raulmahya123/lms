@@ -1,4 +1,4 @@
-@extends('layouts.auth-modern')
+﻿@extends('layouts.auth-modern')
 
 @section('title', 'Konfirmasi Password')
 @section('visual_kicker', 'Area aman')

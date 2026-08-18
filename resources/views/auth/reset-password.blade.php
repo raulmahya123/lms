@@ -1,4 +1,4 @@
-@extends('layouts.auth-modern')
+﻿@extends('layouts.auth-modern')
 
 @section('title', 'Reset Password')
 @section('visual_kicker', 'Password baru')
@@ -93,7 +93,7 @@
       },
       get labelClass() {
         if (!this.password) return 'text-slate-400';
-        return this.score <= 1 ? 'text-red-500' : (this.score === 2 ? 'text-amber-500' : 'text-tosca-dark dark:text-[#9df4e7]');
+        return this.score <= 1 ? 'text-red-500' : (this.score === 2 ? 'text-amber-500' : 'text-tosca-dark dark:text-[#DDD6FE]');
       }
     };
   }

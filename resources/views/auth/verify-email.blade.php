@@ -1,4 +1,4 @@
-@extends('layouts.auth-modern')
+﻿@extends('layouts.auth-modern')
 
 @section('title', 'Verifikasi Email')
 @section('visual_kicker', 'Aktivasi akun')
@@ -16,7 +16,7 @@
 
 @section('content')
 @if (session('status') == 'verification-link-sent')
-  <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-100">
+  <div class="mb-5 rounded-2xl border border-violet-200 bg-violet-50 px-4 py-3 text-sm font-semibold text-violet-800 dark:border-violet-400/20 dark:bg-violet-400/10 dark:text-violet-100">
     Email verifikasi berhasil dikirim ulang.
   </div>
 @endif

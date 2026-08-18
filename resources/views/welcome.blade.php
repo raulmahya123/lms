@@ -1,4 +1,4 @@
-{{-- resources/views/welcome.blade.php --}}
+﻿{{-- resources/views/welcome.blade.php --}}
 @extends('app.layouts.base')
 
 @section('title', 'BERKEMAH - LMS Coding Modern')
@@ -9,22 +9,22 @@
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
   body { font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
-  .landing-shell { background: #f7fbfa; color: #10201d; }
+  .landing-shell { background: #faf7ff; color: #171026; }
   .text-balance { text-wrap: balance; }
   .section-kicker {
     display: inline-flex; align-items: center; gap: .5rem; border-radius: 999px;
-    border: 1px solid rgba(15,157,138,.16); background: rgba(15,157,138,.08);
-    color: #087A6C; padding: .42rem .8rem; font-size: .72rem; font-weight: 800;
+    border: 1px solid rgba(124,58,237,.16); background: rgba(124,58,237,.08);
+    color: #6D28D9; padding: .42rem .8rem; font-size: .72rem; font-weight: 800;
     letter-spacing: .08em; text-transform: uppercase;
   }
   .soft-card {
-    background: rgba(255,255,255,.88); border: 1px solid rgba(15,157,138,.12);
+    background: rgba(255,255,255,.88); border: 1px solid rgba(124,58,237,.12);
     box-shadow: 0 18px 50px rgba(16,32,29,.07); backdrop-filter: blur(18px);
   }
   .lift { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
-  .lift:hover { transform: translateY(-5px); box-shadow: 0 24px 70px rgba(15,157,138,.14); border-color: rgba(15,157,138,.24); }
+  .lift:hover { transform: translateY(-5px); box-shadow: 0 24px 70px rgba(124,58,237,.14); border-color: rgba(124,58,237,.24); }
   .progress-track { height: .45rem; border-radius: 999px; background: #dff5f1; overflow: hidden; }
-  .progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg,#0F9D8A,#075E54); }
+  .progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg,#7C3AED,#4C1D95); }
   .logo-ticker { mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
   .logo-track { animation: ticker 28s linear infinite; }
   @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
@@ -41,11 +41,11 @@
   $fallbackCover = asset('assets/images/foto-belajar.jpg');
   $heroImage = asset('assets/images/foto-berkemah.png');
   $statsCards = [
-    ['label' => 'Kelas', 'value' => $stats['courses'] ?? 0, 'tone' => 'bg-[#0F9D8A]'],
+    ['label' => 'Kelas', 'value' => $stats['courses'] ?? 0, 'tone' => 'bg-[#7C3AED]'],
     ['label' => 'Modul', 'value' => $stats['modules'] ?? 0, 'tone' => 'bg-slate-900'],
-    ['label' => 'Pelajaran', 'value' => $stats['lessons'] ?? 0, 'tone' => 'bg-emerald-600'],
-    ['label' => 'Enrollment', 'value' => $stats['enrollments'] ?? 0, 'tone' => 'bg-cyan-700'],
-    ['label' => 'Kuis', 'value' => $stats['quizzes'] ?? 0, 'tone' => 'bg-teal-800'],
+    ['label' => 'Pelajaran', 'value' => $stats['lessons'] ?? 0, 'tone' => 'bg-violet-700'],
+    ['label' => 'Enrollment', 'value' => $stats['enrollments'] ?? 0, 'tone' => 'bg-indigo-700'],
+    ['label' => 'Kuis', 'value' => $stats['quizzes'] ?? 0, 'tone' => 'bg-fuchsia-700'],
   ];
   $techLogos = collect([
     ['name' => 'Laravel', 'src' => asset('assets/logos/laravel.png')],
@@ -60,8 +60,8 @@
 @endphp
 
 <div class="landing-shell">
-  <section class="relative overflow-hidden bg-[radial-gradient(circle_at_18%_16%,rgba(15,157,138,.16),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(7,94,84,.13),transparent_26%),linear-gradient(180deg,#f2fffc,#ffffff_70%)]">
-    <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#0F9D8A]/40 to-transparent"></div>
+  <section class="relative overflow-hidden bg-[radial-gradient(circle_at_18%_16%,rgba(124,58,237,.16),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(76,29,149,.13),transparent_26%),linear-gradient(180deg,#f2fffc,#ffffff_70%)]">
+    <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#7C3AED]/40 to-transparent"></div>
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 lg:pt-24 lg:pb-16">
       <div class="grid lg:grid-cols-[1.02fr_.98fr] gap-12 items-center">
         <div>
@@ -75,8 +75,8 @@
 
           <div class="mt-7 grid sm:grid-cols-2 gap-3 max-w-2xl">
             @foreach (['Roadmap belajar jelas', 'Project praktik bertahap', 'Kuis dan progres otomatis', 'Sertifikat digital'] as $benefit)
-              <div class="flex items-center gap-3 rounded-2xl bg-white/80 border border-[#0F9D8A]/12 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
-                <span class="grid h-6 w-6 place-items-center rounded-full bg-[#DFF5F1] text-[#087A6C]">
+              <div class="flex items-center gap-3 rounded-2xl bg-white/80 border border-[#7C3AED]/12 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+                <span class="grid h-6 w-6 place-items-center rounded-full bg-[#F3E8FF] text-[#6D28D9]">
                   <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
                 </span>
                 {{ $benefit }}
@@ -85,16 +85,16 @@
           </div>
 
           <div class="mt-8 flex flex-col sm:flex-row gap-3">
-            <a href="#kelas-terbaru" class="inline-flex justify-center items-center gap-2 rounded-2xl bg-[#0F9D8A] px-7 py-4 text-sm font-extrabold text-white shadow-lg shadow-[#0F9D8A]/25 hover:bg-[#087A6C] transition">
+            <a href="#kelas-terbaru" class="inline-flex justify-center items-center gap-2 rounded-2xl bg-[#7C3AED] px-7 py-4 text-sm font-extrabold text-white shadow-lg shadow-[#7C3AED]/25 hover:bg-[#6D28D9] transition">
               Jelajah Kelas
               <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
             </a>
             @guest
-              <a href="{{ route('register') }}" class="inline-flex justify-center items-center gap-2 rounded-2xl border border-[#0F9D8A]/20 bg-white px-7 py-4 text-sm font-extrabold text-[#087A6C] hover:bg-[#DFF5F1] transition">
+              <a href="{{ route('register') }}" class="inline-flex justify-center items-center gap-2 rounded-2xl border border-[#7C3AED]/20 bg-white px-7 py-4 text-sm font-extrabold text-[#6D28D9] hover:bg-[#F3E8FF] transition">
                 Daftar Gratis
               </a>
             @else
-              <a href="{{ route('app.dashboard') }}" class="inline-flex justify-center items-center gap-2 rounded-2xl border border-slate-200 bg-white px-7 py-4 text-sm font-extrabold text-slate-800 hover:border-[#0F9D8A]/30 transition">
+              <a href="{{ route('app.dashboard') }}" class="inline-flex justify-center items-center gap-2 rounded-2xl border border-slate-200 bg-white px-7 py-4 text-sm font-extrabold text-slate-800 hover:border-[#7C3AED]/30 transition">
                 Buka Dashboard
               </a>
             @endguest
@@ -109,10 +109,10 @@
               <div class="absolute left-5 right-5 bottom-5 rounded-2xl bg-white/90 backdrop-blur px-5 py-4 shadow-xl">
                 <div class="flex items-center justify-between gap-4">
                   <div>
-                    <p class="text-xs font-bold uppercase tracking-wider text-[#087A6C]">Learning progress</p>
+                    <p class="text-xs font-bold uppercase tracking-wider text-[#6D28D9]">Learning progress</p>
                     <p class="mt-1 text-sm font-bold text-slate-900">Belajar, latihan, diskusi, lalu dapat sertifikat.</p>
                   </div>
-                  <div class="shrink-0 rounded-2xl bg-[#0F9D8A] px-4 py-3 text-center text-white">
+                  <div class="shrink-0 rounded-2xl bg-[#7C3AED] px-4 py-3 text-center text-white">
                     <div class="text-xl font-black">{{ number_format($stats['courses'] ?? 0) }}+</div>
                     <div class="text-[10px] font-bold uppercase">kelas</div>
                   </div>
@@ -120,9 +120,9 @@
               </div>
             </div>
           </div>
-          <div class="hidden lg:block absolute -left-8 top-10 rounded-2xl bg-white px-5 py-4 shadow-xl border border-[#0F9D8A]/10">
+          <div class="hidden lg:block absolute -left-8 top-10 rounded-2xl bg-white px-5 py-4 shadow-xl border border-[#7C3AED]/10">
             <p class="text-xs text-slate-500">Member aktif</p>
-            <p class="text-2xl font-black text-[#075E54]">{{ number_format($stats['enrollments'] ?? 0) }}+</p>
+            <p class="text-2xl font-black text-[#4C1D95]">{{ number_format($stats['enrollments'] ?? 0) }}+</p>
           </div>
           <div class="hidden lg:block absolute -right-6 bottom-20 rounded-2xl bg-slate-950 px-5 py-4 shadow-xl">
             <p class="text-xs text-white/60">Assessment</p>
@@ -153,12 +153,12 @@
     </div>
   </section>
 
-  <section class="py-8 bg-[#f7fbfa]">
+  <section class="py-8 bg-[#faf7ff]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex flex-col gap-5">
         <div class="flex items-center justify-between gap-4">
           <p class="text-sm font-bold text-slate-500">Trusted technologies behind the learning experience</p>
-          <span class="hidden sm:inline-flex text-xs font-bold text-[#087A6C]">Modern stack</span>
+          <span class="hidden sm:inline-flex text-xs font-bold text-[#6D28D9]">Modern stack</span>
         </div>
         <div class="logo-ticker overflow-hidden rounded-3xl bg-white border border-slate-100 py-5">
           <div class="logo-track flex w-max items-center gap-10 px-8">
@@ -187,14 +187,14 @@
           ];
         @endphp
         @foreach ($chips as $chip)
-          <a href="{{ $chip['href'] }}" class="whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:border-[#0F9D8A]/30 hover:bg-[#DFF5F1] hover:text-[#087A6C] transition">{{ $chip['label'] }}</a>
+          <a href="{{ $chip['href'] }}" class="whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:border-[#7C3AED]/30 hover:bg-[#F3E8FF] hover:text-[#6D28D9] transition">{{ $chip['label'] }}</a>
         @endforeach
         <span class="min-w-4 flex-1"></span>
         @auth
           <a href="{{ route('app.dashboard') }}" class="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2 text-xs font-bold text-white">Dashboard</a>
         @else
           <a href="{{ route('login') }}" class="whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700">Login</a>
-          <a href="{{ route('register') }}" class="whitespace-nowrap rounded-full bg-[#0F9D8A] px-4 py-2 text-xs font-bold text-white">Daftar</a>
+          <a href="{{ route('register') }}" class="whitespace-nowrap rounded-full bg-[#7C3AED] px-4 py-2 text-xs font-bold text-white">Daftar</a>
         @endauth
       </div>
     </div>
@@ -211,21 +211,21 @@
         <div class="soft-card rounded-3xl p-6 sm:p-8">
           <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
             <div class="flex items-center gap-4">
-              <div class="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-[#0F9D8A] to-[#075E54] text-2xl font-black text-white shadow-lg shadow-[#0F9D8A]/20">{{ $initial }}</div>
+              <div class="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-[#7C3AED] to-[#4C1D95] text-2xl font-black text-white shadow-lg shadow-[#7C3AED]/20">{{ $initial }}</div>
               <div>
-                <p class="text-xs font-black uppercase tracking-wider text-[#087A6C]">Profil belajar</p>
+                <p class="text-xs font-black uppercase tracking-wider text-[#6D28D9]">Profil belajar</p>
                 <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $user->name }}</h2>
                 <p class="text-sm text-slate-500">{{ $user->email }}</p>
-                <span class="mt-2 inline-flex rounded-full bg-[#DFF5F1] px-3 py-1 text-xs font-bold text-[#087A6C]">{{ $membershipLabel }}</span>
+                <span class="mt-2 inline-flex rounded-full bg-[#F3E8FF] px-3 py-1 text-xs font-bold text-[#6D28D9]">{{ $membershipLabel }}</span>
               </div>
             </div>
             <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
-              <a href="{{ route('app.my.courses') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#DFF5F1]">My Courses</a>
-              <a href="{{ route('app.certificates.index') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#DFF5F1]">Certificates</a>
-              <a href="{{ route('app.payments.index') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#DFF5F1]">Payments</a>
-              <a href="{{ route('app.memberships.index') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#DFF5F1]">Memberships</a>
-              <a href="{{ route('app.psytests.index') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#DFF5F1]">Psy Tests</a>
-              <a href="{{ route('profile.edit') }}" class="rounded-xl bg-[#0F9D8A] px-4 py-2 text-center text-xs font-bold text-white hover:bg-[#087A6C]">Edit Profile</a>
+              <a href="{{ route('app.my.courses') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#F3E8FF]">My Courses</a>
+              <a href="{{ route('app.certificates.index') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#F3E8FF]">Certificates</a>
+              <a href="{{ route('app.payments.index') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#F3E8FF]">Payments</a>
+              <a href="{{ route('app.memberships.index') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#F3E8FF]">Memberships</a>
+              <a href="{{ route('app.psytests.index') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#F3E8FF]">Psy Tests</a>
+              <a href="{{ route('profile.edit') }}" class="rounded-xl bg-[#7C3AED] px-4 py-2 text-center text-xs font-bold text-white hover:bg-[#6D28D9]">Edit Profile</a>
             </div>
           </div>
         </div>
@@ -233,7 +233,7 @@
     </section>
   @endauth
 
-  <section class="py-20 bg-[#f7fbfa]">
+  <section class="py-20 bg-[#faf7ff]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="max-w-2xl">
         <span class="section-kicker">Kenapa BERKEMAH?</span>
@@ -246,7 +246,7 @@
           ['title' => 'Hasil Nyata', 'desc' => 'Setiap pembelajaran diarahkan menjadi output yang bisa ditunjukkan dan dievaluasi.', 'items' => ['Portfolio project', 'Sertifikat digital', 'Assessment diri']],
         ] as $feature)
           <div class="soft-card rounded-3xl p-7 lift">
-            <div class="grid h-12 w-12 place-items-center rounded-2xl bg-[#DFF5F1] text-[#087A6C]">
+            <div class="grid h-12 w-12 place-items-center rounded-2xl bg-[#F3E8FF] text-[#6D28D9]">
               <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
             </div>
             <h3 class="mt-5 text-xl font-black text-slate-950">{{ $feature['title'] }}</h3>
@@ -254,7 +254,7 @@
             <ul class="mt-5 space-y-2">
               @foreach ($feature['items'] as $item)
                 <li class="flex items-center gap-2 text-sm font-semibold text-slate-700">
-                  <span class="h-1.5 w-1.5 rounded-full bg-[#0F9D8A]"></span>{{ $item }}
+                  <span class="h-1.5 w-1.5 rounded-full bg-[#7C3AED]"></span>{{ $item }}
                 </li>
               @endforeach
             </ul>
@@ -277,7 +277,7 @@
     </div>
   </section>
 
-  <section id="kelas-populer" class="py-20 bg-[#f7fbfa]">
+  <section id="kelas-populer" class="py-20 bg-[#faf7ff]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <x-section-heading kicker="Kelas Populer" title="Kelas yang paling sering dipilih learner." subtitle="Bagian ini membantu user cepat menemukan kelas dengan demand tinggi." />
       <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -299,7 +299,7 @@
           <p class="mt-4 text-slate-600 leading-8">Section assessment dibuat berbeda dari course card agar terasa analitis, premium, dan relevan untuk self-development learner.</p>
           @unless ($isMember ?? false)
             <div class="mt-6 rounded-3xl bg-slate-950 p-6 text-white">
-              <p class="text-sm font-black uppercase tracking-wider text-[#DFF5F1]">Upgrade membership</p>
+              <p class="text-sm font-black uppercase tracking-wider text-[#F3E8FF]">Upgrade membership</p>
               <p class="mt-2 text-sm leading-7 text-white/75">Non-member tetap bisa melihat daftar tes. Akses penuh dibuka melalui paket belajar.</p>
               <a href="#paket" class="mt-5 inline-flex rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950">Lihat Paket</a>
             </div>
@@ -313,17 +313,17 @@
               <h3 class="mt-4 text-lg font-black text-slate-950">{{ $test->title ?? 'Tes IQ' }}</h3>
               <p class="mt-2 text-sm leading-6 text-slate-500 line-clamp-2">{{ $test->description ?? 'Ukur kemampuan penalaran dengan soal bertahap.' }}</p>
               <div class="mt-5 flex flex-wrap gap-2 text-xs font-bold text-slate-600">
-                <span class="rounded-full bg-[#DFF5F1] px-3 py-1">{{ $test->duration_minutes ?: 15 }} menit</span>
-                <span class="rounded-full bg-[#DFF5F1] px-3 py-1">{{ $questionCount }} soal</span>
+                <span class="rounded-full bg-[#F3E8FF] px-3 py-1">{{ $test->duration_minutes ?: 15 }} menit</span>
+                <span class="rounded-full bg-[#F3E8FF] px-3 py-1">{{ $questionCount }} soal</span>
               </div>
-              <a href="{{ ($isMember ?? false) ? route('app.test-iq.show', $test) : '#paket' }}" class="mt-6 inline-flex rounded-2xl bg-[#0F9D8A] px-5 py-3 text-sm font-black text-white">Mulai Tes</a>
+              <a href="{{ ($isMember ?? false) ? route('app.test-iq.show', $test) : '#paket' }}" class="mt-6 inline-flex rounded-2xl bg-[#7C3AED] px-5 py-3 text-sm font-black text-white">Mulai Tes</a>
             </div>
           @endforeach
 
           @foreach (($psyTests ?? collect())->take(4) as $test)
             @php $questions = (int)($test->questions_count ?? 0); @endphp
             <div class="soft-card rounded-3xl p-6 lift">
-              <span class="rounded-full bg-[#DFF5F1] px-3 py-1 text-xs font-black text-[#087A6C]">{{ strtoupper($test->type ?? 'Psy Test') }}</span>
+              <span class="rounded-full bg-[#F3E8FF] px-3 py-1 text-xs font-black text-[#6D28D9]">{{ strtoupper($test->type ?? 'Psy Test') }}</span>
               <h3 class="mt-4 text-lg font-black text-slate-950">{{ $test->name }}</h3>
               <p class="mt-2 text-sm leading-6 text-slate-500">{{ ucfirst($test->track ?? 'general') }} assessment untuk memahami preferensi belajar.</p>
               <div class="mt-5 flex flex-wrap gap-2 text-xs font-bold text-slate-600">
@@ -333,7 +333,7 @@
               @if ($isMember ?? false)
                 <form method="POST" action="{{ route('app.psy.attempts.start', $test) }}" class="mt-6">
                   @csrf
-                  <button class="rounded-2xl bg-[#0F9D8A] px-5 py-3 text-sm font-black text-white">Mulai Tes</button>
+                  <button class="rounded-2xl bg-[#7C3AED] px-5 py-3 text-sm font-black text-white">Mulai Tes</button>
                 </form>
               @else
                 <a href="#paket" class="mt-6 inline-flex rounded-2xl bg-slate-200 px-5 py-3 text-sm font-black text-slate-500">Upgrade</a>
@@ -345,14 +345,14 @@
     </div>
   </section>
 
-  <section id="forum" class="py-20 bg-[#f7fbfa]">
+  <section id="forum" class="py-20 bg-[#faf7ff]">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <x-section-heading kicker="Forum Tanya-Jawab" title="Belajar tidak sendirian." subtitle="Thread terbaru dari learner dan mentor membuat platform terasa aktif." />
       <div class="mt-10 grid md:grid-cols-3 gap-6">
         @forelse (($latestThreads ?? collect()) as $thread)
           <a href="{{ route('app.qa-threads.show', $thread) }}" class="soft-card rounded-3xl p-6 lift block">
             <div class="flex items-center justify-between gap-3">
-              <span class="rounded-full px-3 py-1 text-xs font-black {{ ($thread->status ?? 'open') === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">{{ ucfirst($thread->status ?? 'open') }}</span>
+              <span class="rounded-full px-3 py-1 text-xs font-black {{ ($thread->status ?? 'open') === 'resolved' ? 'bg-violet-100 text-violet-700' : 'bg-amber-100 text-amber-700' }}">{{ ucfirst($thread->status ?? 'open') }}</span>
               <span class="text-xs font-semibold text-slate-400">{{ $thread->created_at?->diffForHumans() }}</span>
             </div>
             <h3 class="mt-5 line-clamp-2 text-lg font-black text-slate-950">{{ $thread->title }}</h3>
@@ -373,7 +373,7 @@
   <section id="paket" class="py-20 bg-slate-950 text-white">
     <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       <div class="max-w-2xl mx-auto text-center">
-        <span class="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#DFF5F1]">Paket Belajar</span>
+        <span class="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#F3E8FF]">Paket Belajar</span>
         <h2 class="mt-5 text-3xl sm:text-4xl font-black tracking-tight">Pricing yang jelas untuk mulai belajar.</h2>
         <p class="mt-4 text-white/65 leading-8">Pilih paket sesuai ritme belajar. Satu card dapat dibuat recommended dari data plan.</p>
       </div>
@@ -395,9 +395,9 @@
             }
             $isRecommended = $loop->iteration === 2 || (bool)($plan->is_recommended ?? false);
           @endphp
-          <div class="relative rounded-3xl border {{ $isRecommended ? 'border-[#0F9D8A] bg-white text-slate-950 scale-[1.02]' : 'border-white/10 bg-white/7 text-white' }} p-7 lift">
+          <div class="relative rounded-3xl border {{ $isRecommended ? 'border-[#7C3AED] bg-white text-slate-950 scale-[1.02]' : 'border-white/10 bg-white/7 text-white' }} p-7 lift">
             @if ($isRecommended)
-              <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#0F9D8A] px-4 py-1.5 text-xs font-black text-white">Recommended</span>
+              <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#7C3AED] px-4 py-1.5 text-xs font-black text-white">Recommended</span>
             @endif
             <h3 class="text-xl font-black">{{ $plan->name ?? 'Plan' }}</h3>
             <div class="mt-5">
@@ -407,7 +407,7 @@
             <ul class="mt-7 space-y-3">
               @foreach ($features->filter(fn ($feature) => filled($feature))->take(6) as $feature)
                 <li class="flex gap-3 text-sm font-semibold {{ $isRecommended ? 'text-slate-700' : 'text-white/75' }}">
-                  <span class="mt-1 h-2 w-2 rounded-full bg-[#0F9D8A]"></span>
+                  <span class="mt-1 h-2 w-2 rounded-full bg-[#7C3AED]"></span>
                   {{ is_array($feature) ? ($feature['label'] ?? json_encode($feature)) : $feature }}
                 </li>
               @endforeach
@@ -416,10 +416,10 @@
               @auth
                 <form method="POST" action="{{ route('app.memberships.subscribe', $plan) }}">
                   @csrf
-                  <button class="w-full rounded-2xl {{ $isRecommended ? 'bg-[#0F9D8A] text-white' : 'bg-white text-slate-950' }} px-5 py-3 text-sm font-black">Pilih Paket</button>
+                  <button class="w-full rounded-2xl {{ $isRecommended ? 'bg-[#7C3AED] text-white' : 'bg-white text-slate-950' }} px-5 py-3 text-sm font-black">Pilih Paket</button>
                 </form>
               @else
-                <a href="{{ route('register') }}" class="block w-full rounded-2xl {{ $isRecommended ? 'bg-[#0F9D8A] text-white' : 'bg-white text-slate-950' }} px-5 py-3 text-center text-sm font-black">Daftar Dulu</a>
+                <a href="{{ route('register') }}" class="block w-full rounded-2xl {{ $isRecommended ? 'bg-[#7C3AED] text-white' : 'bg-white text-slate-950' }} px-5 py-3 text-center text-sm font-black">Daftar Dulu</a>
               @endauth
             </div>
           </div>
@@ -436,17 +436,17 @@
       <div class="mt-10 grid md:grid-cols-3 gap-6">
         @forelse ($activeCoupons as $coupon)
           <div class="soft-card rounded-3xl p-6 lift relative overflow-hidden">
-            <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#DFF5F1]"></div>
+            <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#F3E8FF]"></div>
             <div class="relative">
               <p class="text-xs font-black uppercase tracking-wider text-slate-400">Kode Kupon</p>
               <h3 class="mt-2 font-mono text-3xl font-black tracking-wider text-slate-950">{{ $coupon->code }}</h3>
-              <div class="mt-5 inline-flex rounded-2xl bg-[#0F9D8A] px-4 py-2 text-xl font-black text-white">{{ number_format($coupon->discount_percent, 0) }}% OFF</div>
+              <div class="mt-5 inline-flex rounded-2xl bg-[#7C3AED] px-4 py-2 text-xl font-black text-white">{{ number_format($coupon->discount_percent, 0) }}% OFF</div>
               @php
                 $from = $coupon->valid_from ? \Carbon\Carbon::parse($coupon->valid_from)->format('d M Y') : 'Sekarang';
                 $until = $coupon->valid_until ? \Carbon\Carbon::parse($coupon->valid_until)->format('d M Y') : 'Tanpa batas';
               @endphp
               <p class="mt-4 text-xs font-semibold text-slate-500">{{ $from }} sampai {{ $until }}</p>
-              <a href="{{ route('app.memberships.plans') }}" class="mt-6 inline-flex rounded-2xl bg-[#DFF5F1] px-5 py-3 text-sm font-black text-[#087A6C]">Lihat Paket</a>
+              <a href="{{ route('app.memberships.plans') }}" class="mt-6 inline-flex rounded-2xl bg-[#F3E8FF] px-5 py-3 text-sm font-black text-[#6D28D9]">Lihat Paket</a>
             </div>
           </div>
         @empty
@@ -457,14 +457,14 @@
   </section>
 
   @guest
-    <section class="py-20 bg-[#f7fbfa]">
+    <section class="py-20 bg-[#faf7ff]">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#075E54] via-[#087A6C] to-[#0F9D8A] px-6 py-14 text-center text-white shadow-2xl shadow-[#0F9D8A]/20 sm:px-12">
+        <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#4C1D95] via-[#6D28D9] to-[#7C3AED] px-6 py-14 text-center text-white shadow-2xl shadow-[#7C3AED]/20 sm:px-12">
           <div class="absolute inset-0 opacity-10" style="background-image: linear-gradient(90deg,#fff 1px,transparent 1px),linear-gradient(#fff 1px,transparent 1px); background-size: 32px 32px;"></div>
           <div class="relative max-w-2xl mx-auto">
             <h2 class="text-3xl sm:text-4xl font-black tracking-tight">Mulai gratis, upgrade kapan saja.</h2>
             <p class="mt-4 text-white/80 leading-8">Buat akun untuk mulai menyusun progres belajar, mengambil kelas, mengikuti kuis, dan mengakses rekomendasi belajar.</p>
-            <a href="{{ route('register') }}" class="mt-8 inline-flex rounded-2xl bg-white px-8 py-4 text-sm font-black text-[#075E54]">Buat Akun</a>
+            <a href="{{ route('register') }}" class="mt-8 inline-flex rounded-2xl bg-white px-8 py-4 text-sm font-black text-[#4C1D95]">Buat Akun</a>
           </div>
         </div>
       </div>
