@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\{PsyAttempt, PsyTest, PsyAnswer};
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Validation\Rule;
 
 class PsyAttemptController extends Controller
 {
@@ -14,38 +15,47 @@ class PsyAttemptController extends Controller
      */
     public function index(Request $r)
     {
+        $filters = $r->validate([
+            'test_id'   => ['nullable', 'uuid', 'exists:psy_tests,id'],
+            'status'    => ['nullable', Rule::in(['submitted','in-progress'])],
+            'q'         => ['nullable', 'string', 'max:100'],
+            'date_from' => ['nullable', 'date'],
+            'date_to'   => ['nullable', 'date', 'after_or_equal:date_from'],
+        ]);
+        $term = trim((string) ($filters['q'] ?? ''));
+
         // dropdown filter: pakai kolom 'name'
         $tests = PsyTest::orderBy('name')->get(['id','name']);
 
         $attempts = PsyAttempt::query()
+            ->select(['id', 'test_id', 'user_id', 'started_at', 'submitted_at', 'total_score', 'result_key', 'created_at'])
             ->with([
                 'test:id,name',        // pakai name, bukan title
                 'user:id,name,email',
             ])
-            ->when($r->filled('test_id'), fn (Builder $q) =>
-                $q->where('test_id', (int) $r->input('test_id'))
+            ->when($filters['test_id'] ?? null, fn (Builder $q, $testId) =>
+                $q->where('test_id', $testId)
             )
-            ->when($r->filled('status') && in_array($r->status, ['submitted','in-progress'], true), function (Builder $q) use ($r) {
-                return $r->status === 'submitted'
+            ->when($filters['status'] ?? null, function (Builder $q, $status) {
+                return $status === 'submitted'
                     ? $q->whereNotNull('submitted_at')
                     : $q->whereNull('submitted_at');
             })
-            ->when($r->filled('q'), function (Builder $q) use ($r) {
-                $term = trim((string) $r->q);
+            ->when($term !== '', function (Builder $q) use ($term) {
                 $q->where(function (Builder $sub) use ($term) {
                     $sub->whereHas('user', function (Builder $u) use ($term) {
                             $u->where('name','like',"%{$term}%")
                               ->orWhere('email','like',"%{$term}%");
                         })
-                        ->when(is_numeric($term), fn ($qq) => $qq->orWhere('id', (int) $term))
+                        ->orWhere('id', $term)
                         ->orWhere('result_key','like',"%{$term}%");
                 });
             })
-            ->when($r->filled('date_from'), fn (Builder $q) => 
-                $q->whereDate('started_at','>=', $r->input('date_from'))
+            ->when($filters['date_from'] ?? null, fn (Builder $q, $from) =>
+                $q->whereDate('started_at','>=', $from)
             )
-            ->when($r->filled('date_to'), fn (Builder $q) =>
-                $q->whereDate('started_at','<=', $r->input('date_to'))
+            ->when($filters['date_to'] ?? null, fn (Builder $q, $to) =>
+                $q->whereDate('started_at','<=', $to)
             )
             ->latest('id')
             ->paginate(20)
@@ -62,7 +72,7 @@ class PsyAttemptController extends Controller
         $psy_attempt->load([
             'test:id,name',
             'user:id,name,email',
-            'answers' => fn ($q) => $q->orderBy('id'),
+            'answers' => fn ($q) => $q->select(['id', 'attempt_id', 'question_id', 'option_id', 'value'])->orderBy('id'),
             // ⬇️ ganti 'text' -> 'prompt'; pilih kolom yang memang ada
             'answers.question:id,test_id,ordering,prompt',
             // kalau tabel psy_options tidak ada 'weight', jangan dipilih

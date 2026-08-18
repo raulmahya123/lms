@@ -1,223 +1,273 @@
 @extends('layouts.admin')
-
-@section('title','Options — BERKEMAH')
+@section('title', 'Opsi Jawaban — Admin')
 
 @section('content')
-<div x-data="{ q: @js(request('q') ?? ''), showFilters: {{ request()->hasAny(['q','quiz_id','is_correct']) ? 'true' : 'false' }} }" class="space-y-6">
+<div x-data="{ q: @js(request('q') ?? ''), showFilters: @js(request()->hasAny(['q','quiz_id','is_correct'])) }" class="space-y-6 pb-12">
 
-  {{-- HEADER / ACTIONS --}}
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-extrabold tracking-wide flex items-center gap-2">
-        {{-- list icon --}}
-        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M6 7.5h12a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1 0-1.5Zm0 4.5h12a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1 0-1.5Zm0 4.5h8a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1 0-1.5Z"/>
-        </svg>
-        Options
-      </h1>
-      <p class="text-sm opacity-70">Kelola opsi jawaban untuk setiap question.</p>
+    {{-- HEADER / ACTIONS --}}
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-tosca-light text-tosca-dark text-xs font-bold uppercase tracking-wider mb-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Manajemen Kuis
+            </div>
+            <h1 class="text-3xl font-extrabold text-text-main tracking-tight">Opsi Jawaban</h1>
+            <p class="text-sm text-text-soft mt-1">Kelola pilihan jawaban untuk setiap pertanyaan kuis.</p>
+        </div>
+
+        <div class="flex items-center gap-3">
+            <button type="button" @click="showFilters=!showFilters"
+                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 font-bold hover:bg-gray-50 hover:border-gray-300 transition-colors shadow-sm">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                Pencarian & Filter
+            </button>
+            <a href="{{ route('admin.options.create') }}"
+               class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-tosca text-white font-bold hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/30">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                Buat Opsi Baru
+            </a>
+        </div>
     </div>
 
-    <div class="flex items-center gap-2">
-      <a href="{{ route('admin.options.create') }}"
-         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white shadow hover:bg-blue-700 transition">
-        {{-- plus icon --}}
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5a.75.75 0 0 1 .75.75V11h5.75a.75.75 0 0 1 0 1.5H12.75v5.75a.75.75 0 0 1-1.5 0V12.5H5.5a.75.75 0 0 1 0-1.5h5.75V5.25A.75.75 0 0 1 12 4.5Z"/></svg>
-        Add Option
-      </a>
-      <button type="button" @click="showFilters=!showFilters"
-              class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 transition">
-        {{-- filter icon --}}
-        <svg class="w-5 h-5 opacity-70" viewBox="0 0 24 24" fill="currentColor"><path d="M3.75 6A.75.75 0 0 1 4.5 5.25h15a.75.75 0 0 1 .6 1.2l-5.4 7.2v4.35a.75.75 0 0 1-1.065.683l-3-1.35A.75.75 0 0 1 10.5 16.5v-2.85l-5.4-7.2A.75.75 0 0 1 3.75 6Z"/></svg>
-        Filters
-      </button>
-    </div>
-  </div>
+    {{-- FILTER FORM --}}
+    <form method="GET" x-show="showFilters" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" style="display: none;"
+          class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-6">
+        
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-6 items-end">
+            <div>
+                <label class="block text-xs font-bold text-text-soft uppercase tracking-wider mb-2">Kuis Terkait</label>
+                <div class="relative">
+                    <select name="quiz_id"
+                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main appearance-none cursor-pointer">
+                        <option value="">— Semua Kuis —</option>
+                        @php
+                            $quizList = $quizzes ?? \App\Models\Quiz::orderBy('title')->get(['id','title']);
+                        @endphp
+                        @foreach($quizList as $quiz)
+                            <option value="{{ $quiz->id }}" @selected(request('quiz_id') == $quiz->id)>{{ $quiz->title }}</option>
+                        @endforeach
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+            </div>
 
-  {{-- FLASH MESSAGE --}}
-  @if(session('ok'))
-    <div class="rounded-xl border border-green-200 bg-green-50 p-3 text-green-800">
-      {{ session('ok') }}
-    </div>
-  @endif
+            <div>
+                <label class="block text-xs font-bold text-text-soft uppercase tracking-wider mb-2">Teks Opsi</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+                    <input type="text" name="q" x-model="q" placeholder="Cari..."
+                           class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main placeholder-gray-400">
+                </div>
+            </div>
 
-  {{-- FILTER FORM --}}
-  <form method="GET"
-        x-show="showFilters"
-        x-transition
-        class="rounded-2xl border bg-white p-4 grid md:grid-cols-3 gap-4">
-    {{-- Quiz --}}
-    <div>
-      <label class="block text-sm font-medium mb-1">Quiz</label>
-      <div class="relative">
-        <select name="quiz_id" class="w-full border rounded-xl pl-3 pr-8 py-2">
-          <option value="">— All Quizzes —</option>
-          @php
-            $quizList = $quizzes ?? \App\Models\Quiz::orderBy('title')->get(['id','title']);
-          @endphp
-          @foreach($quizList as $quiz)
-            <option value="{{ $quiz->id }}" @selected(request('quiz_id')==$quiz->id)>{{ $quiz->title }}</option>
-          @endforeach
-        </select>
-        <svg class="w-4 h-4 absolute right-2.5 top-3 opacity-60 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd"/>
-        </svg>
-      </div>
-    </div>
+            <div>
+                <label class="block text-xs font-bold text-text-soft uppercase tracking-wider mb-2">Status Kebenaran</label>
+                @php $ic = request('is_correct'); @endphp
+                <div class="relative">
+                    <select name="is_correct"
+                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main appearance-none cursor-pointer">
+                        <option value="" @selected($ic === null || $ic === '')>Semua Status</option>
+                        <option value="1" @selected($ic === '1')>Benar (True)</option>
+                        <option value="0" @selected($ic === '0')>Salah (False)</option>
+                    </select>
+                    <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                    </div>
+                </div>
+            </div>
 
-    {{-- Search text --}}
-    <div>
-      <label class="block text-sm font-medium mb-1">Search text</label>
-      <div class="relative">
-        <input type="text" name="q" x-model="q" value="{{ request('q') }}" placeholder="Cari isi opsi…"
-               class="w-full border rounded-xl pl-10 pr-3 py-2">
-        <svg class="w-5 h-5 absolute left-3 top-2.5 opacity-60" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M10 3.75a6.25 6.25 0 1 1 3.94 11.09l3.1 3.1a.75.75 0 1 1-1.06 1.06l-3.1-3.1A6.25 6.25 0 0 1 10 3.75Zm0 1.5a4.75 4.75 0 1 0 0 9.5 4.75 4.75 0 0 0 0-9.5Z"/>
-        </svg>
-      </div>
-    </div>
-
-    {{-- Correct? --}}
-    @php $ic = request('is_correct'); @endphp
-    <div>
-      <label class="block text-sm font-medium mb-1">Correct?</label>
-      <div class="relative">
-        <select name="is_correct" class="w-full border rounded-xl pl-3 pr-8 py-2">
-          <option value="" @selected($ic === null || $ic === '')>All</option>
-          <option value="1" @selected($ic==='1')>True</option>
-          <option value="0" @selected($ic==='0')>False</option>
-        </select>
-        <svg class="w-4 h-4 absolute right-2.5 top-3 opacity-60 pointer-events-none" viewBox="0 0 20 20" fill="currentColor">
-          <path fill-rule="evenodd" d="M5.23 7.21a.75.75 0 011.06.02L10 10.94l3.71-3.71a.75.75 0 111.06 1.06l-4.24 4.24a.75.75 0 01-1.06 0L5.21 8.29a.75.75 0 01.02-1.08z" clip-rule="evenodd"/>
-        </svg>
-      </div>
-    </div>
-
-    {{-- Actions --}}
-    <div class="md:col-span-3 flex items-center gap-2">
-      <button class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition">
-        Apply
-      </button>
-      @if(request()->hasAny(['q','quiz_id','is_correct']))
-        <a href="{{ route('admin.options.index') }}"
-           class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border hover:bg-gray-50 transition">
-          Reset
-        </a>
-      @endif
-    </div>
-  </form>
-
-  {{-- TABLE CARD --}}
-  <div class="rounded-2xl border bg-white overflow-hidden">
-    {{-- header strip --}}
-    <div class="px-4 py-3 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
-      <div class="text-sm">
-        <span class="font-semibold">{{ $options->total() }}</span>
-        <span class="opacity-70">options found</span>
-      </div>
-      <div class="text-xs opacity-70">Page {{ $options->currentPage() }} / {{ $options->lastPage() }}</div>
-    </div>
-
-    <div class="overflow-x-auto">
-      <table class="min-w-full text-sm">
-        <thead class="bg-gray-100 text-gray-700 sticky top-0">
-          <tr>
-            <th class="p-3 text-left">Question</th>
-            <th class="p-3 text-left">Text</th>
-            <th class="p-3 text-left w-28">Correct</th>
-            <th class="p-3 text-center w-44">Actions</th>
-          </tr>
-        </thead>
-        <tbody class="[&>tr:hover]:bg-gray-50">
-          @forelse ($options as $opt)
-            <tr class="border-t">
-              <td class="p-3">
-                {{ \Illuminate\Support\Str::limit($opt->question->prompt ?? '—', 60) }}
-              </td>
-              <td class="p-3">
-                {{ \Illuminate\Support\Str::limit($opt->text, 80) }}
-              </td>
-              <td class="p-3">
-                @if($opt->is_correct)
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.25a9.75 9.75 0 1 1 0 19.5 9.75 9.75 0 0 1 0-19.5Zm-1.03 12.03 4.47-4.47a.75.75 0 0 0-1.06-1.06l-3.94 3.94-1.41-1.41a.75.75 0 0 0-1.06 1.06l1.94 1.94a.75.75 0 0 0 1.06 0Z"/></svg>
-                    True
-                  </span>
-                @else
-                  <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-200 text-gray-700">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M6.225 4.811a.75.75 0 0 1 1.06 0L12 9.525l4.715-4.714a.75.75 0 1 1 1.06 1.06L13.06 10.59l4.715 4.715a.75.75 0 1 1-1.06 1.06L12 11.65l-4.715 4.715a.75.75 0 1 1-1.06-1.06l4.715-4.715-4.715-4.715a.75.75 0 0 1 0-1.06Z"/></svg>
-                    False
-                  </span>
-                @endif
-              </td>
-              <td class="p-3 text-center">
-                <div class="flex items-center justify-center gap-2">
-                  @if(Route::has('admin.options.show'))
-                    <a href="{{ route('admin.options.show',$opt) }}"
-                       class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition"
-                       title="View option">
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5c-7 0-10 7.5-10 7.5s3 7.5 10 7.5 10-7.5 10-7.5-3-7.5-10-7.5Zm0 12a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Z"/></svg>
-                      View
+            <div class="flex items-center gap-3">
+                @if (request()->hasAny(['q', 'quiz_id', 'is_correct']))
+                    <a href="{{ route('admin.options.index') }}"
+                       class="px-6 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-center">
+                        Reset
                     </a>
-                  @endif
-                  <a href="{{ route('admin.options.edit',$opt) }}"
-                     class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition"
-                     title="Edit option">
-                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M16.862 3.487a2.25 2.25 0 0 1 3.182 3.182l-9.57 9.569a4.5 4.5 0 0 1-1.78 1.11l-3.27 1.09a.75.75 0 0 1-.947-.948l1.09-3.269a4.5 4.5 0 0 1 1.11-1.78l9.57-9.57Z"/></svg>
-                    Edit
-                  </a>
-                  <form action="{{ route('admin.options.destroy',$opt) }}" method="POST"
-                        onsubmit="return confirm('Yakin hapus opsi ini?')" class="inline">
-                    @csrf @method('DELETE')
-                    <button type="submit"
-                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 transition"
-                            title="Delete option">
-                      <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9.75 3a1 1 0 0 0-.94.66L8.5 4.5H6a.75.75 0 0 0 0 1.5h12a.75.75 0 0 0 0-1.5h-2.5l-.31-.84a1 1 0 0 0-.94-.66h-4.5ZM6.75 8a.75.75 0 0 1 .75.75v8a1.75 1.75 0 0 0 1.75 1.75h4.5A1.75 1.75 0 0 0 15.5 16.75v-8a.75.75 0 0 1 1.5 0v8a3.25 3.25 0 0 1-3.25 3.25h-4.5A3.25 3.25 0 0 1 6 16.75v-8A.75.75 0 0 1 6.75 8Z"/></svg>
-                      Delete
-                    </button>
-                  </form>
-                </div>
-              </td>
-            </tr>
-          @empty
-            <tr>
-              <td colspan="5" class="p-10">
-                <div class="flex flex-col items-center justify-center gap-3 text-center">
-                  <div class="w-16 h-16 rounded-2xl bg-gray-100 flex items-center justify-center">
-                    {{-- empty icon --}}
-                    <svg class="w-8 h-8 opacity-50" viewBox="0 0 24 24" fill="currentColor"><path d="M6.75 3A2.75 2.75 0 0 0 4 5.75v12.5A2.75 2.75 0 0 0 6.75 21h10.5A2.75 2.75 0 0 0 20 18.25V9.5a.75.75 0 0 0-.22-.53l-5.75-5.75A.75.75 0 0 0 13.5 3h-6.75Z"/></svg>
-                  </div>
-                  <div class="text-lg font-semibold">Belum ada option</div>
-                  <p class="text-sm opacity-70">Tambahkan opsi jawaban pertama untuk question.</p>
-                  <a href="{{ route('admin.options.create') }}"
-                     class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow transition">
-                    {{-- plus icon --}}
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M12 4.5a.75.75 0 0 1 .75.75V11h5.75a.75.75 0 0 1 0 1.5H12.75v5.75a.75.75 0 0 1-1.5 0V12.5H5.5a.75.75 0 0 1 0-1.5h5.75V5.25A.75.75 0 0 1 12 4.5Z"/></svg>
-                    Add Option
-                  </a>
-                </div>
-              </td>
-            </tr>
-          @endforelse
-        </tbody>
-      </table>
-    </div>
+                @endif
+                <button type="submit"
+                        class="px-8 py-3 rounded-xl bg-gray-900 text-white font-bold hover:bg-black transition-colors w-full">
+                    Terapkan
+                </button>
+            </div>
+        </div>
+    </form>
 
-    {{-- Pagination strip --}}
-    <div class="px-4 py-3 border-t bg-gray-50 flex flex-col md:flex-row items-center justify-between gap-3">
-      <div class="text-sm opacity-70">
-        Showing
-        <span class="font-semibold">{{ $options->firstItem() ?? 0 }}</span>
-        to
-        <span class="font-semibold">{{ $options->lastItem() ?? 0 }}</span>
-        of
-        <span class="font-semibold">{{ $options->total() }}</span>
-        results
-      </div>
-      <div>
-        {{ $options->withQueryString()->links() }}
-      </div>
+    {{-- TABLE CARD --}}
+    <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden flex flex-col">
+        {{-- Header Strip --}}
+        <div class="p-6 border-b border-gray-50 bg-softbg/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div class="flex flex-wrap items-center gap-2">
+                <span class="text-sm font-bold text-text-main">Total {{ $options->total() }} Opsi</span>
+                
+                @if(request('quiz_id'))
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-100">
+                        Kuis Spesifik
+                    </span>
+                @endif
+                @if(request('is_correct') !== null && request('is_correct') !== '')
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider {{ request('is_correct') === '1' ? 'bg-green-50 text-green-700 border-green-100' : 'bg-red-50 text-red-700 border-red-100' }}">
+                        {{ request('is_correct') === '1' ? 'Jawaban Benar' : 'Jawaban Salah' }}
+                    </span>
+                @endif
+            </div>
+            <div class="text-xs font-bold text-text-soft uppercase tracking-wider">
+                Halaman {{ $options->currentPage() }} dari {{ $options->lastPage() }}
+            </div>
+        </div>
+
+        {{-- Table --}}
+        <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-text-soft">
+                        <th class="px-6 py-4 font-bold w-1/3">Pertanyaan (Question)</th>
+                        <th class="px-6 py-4 font-bold w-1/3">Teks Opsi</th>
+                        <th class="px-6 py-4 font-bold text-center w-32">Status</th>
+                        <th class="px-6 py-4 font-bold text-right w-40">Aksi</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-50">
+                    @forelse($options as $opt)
+                        <tr class="hover:bg-gray-50/50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="text-sm font-bold text-text-main line-clamp-2">
+                                    {{ $opt->question->prompt ?? 'Pertanyaan Tidak Ditemukan' }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="text-sm text-gray-700 line-clamp-2">
+                                    {{ $opt->text }}
+                                </div>
+                            </td>
+                            <td class="px-6 py-4 text-center">
+                                @if ($opt->is_correct)
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border bg-green-50 text-green-700 border-green-200 shadow-sm shadow-green-100/50">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                        Benar
+                                    </span>
+                                @else
+                                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border bg-gray-50 text-gray-500 border-gray-200">
+                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                        Salah
+                                    </span>
+                                @endif
+                            </td>
+                            <td class="px-6 py-4">
+                                <div class="flex items-center justify-end gap-2">
+                                    @if(Route::has('admin.options.show'))
+                                    <a href="{{ route('admin.options.show', $opt) }}" class="p-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:text-blue-600 transition-colors" title="Lihat Detail">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+                                    </a>
+                                    @endif
+                                    <a href="{{ route('admin.options.edit', $opt) }}" class="p-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:text-tosca transition-colors" title="Edit Opsi">
+                                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                                    </a>
+                                    
+                                    <form method="POST" action="{{ route('admin.options.destroy', $opt) }}" class="inline js-delete-form" data-title="Opsi: {{ Str::limit($opt->text, 30) }}">
+                                        @csrf @method('DELETE')
+                                        <button type="button" class="js-delete-btn p-2 bg-white border border-gray-200 text-gray-400 rounded-lg hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors" title="Hapus Opsi">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                        </button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="4">
+                                <div class="py-16 text-center flex flex-col items-center justify-center">
+                                    <div class="w-20 h-20 rounded-3xl bg-softbg flex items-center justify-center mb-6">
+                                        <svg class="w-10 h-10 text-tosca" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                    </div>
+                                    <h3 class="text-xl font-bold text-text-main mb-2">Belum Ada Opsi Jawaban</h3>
+                                    <p class="text-text-soft max-w-sm mb-6">Anda belum menambahkan opsi jawaban untuk kuis manapun.</p>
+                                    <a href="{{ route('admin.options.create') }}" class="px-6 py-3 rounded-xl bg-tosca text-white font-bold hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/20">
+                                        Buat Opsi Pertama
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
+
+        @if($options->hasPages())
+            <div class="px-6 py-4 border-t border-gray-50 bg-gray-50/50 flex justify-center">
+                {{ $options->withQueryString()->links() }}
+            </div>
+        @endif
     </div>
-  </div>
 </div>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    (function() {
+        function bindDeleteButtons() {
+            document.querySelectorAll('.js-delete-btn').forEach(btn => {
+                if (btn.dataset.bound) return;
+                btn.dataset.bound = '1';
+
+                btn.addEventListener('click', (e) => {
+                    const form = e.currentTarget.closest('form.js-delete-form');
+                    const title = form?.dataset.title || 'opsi ini';
+
+                    Swal.fire({
+                        title: 'Hapus Opsi Jawaban?',
+                        html: `<b>${title}</b> akan dihapus permanen.`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Hapus',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true,
+                        focusCancel: true,
+                        customClass: {
+                            popup: 'rounded-3xl',
+                            confirmButton: 'rounded-xl font-bold px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white border-0',
+                            cancelButton: 'rounded-xl font-bold px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 border-0'
+                        }
+                    }).then((res) => {
+                        if (res.isConfirmed) {
+                            if (!form.dataset.submitting) {
+                                form.dataset.submitting = '1';
+                                const b = form.querySelector('.js-delete-btn');
+                                if (b) {
+                                    b.disabled = true;
+                                    b.innerHTML = '<span class="animate-spin mr-2">⏳</span>';
+                                }
+                                form.submit();
+                            }
+                        }
+                    });
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', bindDeleteButtons);
+        document.addEventListener('turbo:load', bindDeleteButtons);
+        document.addEventListener('livewire:navigated', bindDeleteButtons);
+    })();
+</script>
+
+@if (session('ok') || session('success'))
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            Swal.fire({
+                toast: true,
+                position: 'top-end',
+                icon: 'success',
+                title: @json(session('ok') ?? session('success')),
+                showConfirmButton: false,
+                timer: 3000,
+                timerProgressBar: true,
+                customClass: { popup: 'rounded-2xl' }
+            });
+        });
+    </script>
+@endif
+@endpush
 @endsection

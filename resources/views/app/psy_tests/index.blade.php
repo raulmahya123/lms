@@ -1,25 +1,9 @@
-@extends('app.layouts.base')
+@extends('layouts.app')
 
-@section('title','Tes Psikologi')
-
-@push('styles')
-<style>
-  .chip{display:inline-flex;align-items:center;gap:.5rem;padding:.25rem .55rem;border-radius:999px;background:#f8fafc;border:1px solid #e5e7eb;font-size:.75rem}
-  .btn{border-radius:12px;padding:.55rem .9rem;font-weight:600}
-  .btn-primary{background:#2563eb;color:#fff}
-  .btn-muted{background:#fff;border:1px solid #e5e7eb}
-  .btn:disabled{opacity:.6;cursor:not-allowed}
-  .card{background:#fff;border:1px solid #e5e7eb;border-radius:16px;transition:.15s ease}
-  .card:hover{box-shadow:0 14px 40px rgba(2,6,23,.06);transform:translateY(-1px)}
-  .bar{height:6px;border-radius:999px;background:#eef2f7;overflow:hidden}
-  .bar>span{display:block;height:100%;background:linear-gradient(90deg,#2563eb,#22c55e)}
-  .line-2{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-</style>
-@endpush
+@section('title', 'Tes Psikologi')
 
 @section('content')
 @php
-  // fallback nilai filter supaya tidak undefined
   $q       = $q       ?? request('q');
   $track   = $track   ?? request('track');
   $type    = $type    ?? request('type');
@@ -28,65 +12,92 @@
   $hasFilters = request()->hasAny(['q','track','type','sort','per_page']);
 @endphp
 
-<div class="max-w-6xl mx-auto px-4 py-8 space-y-6">
+<div class="max-w-7xl mx-auto space-y-8">
 
   {{-- Header --}}
-  <div class="flex items-center justify-between gap-4">
-    <h1 class="text-2xl font-semibold">Tes Psikologi</h1>
-    <a href="{{ route('home') }}" class="text-sm text-blue-600">← Beranda</a>
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+    <div>
+      <h1 class="text-3xl font-extrabold text-text-main">Tes Psikologi</h1>
+      <p class="text-text-soft mt-1">Jelajahi dan ikuti berbagai tes psikologi untuk mengetahui potensimu.</p>
+    </div>
+    <a href="{{ route('home') }}" class="inline-flex items-center gap-2 px-4 py-2 bg-white border border-gray-100 rounded-xl text-sm font-semibold text-text-main hover:text-tosca hover:border-tosca/30 transition-colors shadow-sm">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+      Beranda
+    </a>
   </div>
 
   {{-- Filter Bar --}}
-  <form method="GET" action="{{ route('app.psy.tests.index') }}" class="grid md:grid-cols-5 gap-3">
-    <input name="q" value="{{ $q }}" placeholder="Cari tes…"
-           class="border rounded-lg px-3 py-2 md:col-span-2">
+  <form method="GET" action="{{ route('app.psy.tests.index') }}" class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-6">
+    <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div class="md:col-span-2">
+        <label class="block text-xs font-bold text-text-soft uppercase tracking-wider mb-2">Cari Tes</label>
+        <div class="relative">
+          <input type="text" name="q" value="{{ $q }}" placeholder="Ketik nama tes..." class="w-full pl-10 pr-4 py-2.5 rounded-xl border-gray-200 focus:border-tosca focus:ring focus:ring-tosca/20 text-sm transition-shadow">
+          <svg class="w-5 h-5 text-gray-400 absolute left-3 top-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+        </div>
+      </div>
 
-    <select name="track" class="border rounded-lg px-3 py-2">
-      <option value="">Semua Track</option>
-      @foreach($tracks as $t)
-        <option value="{{ $t }}" @selected($track===$t)>{{ ucfirst($t) }}</option>
-      @endforeach
-    </select>
+      <div>
+        <label class="block text-xs font-bold text-text-soft uppercase tracking-wider mb-2">Track</label>
+        <select name="track" class="w-full py-2.5 rounded-xl border-gray-200 focus:border-tosca focus:ring focus:ring-tosca/20 text-sm transition-shadow">
+          <option value="">Semua Track</option>
+          @foreach($tracks as $t)
+            <option value="{{ $t }}" @selected($track===$t)>{{ ucfirst($t) }}</option>
+          @endforeach
+        </select>
+      </div>
 
-    <select name="type" class="border rounded-lg px-3 py-2">
-      <option value="">Semua Tipe</option>
-      @foreach($types as $t)
-        <option value="{{ $t }}" @selected($type===$t)>{{ strtoupper($t) }}</option>
-      @endforeach
-    </select>
+      <div>
+        <label class="block text-xs font-bold text-text-soft uppercase tracking-wider mb-2">Tipe</label>
+        <select name="type" class="w-full py-2.5 rounded-xl border-gray-200 focus:border-tosca focus:ring focus:ring-tosca/20 text-sm transition-shadow">
+          <option value="">Semua Tipe</option>
+          @foreach($types as $t)
+            <option value="{{ $t }}" @selected($type===$t)>{{ strtoupper($t) }}</option>
+          @endforeach
+        </select>
+      </div>
 
-    {{-- Optional: sorting & per_page --}}
-    <div class="flex gap-3">
-      <select name="sort" class="border rounded-lg px-3 py-2">
-        <option value="">Urutkan</option>
-        <option value="latest"    @selected($sort==='latest')>Terbaru</option>
-        <option value="name"      @selected($sort==='name')>Nama A→Z</option>
-        <option value="questions" @selected($sort==='questions')>Banyak Soal</option>
-      </select>
-      <select name="per_page" class="border rounded-lg px-3 py-2">
-        <option value="">/Hal</option>
-        @foreach([12,20,30,50] as $pp)
-          <option value="{{ $pp }}" @selected((int)($perPage ?? 0) === $pp)>{{ $pp }}</option>
-        @endforeach
-      </select>
+      <div>
+        <label class="block text-xs font-bold text-text-soft uppercase tracking-wider mb-2">Urutkan</label>
+        <select name="sort" class="w-full py-2.5 rounded-xl border-gray-200 focus:border-tosca focus:ring focus:ring-tosca/20 text-sm transition-shadow">
+          <option value="">Urutkan Berdasarkan</option>
+          <option value="latest" @selected($sort==='latest')>Terbaru</option>
+          <option value="name" @selected($sort==='name')>Nama A→Z</option>
+          <option value="questions" @selected($sort==='questions')>Banyak Soal</option>
+        </select>
+      </div>
     </div>
 
-    <div class="md:col-span-5 flex gap-2">
-      <button class="btn btn-primary">Terapkan</button>
-      @if($hasFilters)
-        <a href="{{ route('app.psy.tests.index') }}" class="btn btn-muted">Reset</a>
-      @endif
+    <div class="mt-4 flex flex-col sm:flex-row items-center justify-between gap-4 border-t border-gray-50 pt-4">
+      <div class="flex items-center gap-2">
+        <label class="text-sm text-text-soft">Tampilkan:</label>
+        <select name="per_page" class="py-1.5 rounded-lg border-gray-200 focus:border-tosca focus:ring focus:ring-tosca/20 text-sm transition-shadow">
+          @foreach([12,20,30,50] as $pp)
+            <option value="{{ $pp }}" @selected((int)($perPage ?? 0) === $pp)>{{ $pp }}</option>
+          @endforeach
+        </select>
+      </div>
+      
+      <div class="flex gap-3 w-full sm:w-auto">
+        @if($hasFilters)
+          <a href="{{ route('app.psy.tests.index') }}" class="flex-1 sm:flex-none px-6 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors text-center">
+            Reset
+          </a>
+        @endif
+        <button type="submit" class="flex-1 sm:flex-none px-6 py-2.5 bg-tosca text-white font-bold rounded-xl hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/20 text-center">
+          Terapkan Filter
+        </button>
+      </div>
     </div>
   </form>
 
   {{-- Grid Cards --}}
-  <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     @forelse($tests as $t)
       @php
         $slugId = $t->slug ?: $t->id;
         $hasQ   = (int)($t->questions_count ?? 0) > 0;
 
-        // Progres (jika controller kirim attemptByTest & answerCountsByAttempt)
         $attempt   = isset($attemptByTest) ? ($attemptByTest[$t->id] ?? null) : null;
         $answered  = 0;
         if ($attempt && isset($answerCountsByAttempt)) {
@@ -96,56 +107,78 @@
         $pct    = $totalQ > 0 ? (int) floor(($answered / $totalQ) * 100) : 0;
       @endphp
 
-      <div class="card p-4 flex flex-col">
-        <div class="text-xs text-gray-500 mb-1 flex flex-wrap gap-2">
-          <span class="chip">{{ strtoupper($t->type) }}</span>
-          <span class="chip">{{ ucfirst($t->track) }}</span>
-          <span class="chip">{{ $t->questions_count }} soal</span>
+      <div class="group bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-6 flex flex-col hover:border-tosca/30 hover:shadow-tosca/10 transition-all h-full">
+        <div class="flex flex-wrap gap-2 mb-4">
+          <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-softbg text-tosca-dark uppercase tracking-wider">{{ strtoupper($t->type) }}</span>
+          <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-purple-50 text-purple-700 uppercase tracking-wider">{{ ucfirst($t->track) }}</span>
+          <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-gray-100 text-gray-600 uppercase tracking-wider">{{ $t->questions_count }} Soal</span>
           @if(!empty($t->time_limit_min))
-            <span class="chip">⏳ {{ (int)$t->time_limit_min }} menit</span>
+            <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold bg-amber-50 text-amber-700 uppercase tracking-wider">⏳ {{ (int)$t->time_limit_min }} Min</span>
           @endif
         </div>
 
-        <a href="{{ route('app.psy.tests.show', $slugId) }}" class="font-semibold text-lg hover:underline">
-          {{ $t->name }}
+        <a href="{{ route('app.psy.tests.show', $slugId) }}" class="block mb-2">
+          <h3 class="font-bold text-lg text-text-main group-hover:text-tosca transition-colors leading-tight">{{ $t->name }}</h3>
         </a>
 
         @if(!empty(optional($t)->description))
-          <p class="text-gray-600 mt-1 line-2">{{ $t->description }}</p>
+          <p class="text-sm text-text-soft line-clamp-2 mb-6 flex-1">{{ $t->description }}</p>
+        @else
+          <div class="flex-1 mb-6"></div>
         @endif
 
         {{-- Progress (jika ada attempt berjalan) --}}
         @if($attempt)
-          <div class="mt-3">
-            <div class="bar"><span style="width: {{ $pct }}%"></span></div>
-            <div class="text-xs text-gray-500 mt-1">
-              Progres: {{ $answered }}/{{ $totalQ }} ({{ $pct }}%)
+          <div class="mb-5 p-3 rounded-2xl bg-gray-50 border border-gray-100">
+            <div class="flex justify-between items-center text-xs font-semibold text-text-main mb-2">
+              <span>Progres Pengerjaan</span>
+              <span>{{ $pct }}%</span>
+            </div>
+            <div class="h-2 w-full bg-gray-200 rounded-full overflow-hidden">
+              <div class="h-full bg-tosca rounded-full transition-all duration-500" style="width: {{ $pct }}%"></div>
+            </div>
+            <div class="text-[10px] text-text-soft uppercase tracking-wider mt-2 font-semibold">
+              {{ $answered }} dari {{ $totalQ }} soal terjawab
             </div>
           </div>
         @endif
 
-        <div class="mt-4 flex items-center justify-between gap-2">
-          <a href="{{ route('app.psy.tests.show', $slugId) }}" class="btn btn-muted">Detail</a>
+        <div class="grid grid-cols-2 gap-3 mt-auto">
+          <a href="{{ route('app.psy.tests.show', $slugId) }}" class="flex items-center justify-center px-4 py-2.5 bg-white border-2 border-gray-100 text-gray-700 font-bold rounded-xl hover:border-gray-200 hover:bg-gray-50 transition-colors">
+            Detail
+          </a>
 
           @if($hasQ)
-            <form method="POST" action="{{ route('app.psy.attempts.start', $slugId) }}">
+            <form method="POST" action="{{ route('app.psy.attempts.start', $slugId) }}" class="w-full">
               @csrf
-              <button class="btn btn-primary">
-                {{ $attempt ? 'Lanjutkan' : 'Mulai' }}
+              <button class="w-full flex items-center justify-center px-4 py-2.5 bg-tosca text-white font-bold rounded-xl hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/20">
+                {{ $attempt ? 'Lanjutkan' : 'Mulai Tes' }}
               </button>
             </form>
           @else
-            <button class="btn btn-muted" disabled>Tidak tersedia</button>
+            <button disabled class="flex items-center justify-center px-4 py-2.5 bg-gray-100 text-gray-400 font-bold rounded-xl cursor-not-allowed">
+              Kosong
+            </button>
           @endif
         </div>
       </div>
     @empty
-      <div class="col-span-full p-6 text-center text-gray-600 bg-white border rounded-xl">
-        Tidak ada tes ditemukan.
+      <div class="col-span-full py-16 flex flex-col items-center justify-center bg-white rounded-3xl border border-gray-50 text-center shadow-[0_4px_24px_rgba(0,0,0,0.02)]">
+        <div class="w-16 h-16 rounded-2xl bg-softbg text-tosca flex items-center justify-center mb-4">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <h3 class="text-xl font-bold text-text-main">Tidak Ditemukan</h3>
+        <p class="text-text-soft mt-1">Maaf, kami tidak menemukan tes yang sesuai dengan pencarian atau filter Anda.</p>
+        <a href="{{ route('app.psy.tests.index') }}" class="mt-6 px-6 py-2.5 bg-gray-100 text-gray-600 font-bold rounded-xl hover:bg-gray-200 transition-colors">Reset Filter</a>
       </div>
     @endforelse
   </div>
 
-  <div class="mt-6">{{ $tests->links() }}</div>
+  @if(method_exists($tests,'links'))
+    <div class="mt-8 flex justify-center">
+      {{ $tests->withQueryString()->links('vendor.pagination.tailwind') }}
+    </div>
+  @endif
+
 </div>
 @endsection

@@ -9,104 +9,142 @@ use Illuminate\Support\Facades\Gate;
 
 class QuestionController extends Controller
 {
-    /**
-     * List semua pertanyaan.
-     */
-    public function index(Request $r)
+    public function index(Request $request)
     {
-        $this->ensureAdminOrMentor($r->user());
+        $user = $this->authorizeContentManager($request->user());
+        $filters = $request->validate([
+            'quiz_id' => ['nullable', 'uuid', 'exists:quizzes,id'],
+            'q' => ['nullable', 'string', 'max:100'],
+        ]);
+        $term = trim((string) ($filters['q'] ?? ''));
 
-        $quizzes = Quiz::orderBy('title')->get(['id','title']);
+        $quizzes = $this->allowedQuizzesQuery($user)->orderBy('title')->get(['id', 'title']);
 
         $questions = Question::query()
+            ->select(['id', 'quiz_id', 'type', 'prompt', 'points', 'created_at'])
             ->with('quiz:id,title')
-            ->when($r->filled('quiz_id'), fn($q) => $q->where('quiz_id', $r->quiz_id))
-            ->when($r->filled('q'), fn($q2) => $q2->where('prompt','like','%'.$r->q.'%'))
+            ->when(!Gate::allows('admin'), fn ($q) => $q->whereHas(
+                'quiz.lesson.module.course',
+                fn ($course) => $course->manageableBy($user)
+            ))
+            ->when($filters['quiz_id'] ?? null, fn ($q, $quizId) => $q->where('quiz_id', $quizId))
+            ->when($term !== '', fn ($q) => $q->where('prompt', 'like', "%{$term}%"))
             ->latest('id')
             ->paginate(12)
             ->withQueryString();
 
-        return view('admin.questions.index', compact('questions','quizzes'));
+        return view('admin.questions.index', compact('questions', 'quizzes'));
     }
 
-    /**
-     * Form buat pertanyaan baru.
-     */
-    public function create(Request $r)
+    public function create(Request $request)
     {
-        $this->ensureAdminOrMentor($r->user());
+        $user = $this->authorizeContentManager($request->user());
+        $quizzes = $this->allowedQuizzesQuery($user)->orderBy('title')->get(['id', 'title']);
 
-        $quizzes = Quiz::select('id','title')->orderBy('title')->get();
         return view('admin.questions.create', compact('quizzes'));
     }
 
-    /**
-     * Simpan pertanyaan baru.
-     */
-    public function store(Request $r)
+    public function store(Request $request)
     {
-        $this->ensureAdminOrMentor($r->user());
-
-        $data = $r->validate([
-            'quiz_id' => 'required|exists:quizzes,id',
-            'type'    => 'required|in:mcq,short,long',
-            'prompt'  => 'required|string',
-            'points'  => 'nullable|integer|min:1',
+        $user = $this->authorizeContentManager($request->user());
+        $data = $request->validate([
+            'quiz_id' => ['required', 'uuid', 'exists:quizzes,id'],
+            'type' => ['required', 'in:mcq,short,long'],
+            'prompt' => ['required', 'string'],
+            'points' => ['nullable', 'integer', 'min:1'],
         ]);
 
-        $data['points'] = $data['points'] ?? 1;
+        $quiz = Quiz::query()->with('lesson.module.course:id,created_by')->findOrFail($data['quiz_id']);
+        $this->authorizeQuizOwner($quiz, $user);
 
+        $data['points'] = $data['points'] ?? 1;
         Question::create($data);
 
-        return redirect()->route('admin.questions.index')->with('ok','Pertanyaan dibuat');
+        return redirect()->route('admin.questions.index')->with('ok', 'Pertanyaan dibuat');
     }
 
-    public function show(Request $r, Question $question)
+    public function show(Request $request, Question $question)
     {
-        $this->ensureAdminOrMentor($r->user());
+        $user = $this->authorizeContentManager($request->user());
+        $this->authorizeQuestionOwner($question, $user);
+
         return view('admin.questions.show', compact('question'));
     }
 
-    public function edit(Request $r, Question $question)
+    public function edit(Request $request, Question $question)
     {
-        $this->ensureAdminOrMentor($r->user());
+        $user = $this->authorizeContentManager($request->user());
+        $this->authorizeQuestionOwner($question, $user);
 
-        $quizzes = Quiz::select('id','title')->orderBy('title')->get();
-        return view('admin.questions.edit', compact('question','quizzes'));
+        $quizzes = $this->allowedQuizzesQuery($user)->orderBy('title')->get(['id', 'title']);
+
+        return view('admin.questions.edit', compact('question', 'quizzes'));
     }
 
-    public function update(Request $r, Question $question)
+    public function update(Request $request, Question $question)
     {
-        $this->ensureAdminOrMentor($r->user());
+        $user = $this->authorizeContentManager($request->user());
+        $this->authorizeQuestionOwner($question, $user);
 
-        $data = $r->validate([
-            'quiz_id' => 'required|exists:quizzes,id',
-            'type'    => 'required|in:mcq,short,long',
-            'prompt'  => 'required|string',
-            'points'  => 'nullable|integer|min:1',
+        $data = $request->validate([
+            'quiz_id' => ['required', 'uuid', 'exists:quizzes,id'],
+            'type' => ['required', 'in:mcq,short,long'],
+            'prompt' => ['required', 'string'],
+            'points' => ['nullable', 'integer', 'min:1'],
         ]);
+
+        $targetQuiz = Quiz::query()->with('lesson.module.course:id,created_by')->findOrFail($data['quiz_id']);
+        $this->authorizeQuizOwner($targetQuiz, $user);
 
         $data['points'] = $data['points'] ?? 1;
         $question->update($data);
 
-        return redirect()->route('admin.questions.index')->with('ok','Pertanyaan diupdate');
+        return redirect()->route('admin.questions.index')->with('ok', 'Pertanyaan diupdate');
     }
 
-    public function destroy(Request $r, Question $question)
+    public function destroy(Request $request, Question $question)
     {
-        $this->ensureAdminOrMentor($r->user());
+        $user = $this->authorizeContentManager($request->user());
+        $this->authorizeQuestionOwner($question, $user);
+
         $question->delete();
 
-        return redirect()->route('admin.questions.index')->with('ok','Pertanyaan dihapus');
+        return redirect()->route('admin.questions.index')->with('ok', 'Pertanyaan dihapus');
     }
 
-    /** =========================
-     * Helpers
-     * ========================= */
-    protected function ensureAdminOrMentor(?User $user): void
+    private function authorizeContentManager(?User $user): User
     {
         if (!$user || (!Gate::allows('admin') && !Gate::allows('mentor'))) {
             abort(403, 'Hanya admin/mentor yang boleh mengakses pertanyaan.');
+        }
+
+        return $user;
+    }
+
+    private function allowedQuizzesQuery(User $user)
+    {
+        return Quiz::query()
+            ->select(['id', 'lesson_id', 'title'])
+            ->when(!Gate::allows('admin'), fn ($q) => $q->whereHas(
+                'lesson.module.course',
+                fn ($course) => $course->manageableBy($user)
+            ));
+    }
+
+    private function authorizeQuestionOwner(Question $question, User $user): void
+    {
+        $question->loadMissing('quiz.lesson.module.course:id,created_by');
+        $this->authorizeQuizOwner($question->quiz, $user);
+    }
+
+    private function authorizeQuizOwner(Quiz $quiz, User $user): void
+    {
+        if (Gate::allows('admin')) {
+            return;
+        }
+
+        if (!$quiz->lesson?->module?->course?->manageableBy($user)) {
+            abort(403, 'Anda tidak berhak mengelola pertanyaan pada quiz ini.');
         }
     }
 }

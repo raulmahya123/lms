@@ -16,7 +16,16 @@ class EnrollmentController extends Controller
         $enrollments = Enrollment::query()
             ->with(['course:id,title,cover'])
             ->where('user_id', $uid)
-            ->select('enrollments.*')
+            ->select([
+                'enrollments.id',
+                'enrollments.user_id',
+                'enrollments.course_id',
+                'enrollments.status',
+                'enrollments.activated_at',
+                'enrollments.access_via',
+                'enrollments.access_expires_at',
+                'enrollments.created_at',
+            ])
 
             // ===== total lessons per course (join lessons -> modules -> courses) =====
             ->selectSub(function ($q) {

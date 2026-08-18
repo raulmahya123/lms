@@ -9,7 +9,10 @@ class PlanController extends Controller
 {
     public function index()
     {
-        $plans = Plan::orderBy('price')->get();
+        $plans = Plan::select(['id', 'name', 'price', 'period', 'features'])
+            ->orderBy('price')
+            ->get();
+
         return view('app.plans.index', compact('plans'));
     }
 }

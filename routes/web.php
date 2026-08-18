@@ -1,16 +1,8 @@
 <?php
 
-use App\Http\Controllers\User\PsyDashboardController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\RateLimiter;
 use Illuminate\Cache\RateLimiting\Limit;
-use Illuminate\Http\Request;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
-use App\Http\Middleware\VerifyCsrfToken;
-use Illuminate\Auth\Middleware\Authenticate;
-use Illuminate\Session\Middleware\StartSession;
-use Illuminate\Cookie\Middleware\AddQueuedCookiesToResponse;
-use Illuminate\View\Middleware\ShareErrorsFromSession;
 use App\Http\Middleware\EnsureCurrentSession;
 use App\Http\Middleware\EnsureSameDevice;
 use App\Http\Controllers\Admin\PsyTestController;
@@ -89,12 +81,10 @@ use App\Http\Controllers\Admin\{
     PsyAttemptController     as AdminPsyAttemptController,
     TestIqController         as AdminTestIqController,
 };
-use App\Http\Controllers\MidtransWebhookController;
 // =====================
 // User Controllers
 // =====================
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\PsyProfileController;
 use App\Http\Controllers\User\{
     DashboardController      as UserDashboardController,
     CourseBrowseController,
@@ -117,6 +107,7 @@ use App\Http\Controllers\User\{
     QaReplyController        as UserQaReplyController,
     TestIqController         as UserTestIqController,
     PsyDashboardController   as UserPysDashController,
+    NotificationController   as UserNotificationController,
 };
 
 // =====================
@@ -139,6 +130,12 @@ Route::middleware(['auth', 'verified', EnsureCurrentSession::class, EnsureSameDe
     // Dashboard (USER)
     Route::get('/dashboard', [UserDashboardController::class, 'index'])->name('dashboard');
     Route::get('/app/dashboard', [UserDashboardController::class, 'index'])->name('app.dashboard'); // alias
+    Route::get('/app/psychology', UserPysDashController::class)->name('app.psychology');
+
+    // Notifications (USER)
+    Route::get('/notifications', [UserNotificationController::class, 'index'])->name('app.notifications.index');
+    Route::patch('/notifications/read-all', [UserNotificationController::class, 'markAllAsRead'])->name('app.notifications.readAll');
+    Route::patch('/notifications/{id}/read', [UserNotificationController::class, 'markAsRead'])->name('app.notifications.read');
 
     // Membership (USER)
     Route::get('/memberships', [UserMembershipController::class, 'index'])
@@ -245,8 +242,6 @@ Route::middleware(['auth', 'verified', EnsureCurrentSession::class, EnsureSameDe
     Route::get('/certificates', [CertificateController::class, 'index'])
         ->name('app.certificates.index');
 
-    // (DUPLIKASI DIPERTAHANKAN SESUAI PUNYAMU)
-    Route::get('/memberships', [UserMembershipController::class, 'index'])->name('app.memberships.index');
     Route::get('/plans', [UserPlanController::class, 'index'])->name('app.plans.index');
 
     // Payments (USER)
@@ -331,10 +326,6 @@ Route::middleware(['auth', 'verified', EnsureCurrentSession::class, EnsureSameDe
         ->whereUuid('issue')->name('app.certificates.download');
 
 
-    // CRUD Psych Profiles
-    Route::resource('admin/psy-profiles', PsyProfileController::class)
-        ->parameters(['psy-profiles' => 'psy_profile'])
-        ->names('admin.psy-profiles');
     // Q&A (USER)
     Route::resource('qa-threads', UserQaThreadController::class)
         ->names('app.qa-threads')
@@ -400,19 +391,10 @@ Route::middleware(['auth', 'verified', EnsureCurrentSession::class, EnsureSameDe
     // IQ Test (USER) — STEP ROUTES (yang kamu minta tampil 1-per-1)
     // =====================
     // Start (opsional) -> redirect ke step 1
-    Route::get('/iq/{testIq}/start', [UserTestIqController::class, 'start'])
-        ->whereUuid('testIq')->name('user.test-iq.start');
-
     Route::get('/app/iq/{testIq}/start', [UserTestIqController::class, 'start'])
         ->whereUuid('testIq')->name('app.test-iq.start');
 
     // Versi user.* (tanpa /app)
-    Route::get('/iq/{testIq}/q/{step}', [UserTestIqController::class, 'showStep'])
-        ->whereUuid('testIq')->whereNumber('step')->name('user.test-iq.question');
-
-    Route::post('/iq/{testIq}/q/{step}', [UserTestIqController::class, 'answer'])
-        ->whereUuid('testIq')->whereNumber('step')->name('user.test-iq.answer');
-
     // Versi app.* (dengan /app prefix di path)
     Route::get('/app/iq/{testIq}/q/{step}', [UserTestIqController::class, 'showStep'])
         ->whereUuid('testIq')->whereNumber('step')->name('app.test-iq.question');
@@ -442,26 +424,12 @@ Route::middleware(['auth', 'verified', EnsureCurrentSession::class, EnsureSameDe
     // Profile
     // =====================
     Route::middleware('auth')->group(function () {
-        Route::get('/profile', fn() => view('profile.index'))->name('profile.edit');
-
-        Route::get(
-            '/profile/updateinformation',
-            fn(\Illuminate\Http\Request $r) =>
-            view('profile.updateinformation', [
-                'user' => $r->user(),
-                'mustVerifyEmail' => $r->user() instanceof \Illuminate\Contracts\Auth\MustVerifyEmail,
-                'status' => session('status'),
-            ])
-        )->name('profile.info.edit');
-
-        Route::get('/profile/updatepass', fn() => view('profile.updatepass', ['status' => session('status')]))
-            ->name('profile.pass.edit');
-
-        Route::get('/profile/delacc', fn() => view('profile.delacc'))
-            ->name('profile.delete.confirm');
-
-        Route::patch('/profile', [\App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
-        Route::delete('/profile', [\App\Http\Controllers\ProfileController::class, 'destroy'])->name('profile.destroy');
+        Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
+        Route::get('/profile/updateinformation', [ProfileController::class, 'editInformation'])->name('profile.info.edit');
+        Route::get('/profile/updatepass', [ProfileController::class, 'editPassword'])->name('profile.pass.edit');
+        Route::get('/profile/delacc', [ProfileController::class, 'confirmDelete'])->name('profile.delete.confirm');
+        Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
+        Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
     });
 });
 
@@ -471,25 +439,25 @@ Route::middleware(['auth', 'can:backoffice', EnsureCurrentSession::class, Ensure
     ->group(function () {
 
         // Admin Dashboard (/admin/dashboard)
-        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->middleware('can:admin')->name('dashboard');
 
         // =====================
         // Test IQ (Admin)
         // =====================
-        Route::get('test-iq',                 [AdminTestIqController::class, 'index'])->name('test-iq.index');
-        Route::get('test-iq/create',          [AdminTestIqController::class, 'create'])->name('test-iq.create');
-        Route::post('test-iq',                [AdminTestIqController::class, 'store'])->name('test-iq.store');
+        Route::get('test-iq',                 [AdminTestIqController::class, 'index'])->middleware('can:admin')->name('test-iq.index');
+        Route::get('test-iq/create',          [AdminTestIqController::class, 'create'])->middleware('can:admin')->name('test-iq.create');
+        Route::post('test-iq',                [AdminTestIqController::class, 'store'])->middleware('can:admin')->name('test-iq.store');
         Route::get('test-iq/{testIq}/edit',   [AdminTestIqController::class, 'edit'])
-            ->whereUuid('testIq')->name('test-iq.edit');
+            ->middleware('can:admin')->whereUuid('testIq')->name('test-iq.edit');
         Route::put('test-iq/{testIq}',        [AdminTestIqController::class, 'update'])
-            ->whereUuid('testIq')->name('test-iq.update');
+            ->middleware('can:admin')->whereUuid('testIq')->name('test-iq.update');
         Route::delete('test-iq/{testIq}',     [AdminTestIqController::class, 'destroy'])
-            ->whereUuid('testIq')->name('test-iq.destroy');
+            ->middleware('can:admin')->whereUuid('testIq')->name('test-iq.destroy');
         Route::post('test-iq/{testIq}/toggle', [AdminTestIqController::class, 'toggle'])
-            ->whereUuid('testIq')->name('test-iq.toggle');
+            ->middleware('can:admin')->whereUuid('testIq')->name('test-iq.toggle');
 
         // Resource khusus
-        Route::resource('dashboard_admin', AdminDashboardController::class);
+        Route::resource('dashboard_admin', AdminDashboardController::class)->middleware('can:admin');
 
         // =====================
         // Courses / Modules / Lessons / Resources
@@ -535,17 +503,18 @@ Route::middleware(['auth', 'can:backoffice', EnsureCurrentSession::class, Ensure
         // =====================
         // Plans & Membership & Payments & Enrollments & Coupons
         // =====================
-        Route::resource('plans', AdminPlanController::class);
-        Route::resource('plan-courses', AdminPlanCourseController::class)->only(['store', 'destroy']);
+        Route::resource('plans', AdminPlanController::class)->middleware('can:admin');
+        Route::resource('plan-courses', AdminPlanCourseController::class)->only(['store', 'destroy'])->middleware('can:admin');
 
-        Route::resource('memberships', AdminMembershipController::class);
+        Route::resource('memberships', AdminMembershipController::class)->middleware('can:admin');
 
         Route::resource('payments', AdminPaymentController::class)
-            ->only(['index', 'show', 'update']);
+            ->only(['index', 'show', 'update'])
+            ->middleware('can:admin');
 
-        Route::resource('enrollments', AdminEnrollmentController::class);
+        Route::resource('enrollments', AdminEnrollmentController::class)->middleware('can:admin');
 
-        Route::resource('coupons', AdminCouponController::class);
+        Route::resource('coupons', AdminCouponController::class)->middleware('can:admin');
 
         // =====================
         // Q&A (Admin)
@@ -559,75 +528,73 @@ Route::middleware(['auth', 'can:backoffice', EnsureCurrentSession::class, Ensure
         // =====================
         // Certificates
         // =====================
-        Route::resource('certificate-templates', \App\Http\Controllers\Admin\CertificateTemplateController::class);
+        Route::resource('certificate-templates', \App\Http\Controllers\Admin\CertificateTemplateController::class)->middleware('can:admin');
         Route::resource('certificate-issues', \App\Http\Controllers\Admin\CertificateIssueController::class)
-            ->only(['index', 'show', 'destroy']);
+            ->only(['index', 'show', 'destroy'])
+            ->middleware('can:admin');
 
         // =====================
         // PSY (dipisah agar TIDAK BENTROK dengan /admin/questions milik QUIZ)
         // =====================
-        Route::resource('psy-tests', \App\Http\Controllers\Admin\PsyTestController::class);
+        Route::resource('psy-tests', \App\Http\Controllers\Admin\PsyTestController::class)->middleware('can:admin');
 
         // Nested PSY (per test): index/create/store
         // /admin/psy-tests/{psy_test}/questions
         // Nested PSY (per test): index/create/store + show/destroy
         Route::resource('psy-tests.questions', \App\Http\Controllers\Admin\PsyQuestionController::class)
             ->only(['index', 'create', 'store', 'update', 'show', 'destroy'])   // ⬅️ tambah show & destroy
+            ->middleware('can:admin')
             ->names('psy-tests.questions')
             ->parameters(['psy-tests' => 'psy_test', 'questions' => 'psy_question'])
             ->whereUuid(['psy_test', 'psy_question']); // ⬅️ sekalian enforce UUID untuk question juga
 
 
-        // TEST
-        Route::resource('psy-tests', PsyTestController::class)
-            ->parameters(['psy-tests' => 'psy_test'])
-            ->whereUuid(['psy_test']);
         // PSY single (flat): show/edit/update/destroy di /admin/psy-questions/{psy_question}
         // ==== FLAT QUESTION ==== 
         // 1) index/create/store pakai global*()
         Route::get('psy-questions', [PsyQuestionController::class, 'globalIndex'])
+            ->middleware('can:admin')
             ->name('psy-questions.index');
 
         Route::get('psy-questions/create', [PsyQuestionController::class, 'globalCreate'])
+            ->middleware('can:admin')
             ->name('psy-questions.create');
 
         Route::post('psy-questions', [PsyQuestionController::class, 'globalStore'])
+            ->middleware('can:admin')
             ->name('psy-questions.store');
 
         // 2) show FLAT → arahkan ke showFlat (bukan show nested)
         Route::get('psy-questions/{psy_question}', [PsyQuestionController::class, 'showFlat'])
+            ->middleware('can:admin')
             ->name('psy-questions.show')
             ->whereUuid(['psy_question']);
 
         // 3) edit/update/destroy FLAT tetap
         Route::get('psy-questions/{psy_question}/edit', [PsyQuestionController::class, 'edit'])
+            ->middleware('can:admin')
             ->name('psy-questions.edit')
             ->whereUuid(['psy_question']);
 
         Route::put('psy-questions/{psy_question}', [PsyQuestionController::class, 'update'])
+            ->middleware('can:admin')
             ->name('psy-questions.update')
             ->whereUuid(['psy_question']);
 
         Route::delete('psy-questions/{psy_question}', [PsyQuestionController::class, 'destroyFlat'])
+            ->middleware('can:admin')
             ->name('psy-questions.destroy')
             ->whereUuid(['psy_question']);
 
 
 
         // GLOBAL PSY (opsional) — daftar lintas tes, create/store global
-        Route::get('psy-questions', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalIndex'])
-            ->name('psy-questions.index');
-        Route::get('psy-questions/create', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalCreate'])
-            ->name('psy-questions.create');
-        Route::post('psy-questions', [\App\Http\Controllers\Admin\PsyQuestionController::class, 'globalStore'])
-            ->name('psy-questions.store');
+        Route::resource('psy-profiles', \App\Http\Controllers\Admin\PsyProfileController::class)
+            ->parameters(['psy-profiles' => 'psyProfile'])
+            ->except(['show'])
+            ->middleware('can:admin');
 
         Route::resource('psy-attempts', AdminPsyAttemptController::class)
-            ->only(['index', 'show', 'destroy']);
-    });
-
-/* ================== USER AREA ================== */
-Route::middleware(['auth', EnsureCurrentSession::class, EnsureSameDevice::class])
-    ->prefix('app')->name('app.')->group(function () {
-        Route::get('psychology', UserPysDashController::class)->name('psychology');
+            ->only(['index', 'show', 'destroy'])
+            ->middleware('can:admin');
     });

@@ -6,10 +6,15 @@ use App\Http\Controllers\Controller;
 use App\Models\PsyAttempt;
 use App\Models\PsyTest;
 use App\Models\PsyProfile;
+use App\Services\Psychology\PsyTestFlowService;
 use Illuminate\Support\Facades\Auth;
 
 class PsyDashboardController extends Controller
 {
+    public function __construct(private PsyTestFlowService $psyFlow)
+    {
+    }
+
     /**
      * Invokable controller untuk /app/psychology
      */
@@ -21,22 +26,52 @@ class PsyDashboardController extends Controller
         $attempts = PsyAttempt::with(['test:id,name,slug'])
             ->where('user_id', $uid)
             ->whereNotNull('submitted_at')
+            ->select(['id', 'test_id', 'user_id', 'submitted_at', 'created_at', 'total_score', 'result_key'])
             ->latest('submitted_at')
             ->paginate(10);
 
+        $profilesByTest = PsyProfile::query()
+            ->whereIn('test_id', $attempts->getCollection()->pluck('test_id')->filter()->unique()->values())
+            ->orderByDesc('min_total')
+            ->get(['id', 'test_id', 'key', 'name', 'min_total', 'max_total'])
+            ->groupBy('test_id');
+
         // Normalisasi judul untuk Blade (title dari name)
-        $attempts->getCollection()->transform(function ($a) {
+        $attempts->getCollection()->transform(function ($a) use ($profilesByTest) {
             if ($a->relationLoaded('test') && $a->test) {
                 $a->test->title = $a->test->name;
             }
+            $profile = $profilesByTest
+                ->get($a->test_id, collect())
+                ->first(function ($profile) use ($a) {
+                    $score = (int) $a->total_score;
+
+                    return (int) $profile->min_total <= $score
+                        && (is_null($profile->max_total) || (int) $profile->max_total >= $score);
+                });
+
+            $a->profile_name = $profile?->name ?: ($a->result_key ?: '-');
+
             return $a;
         });
 
         // === Daftar tes aktif + statistik per user ===
         $tests = PsyTest::where('is_active', true)
+            ->select(['id', 'name', 'slug', 'is_active', 'created_at'])
             ->withCount('questions')
             ->orderByDesc('id')
             ->get();
+
+        $statsRaw = PsyAttempt::query()
+            ->where('user_id', $uid)
+            ->whereNotNull('submitted_at')
+            ->select('test_id')
+            ->selectRaw('COUNT(*) as attempts')
+            ->selectRaw('AVG(total_score) as avg_score')
+            ->selectRaw('MAX(total_score) as best')
+            ->groupBy('test_id')
+            ->get()
+            ->keyBy('test_id');
 
         $stats = [];
         foreach ($tests as $t) {
@@ -44,21 +79,12 @@ class PsyDashboardController extends Controller
             $t->locked     = false;   // atur kalau ada rule membership
             $t->is_premium = false;
 
-            $userAttempts = PsyAttempt::where('user_id', $uid)
-                ->where('test_id', $t->id)
-                ->whereNotNull('submitted_at')
-                ->get();
-
-            $attemptsCnt = $userAttempts->count();
-            $scores      = $userAttempts->map(fn($a) => (int) $a->total_score);
-
-            $avg  = $scores->count() ? round($scores->avg(), 2) : 0;
-            $best = $scores->count() ? (int) $scores->max() : 0;
+            $row = $statsRaw->get($t->id);
 
             $stats[$t->id] = (object) [
-                'attempts'  => $attemptsCnt,
-                'avg_score' => $avg,
-                'best'      => $best,
+                'attempts'  => (int) ($row->attempts ?? 0),
+                'avg_score' => round((float) ($row->avg_score ?? 0), 2),
+                'best'      => (int) ($row->best ?? 0),
             ];
         }
 
@@ -73,15 +99,7 @@ class PsyDashboardController extends Controller
             $total = (int) $last->total_score;
 
             // Cari profil berdasar rentang min_total..max_total (tanpa user_id)
-            $prof = PsyProfile::query()
-                ->where('test_id', (string) $last->test_id)
-                ->where('min_total', '<=', $total)
-                ->where(function ($q) use ($total) {
-                    $q->whereNull('max_total')
-                      ->orWhere('max_total', '>=', $total);
-                })
-                ->orderByDesc('min_total')
-                ->first();
+            $prof = $this->psyFlow->profileForScore((string) $last->test_id, $total);
 
             if ($prof) {
                 $recommendation = [

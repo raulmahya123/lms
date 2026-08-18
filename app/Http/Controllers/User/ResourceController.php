@@ -3,8 +3,7 @@
 namespace App\Http\Controllers\User;
 
 use App\Http\Controllers\Controller;
-use App\Models\Resource;
-use App\Models\Enrollment;
+use App\Models\{Enrollment, Membership, Resource};
 use Illuminate\Support\Facades\Auth;
 
 class ResourceController extends Controller
@@ -14,8 +13,23 @@ class ResourceController extends Controller
         $resource->load('lesson.module.course');
         $course = $resource->lesson->module->course;
 
-        $isEnrolled = Enrollment::where('user_id',Auth::id())->where('course_id',$course->id)->exists();
-        if (!$resource->lesson->is_free && !$isEnrolled) abort(403);
+        if (!$resource->lesson->is_free) {
+            $enrollment = Enrollment::where('user_id', Auth::id())
+                ->where('course_id', $course->id)
+                ->where('status', 'active')
+                ->first();
+
+            $hasActiveMembership = Membership::where('user_id', Auth::id())
+                ->where('status', 'active')
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
+                ->exists();
+
+            if (!$enrollment || !$enrollment->hasEffectiveAccess($hasActiveMembership)) {
+                abort(403);
+            }
+        }
 
         return view('app.resources.show', compact('resource','course'));
     }

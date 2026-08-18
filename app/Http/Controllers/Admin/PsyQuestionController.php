@@ -16,13 +16,21 @@ class PsyQuestionController extends Controller
      * ========================= */
     public function globalIndex(Request $r)
     {
-        $q = PsyQuestion::query()->with(['test:id,name']);
+        $filters = $r->validate([
+            'psy_test_id' => ['nullable', 'uuid', 'exists:psy_tests,id'],
+            'q'           => ['nullable', 'string', 'max:100'],
+        ]);
+        $term = trim((string) ($filters['q'] ?? ''));
 
-        if ($r->filled('psy_test_id')) {
-            $q->where('test_id', $r->string('psy_test_id'));
+        $q = PsyQuestion::query()
+            ->select(['id', 'test_id', 'prompt', 'trait_key', 'qtype', 'ordering', 'created_at'])
+            ->with(['test:id,name']);
+
+        if (!empty($filters['psy_test_id'])) {
+            $q->where('test_id', $filters['psy_test_id']);
         }
-        if ($r->filled('q')) {
-            $q->where('prompt', 'like', '%' . $r->q . '%');
+        if ($term !== '') {
+            $q->where('prompt', 'like', '%' . $term . '%');
         }
 
         $questions = $q->orderBy('ordering')->paginate(50)->withQueryString();
@@ -86,7 +94,8 @@ class PsyQuestionController extends Controller
     public function index(PsyTest $psy_test)
     {
         $questions = PsyQuestion::where('test_id', $psy_test->id)
-            ->with('options')
+            ->select(['id', 'test_id', 'prompt', 'trait_key', 'qtype', 'ordering', 'created_at'])
+            ->with('options:id,question_id,label,value,ordering')
             ->orderBy('ordering')
             ->paginate(50);
 
@@ -141,7 +150,7 @@ class PsyQuestionController extends Controller
     {
         abort_if($psy_question->test_id !== $psy_test->id, 404);
 
-        $psy_question->load('test:id,name', 'options');
+        $psy_question->load('test:id,name', 'options:id,question_id,label,value,ordering');
 
         return view('admin.psy_questions.show', [
             'question'    => $psy_question,
@@ -152,7 +161,7 @@ class PsyQuestionController extends Controller
 
     public function showFlat(PsyQuestion $psy_question)
     {
-        $psy_question->load('test:id,name', 'options');
+        $psy_question->load('test:id,name', 'options:id,question_id,label,value,ordering');
 
         return view('admin.psy_questions.show', [
             'question'    => $psy_question,
@@ -174,7 +183,7 @@ class PsyQuestionController extends Controller
      * ========================= */
     public function edit(PsyQuestion $psy_question)
     {
-        $psy_question->load('test:id,name', 'options');
+        $psy_question->load('test:id,name', 'options:id,question_id,label,value,ordering');
 
         return view('admin.psy_questions.edit', [
             'question' => $psy_question,

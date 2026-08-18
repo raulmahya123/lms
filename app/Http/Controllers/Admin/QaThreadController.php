@@ -5,16 +5,24 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\{QaThread, Course, Lesson, User};
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class QaThreadController extends Controller
 {
     public function index(Request $r)
     {
+        $filters = $r->validate([
+            'q'      => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', Rule::in(['open', 'resolved', 'closed'])],
+        ]);
+        $term = trim((string) ($filters['q'] ?? ''));
+
         $threads = QaThread::query()
-            ->with(['user','course','lesson'])
+            ->select(['id', 'user_id', 'course_id', 'lesson_id', 'title', 'status', 'created_at'])
+            ->with(['user:id,name,email','course:id,title','lesson:id,title'])
             ->withCount('replies')
-            ->when($r->filled('q'), fn($q) => $q->where('title','like','%'.$r->q.'%'))
-            ->when($r->filled('status'), fn($q) => $q->where('status',$r->status))
+            ->when($term !== '', fn($q) => $q->where('title','like','%'.$term.'%'))
+            ->when($filters['status'] ?? null, fn($q, $status) => $q->where('status',$status))
             // ⚠️ UUID tidak bisa dipakai untuk sort kronologis → gunakan created_at
             ->latest() // default: created_at desc
             ->paginate(20)
@@ -55,7 +63,16 @@ class QaThreadController extends Controller
 
     public function show(QaThread $qa_thread)
     {
-        $qa_thread->load(['user','course','lesson','replies.user']);
+        $qa_thread->load([
+            'user:id,name,email',
+            'course:id,title',
+            'lesson:id,title',
+            'replies' => fn($q) => $q
+                ->select(['id', 'thread_id', 'user_id', 'body', 'is_answer', 'created_at'])
+                ->with('user:id,name,email')
+                ->orderByDesc('is_answer')
+                ->orderBy('created_at'),
+        ]);
         return view('admin.qa_threads.show', ['thread' => $qa_thread]);
     }
 

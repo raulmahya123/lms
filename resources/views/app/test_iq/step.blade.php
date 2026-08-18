@@ -5,143 +5,196 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>{{ $test->title }} — Soal {{ $index }}/{{ $total }}</title>
   <meta name="csrf-token" content="{{ csrf_token() }}">
-  @vite(['resources/css/app.css','resources/js/app.js'])
+  
+  {{-- Tailwind CDN (Sesuai Foundation) --}}
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            tosca: {
+              DEFAULT: '#0F9D8A',
+              dark: '#087A6C',
+              light: '#DFF5F1',
+            },
+            softbg: '#F4FBF9',
+            text: {
+              main: '#1e293b',
+              soft: '#64748b'
+            }
+          },
+          fontFamily: {
+            sans: ['Inter', 'Segoe UI', 'Roboto', 'Helvetica', 'Arial', 'sans-serif'],
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    .timer-danger { color:#dc2626 }
+    .timer-danger { color: #ef4444; }
+    /* Hide scrollbar for clean look */
+    ::-webkit-scrollbar { width: 6px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
-<body class="min-h-screen bg-gradient-to-br from-sky-50 to-blue-100 text-slate-800">
+<body class="min-h-screen bg-softbg text-text-main flex flex-col">
   <!-- Header -->
-  <header class="sticky top-0 z-40 bg-white/95 backdrop-blur border-b">
-    <div class="mx-auto max-w-3xl md:max-w-5xl px-4 sm:px-6 py-3 flex items-center justify-between gap-3">
-      <div class="min-w-0">
-        <p class="text-[11px] tracking-wide uppercase text-slate-500">Ujian IQ</p>
-        <h1 class="text-base sm:text-lg font-semibold truncate" title="{{ $test->title }}">{{ $test->title }}</h1>
+  <header class="sticky top-0 z-40 bg-white/90 backdrop-blur-md border-b border-gray-100 shadow-sm">
+    <div class="mx-auto max-w-4xl px-4 sm:px-6 py-4 flex items-center justify-between gap-4">
+      <div class="min-w-0 flex items-center gap-3">
+        <div class="w-10 h-10 rounded-xl bg-tosca-light text-tosca flex items-center justify-center shrink-0 hidden sm:flex">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+        </div>
+        <div>
+          <p class="text-[10px] font-bold tracking-wider uppercase text-text-soft">Tes Berlangsung</p>
+          <h1 class="text-sm sm:text-base font-extrabold truncate text-text-main" title="{{ $test->title }}">{{ $test->title }}</h1>
+        </div>
       </div>
 
       @if(($test->duration_minutes ?? 0) > 0)
-      <div class="shrink-0 text-right">
-        <p class="text-[11px] uppercase tracking-wide text-slate-500">Sisa Waktu</p>
-        <div id="timer-box" class="text-xl sm:text-2xl font-extrabold tabular-nums" aria-live="polite">
-          <span id="iq-min">--</span><span class="mx-0.5">:</span><span id="iq-sec">--</span>
+      <div class="shrink-0 flex items-center gap-3 bg-gray-50 border border-gray-100 px-4 py-2 rounded-xl">
+        <svg class="w-5 h-5 text-tosca" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        <div class="text-right">
+          <div id="timer-box" class="text-lg sm:text-xl font-extrabold tabular-nums tracking-tight text-tosca-dark leading-none" aria-live="polite">
+            <span id="iq-min">--</span><span class="mx-0.5">:</span><span id="iq-sec">--</span>
+          </div>
         </div>
       </div>
       @endif
     </div>
     @if(($test->duration_minutes ?? 0) > 0)
-    <div class="h-1 w-full bg-slate-200">
-      <div id="time-progress" class="h-1 bg-blue-600 transition-[width]" style="width:100%"></div>
+    <div class="h-1.5 w-full bg-gray-100">
+      <div id="time-progress" class="h-full bg-tosca transition-[width] duration-1000 ease-linear rounded-r-full" style="width:100%"></div>
     </div>
     @endif
   </header>
 
   <!-- Main -->
   <main id="iq-step-root"
-        class="mx-auto max-w-3xl md:max-w-5xl px-4 sm:px-6 pt-6 sm:pt-8 pb-28 sm:pb-10"
+        class="flex-1 w-full mx-auto max-w-3xl px-4 sm:px-6 py-8 sm:py-12 pb-32 sm:pb-12"
         data-started-at-ms="{{ $startedAtMs }}"
         data-duration-min="{{ (int)($test->duration_minutes ?? 0) }}"
         data-autosubmit="1">
 
     <!-- Progress -->
-    <div class="flex items-end justify-between gap-3 mb-3 sm:mb-5">
-      <div class="text-sm text-slate-600">Soal <span class="font-semibold">{{ $index }}</span> dari <span class="font-semibold">{{ $total }}</span></div>
-      <div class="hidden sm:block text-xs text-slate-500">Progress</div>
-    </div>
-    <div class="w-full h-2 bg-slate-100 rounded overflow-hidden mb-4">
-      <div class="h-2 bg-blue-600" style="width: {{ (int)round(($index-1)/max(1,$total-1)*100) }}%"></div>
+    <div class="mb-8">
+      <div class="flex items-end justify-between gap-3 mb-3">
+        <div class="text-sm text-text-soft font-medium">Pertanyaan <span class="text-text-main font-bold text-lg">{{ $index }}</span> dari <span class="font-bold text-text-main">{{ $total }}</span></div>
+        <div class="text-xs font-bold text-tosca uppercase tracking-wider">{{ (int)round(($index-1)/max(1,$total-1)*100) }}% Selesai</div>
+      </div>
+      <div class="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
+        <div class="h-full bg-tosca rounded-full transition-all duration-500 ease-out" style="width: {{ (int)round(($index-1)/max(1,$total-1)*100) }}%"></div>
+      </div>
     </div>
 
     <!-- Kartu soal -->
-    <section class="bg-white border border-slate-200 rounded-2xl shadow-sm p-5 sm:p-7">
+    <section class="bg-white border border-gray-50 rounded-3xl shadow-[0_8px_30px_rgba(0,0,0,0.04)] overflow-hidden">
       @php
-        // Normalisasi struktur soal (compat q/text)
         $questionText = $q['text'] ?? ($q['q'] ?? '—');
-        // Pastikan opsi berupa list string
         $options = is_array($q['options'] ?? null) ? array_values($q['options']) : [];
-        // prevAnswer dari controller bisa INT (index) atau STRING (legacy)
         $prev = $prevAnswer ?? null;
       @endphp
 
-      <h2 class="text-lg sm:text-xl font-semibold leading-snug mb-5">
-        {{ $questionText }}
-      </h2>
+      <div class="p-6 sm:p-10 border-b border-gray-50 bg-white">
+        <h2 class="text-xl sm:text-2xl font-bold text-text-main leading-relaxed">
+          {{ $questionText }}
+        </h2>
+      </div>
 
-      <form id="iq-step-form" method="POST" action="{{ route('user.test-iq.answer', [$test, $index]) }}" class="space-y-6">
+      <form id="iq-step-form" method="POST" action="{{ route('user.test-iq.answer', [$test, $index]) }}">
         @csrf
+        
+        <div class="p-6 sm:p-10 bg-gray-50/50">
+          <!-- Opsi jawaban -->
+          <div class="grid gap-3">
+            @forelse($options as $i => $opt)
+              @php
+                $optText = (string)$opt;
+                $isChecked = (is_int($prev) && $prev === $i) || (!is_int($prev) && is_string($prev) && $prev === $optText);
+                $letter    = chr(65 + $i);
+                $id        = 'opt_'.$index.'_'.$i; 
+              @endphp
+              <label for="{{ $id }}" class="group flex items-start gap-4 p-4 sm:p-5 rounded-2xl border-2 cursor-pointer transition-all duration-200 {{ $isChecked ? 'border-tosca bg-tosca-light/30' : 'border-gray-200 bg-white hover:border-tosca/50 hover:shadow-sm' }}">
+                <input id="{{ $id }}" type="radio" name="answer" value="{{ $i }}" class="peer sr-only" @checked($isChecked)>
+                
+                <div class="relative shrink-0 flex items-center justify-center w-8 h-8 rounded-full border-2 transition-colors {{ $isChecked ? 'border-tosca bg-tosca text-white' : 'border-gray-300 text-gray-500 group-hover:border-tosca/50' }}">
+                  <span class="text-sm font-bold">{{ $letter }}</span>
+                </div>
+                
+                <span class="text-base font-medium pt-1 {{ $isChecked ? 'text-tosca-dark' : 'text-text-main' }}">
+                  {{ $optText }}
+                </span>
+              </label>
+            @empty
+              <div class="rounded-2xl border-2 border-amber-200 bg-amber-50 text-amber-800 p-5 text-sm font-semibold flex items-center gap-3">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                Opsi jawaban belum diset untuk soal ini.
+              </div>
+            @endforelse
+          </div>
 
-        <!-- Opsi jawaban -->
-        <div class="grid gap-2">
-          @forelse($options as $i => $opt)
-            @php
-              $optText = (string)$opt;
-              // tandai checked jika prev == index ATAU prev string = teks opsi (kompat lama)
-              $isChecked = (is_int($prev) && $prev === $i) || (!is_int($prev) && is_string($prev) && $prev === $optText);
-              $letter    = chr(65 + $i);
-              $id        = 'opt_'.$index.'_'.$i; // unik per step
-            @endphp
-            <label for="{{ $id }}" class="flex items-center gap-3 px-4 py-3 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 cursor-pointer transition">
-              <!-- value = INDEX (sinkron dengan controller yang menyimpan index) -->
-              <input id="{{ $id }}" type="radio" name="answer" value="{{ $i }}" class="peer sr-only" @checked($isChecked)>
-              <span class="inline-flex h-7 w-7 items-center justify-center rounded-lg bg-slate-100 text-slate-700 font-semibold text-sm peer-checked:bg-blue-600 peer-checked:text-white">{{ $letter }}</span>
-              <span class="text-slate-800 leading-relaxed">{{ $optText }}</span>
-              <span class="ml-auto hidden sm:inline text-xs text-slate-400 peer-checked:text-blue-600">pilih</span>
-            </label>
-          @empty
-            <div class="rounded-xl border bg-amber-50 text-amber-800 px-3 py-2 text-sm">
-              Opsi jawaban belum diset untuk soal ini.
-            </div>
-          @endforelse
-        </div>
-
-        <!-- Navigasi desktop -->
-        <div class="hidden sm:flex justify-between mt-6">
-          <button name="nav" value="prev" type="submit"
-                  class="px-4 py-2.5 rounded-xl border text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                  @disabled($index === 1)>
-            ← Sebelumnya
-          </button>
-
-          @if($index < $total)
-            <button name="nav" value="next" type="submit"
-                    class="px-5 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700 shadow">
-              Selanjutnya →
+          <!-- Navigasi desktop -->
+          <div class="hidden sm:flex justify-between items-center mt-10 pt-6 border-t border-gray-200/60">
+            <button name="nav" value="prev" type="submit"
+                    class="px-6 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-bold hover:bg-gray-100 hover:text-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                    @disabled($index === 1)>
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+              Sebelumnya
             </button>
-          @else
-            <button name="nav" value="submit" type="submit"
-                    class="px-5 py-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 shadow">
-              Kirim Jawaban ✅
-            </button>
-          @endif
+
+            @if($index < $total)
+              <button name="nav" value="next" type="submit"
+                      class="px-8 py-3 rounded-xl bg-tosca text-white font-bold hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/30 flex items-center gap-2">
+                Selanjutnya
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+              </button>
+            @else
+              <button name="nav" value="submit" type="submit"
+                      class="px-8 py-3 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-colors shadow-sm shadow-green-600/30 flex items-center gap-2">
+                Kirim Jawaban
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              </button>
+            @endif
+          </div>
         </div>
 
         <!-- Sticky footer nav (mobile) -->
-        <div class="sm:hidden fixed bottom-0 inset-x-0 z-40">
-          <div class="mx-4 mb-[calc(env(safe-area-inset-bottom)+1rem)] rounded-2xl border border-slate-200 bg-white/95 backdrop-blur shadow-lg">
-            <div class="p-3 grid grid-cols-2 gap-2">
-              <button name="nav" value="prev" type="submit"
-                      class="px-4 py-2.5 rounded-xl border text-slate-700 hover:bg-slate-50 disabled:opacity-50 disabled:cursor-not-allowed"
-                      @disabled($index === 1)>
-                ← Sebelumnya
-              </button>
+        <div class="sm:hidden fixed bottom-0 left-0 right-0 z-40 bg-white border-t border-gray-100 shadow-[0_-4px_20px_rgba(0,0,0,0.05)] pb-safe">
+          <div class="p-4 grid grid-cols-2 gap-3 max-w-md mx-auto">
+            <button name="nav" value="prev" type="submit"
+                    class="px-4 py-3.5 rounded-xl border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    @disabled($index === 1)>
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path></svg>
+              Kembali
+            </button>
 
-              @if($index < $total)
-                <button name="nav" value="next" type="submit"
-                        class="px-4 py-2.5 rounded-xl bg-blue-600 text-white hover:bg-blue-700">
-                  Selanjutnya →
-                </button>
-              @else
-                <button name="nav" value="submit" type="submit"
-                        class="px-4 py-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700">
-                  Kirim ✅
-                </button>
-              @endif
-            </div>
+            @if($index < $total)
+              <button name="nav" value="next" type="submit"
+                      class="px-4 py-3.5 rounded-xl bg-tosca text-white font-bold shadow-sm shadow-tosca/20 hover:bg-tosca-dark flex items-center justify-center gap-2">
+                Lanjut
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+              </button>
+            @else
+              <button name="nav" value="submit" type="submit"
+                      class="px-4 py-3.5 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 flex items-center justify-center gap-2">
+                Kirim
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              </button>
+            @endif
           </div>
         </div>
       </form>
     </section>
 
-    <p class="mt-4 text-xs text-slate-500">Tips: kamu dapat meninjau dan mengubah jawaban sebelum mengirim.</p>
+    <div class="mt-8 text-center hidden sm:block">
+      <p class="inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white border border-gray-100 text-xs font-semibold text-text-soft shadow-sm">
+        <svg class="w-4 h-4 text-tosca" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        Kamu dapat meninjau dan mengubah jawaban sebelum mengirim. Gunakan tombol panah di keyboard untuk navigasi.
+      </p>
+    </div>
   </main>
 
   <!-- Countdown -->
@@ -172,10 +225,20 @@
       if (bar){
         const pct = Math.max(0, Math.min(100, (left/(durMin*60)) * 100));
         bar.style.width = pct + '%';
+        if (pct < 20) {
+            bar.classList.remove('bg-tosca');
+            bar.classList.add('bg-red-500');
+        }
       }
       if (box){
-        if (left <= 60) box.classList.add('timer-danger','animate-pulse');
-        else box.classList.remove('timer-danger','animate-pulse');
+        if (left <= 60) {
+            box.classList.add('text-red-500', 'animate-pulse');
+            box.classList.remove('text-tosca-dark');
+        }
+        else {
+            box.classList.remove('text-red-500', 'animate-pulse');
+            box.classList.add('text-tosca-dark');
+        }
       }
     }
 
@@ -197,20 +260,56 @@
       raf = requestAnimationFrame(tick);
     }
 
+    // Dynamic styling when a radio button is selected
+    const radioInputs = document.querySelectorAll('input[name="answer"]');
+    radioInputs.forEach(input => {
+        input.addEventListener('change', function() {
+            // Reset all styles
+            document.querySelectorAll('label').forEach(label => {
+                label.classList.remove('border-tosca', 'bg-tosca-light/30');
+                label.classList.add('border-gray-200', 'bg-white');
+                const circle = label.querySelector('div');
+                circle.classList.remove('border-tosca', 'bg-tosca', 'text-white');
+                circle.classList.add('border-gray-300', 'text-gray-500');
+                const text = label.querySelector('span.text-base');
+                text.classList.remove('text-tosca-dark');
+                text.classList.add('text-text-main');
+            });
+
+            // Apply selected styles
+            if (this.checked) {
+                const label = this.closest('label');
+                label.classList.add('border-tosca', 'bg-tosca-light/30');
+                label.classList.remove('border-gray-200', 'bg-white');
+                const circle = label.querySelector('div');
+                circle.classList.add('border-tosca', 'bg-tosca', 'text-white');
+                circle.classList.remove('border-gray-300', 'text-gray-500');
+                const text = label.querySelector('span.text-base');
+                text.classList.add('text-tosca-dark');
+                text.classList.remove('text-text-main');
+            }
+        });
+    });
+
     // keyboard navigasi
     document.addEventListener('keydown', (e) => {
       const radios = Array.from(document.querySelectorAll('input[name="answer"]'));
       if (!radios.length) return;
-      const idx = radios.findIndex(r => r.checked);
+      
+      const checkedInput = radios.find(r => r.checked);
+      let idx = checkedInput ? radios.indexOf(checkedInput) : -1;
+      
       if (e.key === 'ArrowDown' || e.key === 'ArrowRight') {
         e.preventDefault();
-        const next = radios[(idx + 1 + radios.length) % radios.length];
-        next.checked = true; next.dispatchEvent(new Event('change'));
+        const nextIdx = idx === -1 ? 0 : (idx + 1) % radios.length;
+        radios[nextIdx].checked = true; 
+        radios[nextIdx].dispatchEvent(new Event('change'));
       }
       if (e.key === 'ArrowUp' || e.key === 'ArrowLeft') {
         e.preventDefault();
-        const prev = radios[(idx - 1 + radios.length) % radios.length];
-        prev.checked = true; prev.dispatchEvent(new Event('change'));
+        const prevIdx = idx === -1 ? radios.length - 1 : (idx - 1 + radios.length) % radios.length;
+        radios[prevIdx].checked = true; 
+        radios[prevIdx].dispatchEvent(new Event('change'));
       }
       if (e.key === 'Enter') {
         const nextBtn = document.querySelector('button[name="nav"][value="next"]');

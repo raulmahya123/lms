@@ -1,123 +1,44 @@
 @extends('layouts.admin')
-@section('title','Edit Membership')
+@section('title', 'Edit Membership — Admin')
 
 @section('content')
-@php($m = $membership ?? null) {{-- SAFE alias --}}
-
-{{-- HEADER --}}
-<div class="mb-6 flex items-center justify-between">
-  <div class="flex items-center gap-2">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 6h10M9 12h10M9 18h10M5 6h.01M5 12h.01M5 18h.01"/>
-    </svg>
-    <div>
-      <h1 class="text-2xl font-extrabold tracking-wide">Membership · Edit</h1>
-      <p class="text-xs opacity-70">Perbarui status & masa aktif membership.</p>
+<div class="max-w-3xl mx-auto space-y-8 pb-12">
+    {{-- Header --}}
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-tosca-light text-tosca-dark text-xs font-bold uppercase tracking-wider mb-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                Edit Akses
+            </div>
+            <h1 class="text-3xl font-extrabold text-text-main tracking-tight">Edit Membership</h1>
+            <p class="text-sm text-text-soft mt-1">Perbarui informasi paket, status, atau masa berlaku pengguna.</p>
+        </div>
+        
+        <div class="shrink-0 flex gap-3">
+            <a href="{{ route('admin.memberships.index') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Kembali
+            </a>
+        </div>
     </div>
-  </div>
 
-  <a href="{{ route('admin.memberships.index') }}"
-     class="inline-flex items-center gap-2 px-3 py-2 border rounded-xl hover:bg-gray-50 text-sm">
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-    </svg>
-    Back
-  </a>
+    @if($errors->any())
+        <div class="bg-red-50 border border-red-200 rounded-2xl p-4 flex gap-3 text-sm text-red-800 shadow-sm">
+            <svg class="w-5 h-5 shrink-0 mt-0.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+            <div>
+                <p class="font-bold">Gagal menyimpan data! Silakan periksa isian Anda:</p>
+                <ul class="mt-2 list-disc pl-4 text-red-700 font-medium space-y-1">
+                    @foreach ($errors->all() as $e)
+                        <li>{{ $e }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        </div>
+    @endif
+
+    <form method="POST" action="{{ route('admin.memberships.update', $membership) }}" class="space-y-6">
+        @csrf @method('PUT')
+        @include('admin.memberships._form', ['submit' => 'Simpan Perubahan'])
+    </form>
 </div>
-
-{{-- FLASH --}}
-@if(session('ok'))
-  <div class="mb-4 border border-green-200 bg-green-50 text-green-800 rounded-2xl px-4 py-3">
-    {{ session('ok') }}
-  </div>
-@endif
-@if($errors->any())
-  <div class="mb-4 border border-red-200 bg-red-50 text-red-800 rounded-2xl px-4 py-3">
-    {{ $errors->first() }}
-  </div>
-@endif
-
-{{-- INFO STRIP (read-only) --}}
-<div class="mb-6 rounded-2xl border bg-white shadow-sm p-4 flex flex-wrap gap-4 text-sm">
-  <div class="flex items-center gap-2">
-    <span class="text-gray-500">User:</span>
-    <span class="font-medium">{{ data_get($m,'user.name','-') }}</span>
-    <span class="text-gray-400">({{ data_get($m,'user.email','-') }})</span>
-  </div>
-  <div class="flex items-center gap-2">
-    <span class="text-gray-500">Plan:</span>
-    <span class="font-medium">{{ data_get($m,'plan.name','-') }}</span>
-  </div>
-  <div class="flex items-center gap-2">
-    <span class="text-gray-500">ID:</span>
-    <span class="font-mono text-xs">#{{ data_get($m,'id','—') }}</span>
-  </div>
-</div>
-
-{{-- FORM CARD --}}
-<form method="POST" action="{{ isset($m) ? route('admin.memberships.update',$m) : '#' }}" class="space-y-6 max-w-3xl">
-  @csrf
-  @method('PUT')
-
-  <div class="rounded-2xl border bg-white shadow p-6 space-y-5">
-    {{-- Status --}}
-    <div class="relative">
-      <label class="block text-sm font-medium mb-1">Status</label>
-      <select name="status" class="w-full pl-9 pr-3 py-2.5 border rounded-xl focus:ring-blue-600 focus:border-blue-600">
-        @foreach(['pending','active','inactive'] as $st)
-          <option value="{{ $st }}" @selected(old('status', data_get($m,'status')) === $st)>{{ ucfirst($st) }}</option>
-        @endforeach
-      </select>
-      <span class="absolute left-3 top-[2.15rem] text-gray-400">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h10M4 18h16"/>
-        </svg>
-      </span>
-    </div>
-
-    {{-- Activated At --}}
-    <div class="relative">
-      <label class="block text-sm font-medium mb-1">Activated At</label>
-      <input type="datetime-local" name="activated_at"
-             value="{{ old('activated_at', optional(data_get($m,'activated_at'))->format('Y-m-d\TH:i')) }}"
-             class="w-full pl-9 pr-3 py-2.5 border rounded-xl focus:ring-blue-600 focus:border-blue-600">
-      <span class="absolute left-3 top-[2.15rem] text-gray-400">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3M4 11h16M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
-        </svg>
-      </span>
-    </div>
-
-    {{-- Expires At --}}
-    <div class="relative">
-      <label class="block text-sm font-medium mb-1">Expires At</label>
-      <input type="datetime-local" name="expires_at"
-             value="{{ old('expires_at', optional(data_get($m,'expires_at'))->format('Y-m-d\TH:i')) }}"
-             class="w-full pl-9 pr-3 py-2.5 border rounded-xl focus:ring-blue-600 focus:border-blue-600">
-      <span class="absolute left-3 top-[2.15rem] text-gray-400">
-        <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3M12 22a10 10 0 110-20 10 10 0 010 20z"/>
-        </svg>
-      </span>
-      <p class="mt-1 text-xs text-gray-500">Harus setelah “Activated At”.</p>
-    </div>
-  </div>
-
-  {{-- ACTIONS --}}
-  <div class="flex items-center gap-3">
-    <a href="{{ route('admin.memberships.index') }}"
-       class="inline-flex items-center gap-2 px-4 py-2 border rounded-xl hover:bg-gray-50">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/>
-      </svg>
-      Cancel
-    </a>
-    <button class="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-500">
-      <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
-      </svg>
-      Update Membership
-    </button>
-  </div>
-</form>
 @endsection

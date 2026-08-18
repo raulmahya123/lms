@@ -1,382 +1,218 @@
 @extends('layouts.admin')
-@section('title', 'Lessons — BERKEMAH')
+
+@section('title', 'Manajemen Pelajaran — Admin')
 
 @section('content')
-    <div x-data="{ q: @js(request('q') ?? ''), showFilters: false }" class="space-y-6">
+    <div x-data="{ q: @js(request('q') ?? ''), showFilters: false }" class="space-y-6 pb-12">
 
         {{-- HEADER / ACTIONS --}}
         <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div>
-                <h1 class="text-2xl font-extrabold tracking-wide flex items-center gap-2">
-                    {{-- Lesson/Play icon --}}
-                    <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M4.5 5.75A2.75 2.75 0 0 1 7.25 3h9.5A2.75 2.75 0 0 1 19.5 5.75v12.5A2.75 2.75 0 0 1 16.75 21h-9.5A2.75 2.75 0 0 1 4.5 18.25V5.75Zm5 1.25a.75.75 0 0 0-.75.75v8.5a.75.75 0 0 0 1.14.64l6.5-4.25a.75.75 0 0 0 0-1.28l-6.5-4.25a.75.75 0 0 0-.39-.11Z" />
-                    </svg>
-                    Lessons
-                </h1>
-                <p class="text-sm opacity-70">Kelola pelajaran per modul. Filter cepat, cari judul, dan aksi edit/hapus.</p>
+                <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-tosca-light text-tosca-dark text-xs font-bold uppercase tracking-wider mb-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                    Materi Pembelajaran
+                </div>
+                <h1 class="text-3xl font-extrabold text-text-main tracking-tight">Manajemen Pelajaran</h1>
+                <p class="text-sm text-text-soft mt-1">Kelola konten video, artikel, dan pengaturan akses setiap pelajaran.</p>
             </div>
 
-            <div class="flex items-center gap-2">
-                <a href="{{ route('admin.lessons.create') }}"
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white shadow hover:bg-blue-700 transition">
-                    {{-- plus icon --}}
-                    <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M12 4.5a.75.75 0 0 1 .75.75V11h5.75a.75.75 0 0 1 0 1.5H12.75v5.75a.75.75 0 0 1-1.5 0V12.5H5.5a.75.75 0 0 1 0-1.5h5.75V5.25A.75.75 0 0 1 12 4.5Z" />
-                    </svg>
-                    New Lesson
-                </a>
+            <div class="flex items-center gap-3">
                 <button type="button" @click="showFilters=!showFilters"
-                    class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border bg-white hover:bg-gray-50 transition">
-                    {{-- filter icon --}}
-                    <svg class="w-5 h-5 opacity-70" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M3.75 6A.75.75 0 0 1 4.5 5.25h15a.75.75 0 0 1 .6 1.2l-5.4 7.2v4.35a.75.75 0 0 1-1.065.683l-3-1.35A.75.75 0 0 1 10.5 16.5v-2.85l-5.4-7.2A.75.75 0 0 1 3.75 6Z" />
-                    </svg>
-                    Filters
+                        class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl border border-gray-200 bg-white text-gray-700 font-bold hover:bg-gray-50 hover:border-gray-300 transition-colors">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                    Filter
                 </button>
+                <a href="{{ route('admin.lessons.create') }}"
+                   class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-tosca text-white font-bold hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/30">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    Pelajaran Baru
+                </a>
             </div>
         </div>
 
         {{-- FILTERS / SEARCH --}}
-        <form method="GET" x-show="showFilters" x-transition
-            class="rounded-2xl border bg-white p-4 grid md:grid-cols-3 gap-4">
-            <div>
-                <label class="block text-sm font-medium mb-1">Module</label>
-                <div class="relative">
-                    <select name="module_id" class="w-full border rounded-xl pl-10 pr-3 py-2">
-                        <option value="">— All Modules —</option>
-                        @php
-                            $__modules = \App\Models\Module::with('course:id,title')
-                                ->orderBy('course_id')
-                                ->orderBy('ordering')
-                                ->get();
-                        @endphp
-                        @foreach ($__modules as $m)
-                            <option value="{{ $m->id }}" @selected(request('module_id') == $m->id)>
-                                {{ $m->course?->title }} — {{ $m->title }}
-                            </option>
-                        @endforeach
-                    </select>
-                    {{-- list icon --}}
-                    <svg class="w-5 h-5 absolute left-3 top-2.5 opacity-60" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M6 7.5h12a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1 0-1.5Zm0 4.5h12a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1 0-1.5Zm0 4.5h8a.75.75 0 0 1 0 1.5H6a.75.75 0 0 1 0-1.5Z" />
-                    </svg>
+        <form method="GET" x-show="showFilters" x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 -translate-y-2" x-transition:enter-end="opacity-100 translate-y-0" x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 translate-y-0" x-transition:leave-end="opacity-0 -translate-y-2" style="display: none;"
+              class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div>
+                    <label class="block text-xs font-bold text-text-soft uppercase tracking-wider mb-2">Pilih Modul</label>
+                    <div class="relative">
+                        <select name="module_id" class="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main appearance-none cursor-pointer">
+                            <option value="">— Semua Modul —</option>
+                            @php
+                                $__modules = \App\Models\Module::with('course:id,title')
+                                    ->orderBy('course_id')
+                                    ->orderBy('ordering')
+                                    ->get();
+                            @endphp
+                            @foreach ($__modules as $m)
+                                <option value="{{ $m->id }}" @selected(request('module_id') == $m->id)>
+                                    {{ Str::limit($m->course?->title, 30) }} — {{ Str::limit($m->title, 30) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
                 </div>
-            </div>
 
-            <div>
-                <label class="block text-sm font-medium mb-1">Search title</label>
-                <div class="relative">
-                    <input type="text" name="q" x-model="q" placeholder="Cari judul lesson…"
-                        class="w-full border rounded-xl pl-10 pr-3 py-2">
-                    {{-- search icon --}}
-                    <svg class="w-5 h-5 absolute left-3 top-2.5 opacity-60" viewBox="0 0 24 24" fill="currentColor">
-                        <path
-                            d="M10 3.75a6.25 6.25 0 1 1 3.94 11.09l3.1 3.1a.75.75 0 1 1-1.06 1.06l-3.1-3.1A6.25 6.25 0 0 1 10 3.75Zm0 1.5a4.75 4.75 0 1 0 0 9.5 4.75 4.75 0 0 0 0-9.5Z" />
-                    </svg>
+                <div>
+                    <label class="block text-xs font-bold text-text-soft uppercase tracking-wider mb-2">Cari Judul</label>
+                    <div class="relative">
+                        <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                        </div>
+                        <input type="text" name="q" x-model="q" placeholder="Masukkan kata kunci..."
+                               class="w-full pl-11 pr-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main placeholder-gray-400" />
+                    </div>
                 </div>
-            </div>
 
-            <div class="flex items-end gap-2">
-                <button
-                    class="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gray-900 text-white hover:bg-gray-800 transition">
-                    Apply
-                </button>
-                @if (request()->hasAny(['module_id', 'q']))
-                    <a href="{{ route('admin.lessons.index') }}"
-                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border hover:bg-gray-50 transition">
-                        Reset
-                    </a>
-                @endif
+                <div class="flex items-end gap-3 pt-6 md:pt-0 border-t border-gray-50 md:border-none">
+                    <button class="w-full md:w-auto px-6 py-3 rounded-xl bg-gray-900 text-white font-bold hover:bg-black transition-colors flex-1 text-center">
+                        Terapkan
+                    </button>
+                    @if (request()->hasAny(['module_id', 'q']))
+                        <a href="{{ route('admin.lessons.index') }}"
+                           class="px-6 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-center">
+                            Reset
+                        </a>
+                    @endif
+                </div>
             </div>
         </form>
 
         {{-- TABLE CARD --}}
-        <div class="rounded-2xl border bg-white overflow-hidden">
-            <div class="px-4 py-3 flex items-center justify-between bg-gradient-to-r from-gray-50 to-white">
-                <div class="text-sm">
-                    <span class="font-semibold">{{ $lessons->total() }}</span>
-                    <span class="opacity-70">lessons found</span>
+        <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden flex flex-col">
+            <div class="p-6 border-b border-gray-50 bg-softbg/30 flex flex-col sm:flex-row items-center justify-between gap-4">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-sm font-bold text-text-main">Total {{ $lessons->total() }} Pelajaran</span>
+                    
+                    @if (request('module_id'))
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-100">
+                            Modul Spesifik
+                        </span>
+                    @endif
+
+                    @if (request('q'))
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-100">
+                            Pencarian: "{{ request('q') }}"
+                        </span>
+                    @endif
                 </div>
-                <div class="text-xs opacity-70">Page {{ $lessons->currentPage() }} / {{ $lessons->lastPage() }}</div>
+                <div class="text-xs font-bold text-text-soft uppercase tracking-wider">
+                    Halaman {{ $lessons->currentPage() }} dari {{ $lessons->lastPage() }}
+                </div>
             </div>
 
             <div class="overflow-x-auto">
-                <table class="min-w-full text-sm">
-                    <thead class="bg-gray-100 text-gray-700 sticky top-0">
-                        <tr>
-                            <th class="p-3 text-left">Course</th>
-                            <th class="p-3 text-left">Module</th>
-                            <th class="p-3 text-left">Title & Meta</th>
-                            <th class="p-3 text-left">Content URLs</th>
-                            <th class="p-3 text-left w-64">Drive</th>
-                            <th class="p-3 text-left w-28">Ordering</th>
-                            <th class="p-3 text-left w-24">Free?</th>
-                            <th class="p-3 text-center w-44">Actions</th>
+                <table class="w-full text-left border-collapse min-w-[1000px]">
+                    <thead>
+                        <tr class="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-text-soft">
+                            <th class="px-6 py-4 font-bold">Informasi Pelajaran</th>
+                            <th class="px-6 py-4 font-bold">Struktur (Kursus & Modul)</th>
+                            <th class="px-6 py-4 font-bold text-center">Urutan</th>
+                            <th class="px-6 py-4 font-bold text-center">Akses Free</th>
+                            <th class="px-6 py-4 font-bold text-right">Aksi</th>
                         </tr>
                     </thead>
-                    <tbody class="[&>tr:hover]:bg-gray-50">
+                    <tbody class="divide-y divide-gray-50">
                         @forelse($lessons as $l)
                             @php
-                                // --- helper: flatten value to text ---
-                                $toText = function ($v): string {
-                                    if (is_array($v)) {
-                                        $flat = [];
-                                        $it = function ($x) use (&$flat, &$it) {
-                                            if (is_array($x)) {
-                                                foreach ($x as $y) {
-                                                    $it($y);
-                                                }
-                                            } else {
-                                                $flat[] = is_scalar($x) ? (string) $x : '';
-                                            }
-                                        };
-                                        $it($v);
-                                        $s = trim(implode(' • ', array_filter($flat)));
-                                        return $s;
-                                    }
-                                    if (is_object($v)) {
-                                        return '';
-                                    }
-                                    return (string) ($v ?? '');
-                                };
-
-                                // --- Content (array | JSON string | string) -> text ringkas ---
-                                $contentRaw = $l->content;
-                                if (is_string($contentRaw)) {
-                                    $decoded = json_decode($contentRaw, true);
-                                    $contentArr = is_array($decoded) ? $decoded : [$contentRaw];
-                                } elseif (is_array($contentRaw)) {
-                                    $contentArr = $contentRaw;
-                                } else {
-                                    $contentArr = [];
-                                }
-                                $contentText = collect($contentArr)
-                                    ->flatten()
-                                    ->filter(fn($v) => is_scalar($v) && trim((string) $v) !== '')
-                                    ->implode("\n");
-
-                                // --- Content URLs normalize ---
                                 $videos = $l->content_url;
                                 if (is_string($videos)) {
                                     $decoded = json_decode($videos, true);
                                     $videos = is_array($decoded) ? $decoded : [];
                                 }
-
-                                // --- Tools / Benefits normalize ---
-                                $tools = $l->tools;
-                                if (is_string($tools)) {
-                                    $json = json_decode($tools, true);
-                                    $tools = is_array($json)
-                                        ? $json
-                                        : array_filter(array_map('trim', explode(',', $tools)));
-                                }
-                                if (!is_array($tools)) {
-                                    $tools = [];
-                                }
-
-                                $benefits = $l->benefits;
-                                if (is_string($benefits)) {
-                                    $json = json_decode($benefits, true);
-                                    $benefits = is_array($json)
-                                        ? $json
-                                        : array_filter(array_map('trim', explode(',', $benefits)));
-                                }
-                                if (!is_array($benefits)) {
-                                    $benefits = [];
-                                }
-
-                                // --- About/Reviews/Syllabus to string (aman untuk strip_tags) ---
-                                $aboutStr = $toText($l->about);
-                                $reviewsStr = $toText($l->reviews);
-                                $syllabusStr = $toText($l->syllabus);
-
-                                // --- Drive summary ---
-                                $wl = $l->driveWhitelists ?? collect();
-                                $total = $wl->count();
-                                $approved = $wl->where('status', 'approved')->count();
-                                $pending = $wl->where('status', 'pending')->count();
-                                $rejected = $wl->where('status', 'rejected')->count();
-
-                                $driveStatus = $l->drive_status ?? null;
-                                $statusClass = match ($driveStatus) {
-                                    'approved' => 'bg-green-100 text-green-700',
-                                    'rejected' => 'bg-red-100 text-red-700',
-                                    'pending' => 'bg-yellow-100 text-yellow-700',
-                                    default => 'bg-gray-100 text-gray-700',
-                                };
+                                $videoCount = is_array($videos) ? count($videos) : 0;
                             @endphp
-
-                            <tr class="border-t align-top">
-                                <td class="p-3">{{ $l->module?->course?->title ?? '-' }}</td>
-                                <td class="p-3">{{ $l->module?->title ?? '-' }}</td>
-
-                                {{-- TITLE + META --}}
-                                <td class="p-3">
-                                    <div class="font-medium">{{ $l->title }}</div>
-
-                                    {{-- about (ringkas) --}}
-                                    @if ($aboutStr !== '')
-                                        <div class="text-xs text-gray-600 mt-1">
-                                            {{ \Illuminate\Support\Str::limit(strip_tags($aboutStr), 120) }}
-                                        </div>
-                                    @endif
-
-                                    {{-- content (ringkas) --}}
-                                    @if ($contentText !== '')
-                                        <div class="text-xs text-gray-600 mt-1">
-                                            <span class="font-medium">Content:</span>
-                                            {{ \Illuminate\Support\Str::limit(strip_tags($contentText), 120) }}
-                                        </div>
-                                    @endif
-
-                                    {{-- tools / benefits badges --}}
-                                    <div class="flex flex-wrap gap-1.5 mt-1">
-                                        @foreach ($tools as $t)
-                                            <span
-                                                class="inline-flex items-center px-2 py-0.5 rounded-full bg-sky-50 border border-sky-200 text-sky-800 text-[11px]">
-                                                {{ $t }}
-                                            </span>
-                                        @endforeach
-                                        @foreach ($benefits as $b)
-                                            <span
-                                                class="inline-flex items-center px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-[11px]">
-                                                {{ $b }}
-                                            </span>
-                                        @endforeach
-                                    </div>
-
-                                    {{-- reviews & syllabus (ringkas) --}}
-                                    @if ($reviewsStr !== '' || $syllabusStr !== '')
-                                        <div class="flex flex-wrap items-center gap-2 mt-1 text-[11px] text-gray-600">
-                                            @if ($reviewsStr !== '')
-                                                <span title="Reviews">
-                                                    <svg class="inline w-3.5 h-3.5 -mt-0.5" viewBox="0 0 24 24"
-                                                        fill="currentColor">
-                                                        <path
-                                                            d="m11.48 3.5.84 2.54c.2.61.76 1.02 1.4 1.02h2.67c1.43 0 2.02 1.83.87 2.66l-2.16 1.56c-.53.38-.75 1.07-.54 1.69l.83 2.53c.45 1.36-1.12 2.49-2.28 1.66l-2.16-1.56a1.5 1.5 0 0 0-1.76 0l-2.16 1.56c-1.16.83-2.73-.3-2.28-1.66l.83-2.53c.21-.62-.01-1.31-.54-1.69L3.74 9.72c-1.16-.83-.56-2.66.87-2.66h2.67c.64 0 1.21-.41 1.4-1.02l.84-2.54c.45-1.36 2.39-1.36 2.95 0Z" />
-                                                    </svg>
-                                                    {{ \Illuminate\Support\Str::limit(strip_tags($reviewsStr), 80) }}
-                                                </span>
-                                            @endif
-                                            @if ($syllabusStr !== '')
-                                                <span
-                                                    title="Syllabus">{{ \Illuminate\Support\Str::limit(strip_tags($syllabusStr), 80) }}</span>
-                                            @endif
-                                        </div>
-                                    @endif
-                                </td>
-
-                                {{-- Content URLs --}}
-                                <td class="p-3">
-                                    @if (!empty($videos))
-                                        <div class="flex flex-wrap gap-1.5 max-w-[420px]">
-                                            @foreach ($videos as $i => $video)
-                                                <a href="{{ route('admin.lessons.show', [$l, 'v' => $i]) }}"
-                                                    class="inline-flex items-center gap-1 px-2.5 py-1 rounded-full border hover:bg-gray-50 text-xs"
-                                                    title="Play: {{ $video['title'] ?? 'Untitled' }}">
-                                                    <svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="currentColor">
-                                                        <path d="M8.5 7.5v9l8-4.5-8-4.5Z" />
-                                                    </svg>
-                                                    <span
-                                                        class="truncate max-w-[160px]">{{ $video['title'] ?? 'Untitled' }}</span>
-                                                </a>
-                                            @endforeach
-                                        </div>
-                                    @else
-                                        <span class="text-xs opacity-60">-</span>
-                                    @endif
-                                </td>
-
-                                {{-- Drive summary --}}
-                                <td class="p-3">
-                                    <div class="flex items-center gap-2 flex-wrap">
-                                        @php $hasLink = !empty($l->drive_link ?? null); @endphp
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs"
-                                            title="{{ $hasLink ? $l->drive_link : 'No drive link' }}">
-                                            {{ $hasLink ? 'Link' : 'No Link' }}
-                                        </span>
-
-                                        @if ($hasLink)
-                                            <a href="{{ $l->drive_link }}" target="_blank" rel="noopener"
-                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border text-xs hover:bg-gray-50">
-                                                Open
-                                            </a>
-                                        @endif
-
-                                        <span
-                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs {{ $statusClass }}">
-                                            {{ $driveStatus ? ucfirst($driveStatus) : '—' }}
-                                        </span>
-
-                                        <span
-                                            class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-800 text-xs"
-                                            title="Approved: {{ $approved }} • Pending: {{ $pending }} • Rejected: {{ $rejected }}">
-                                            WL {{ $total }}/4
-                                        </span>
-
-                                        @if ($approved > 0)
-                                            <span
-                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-xs">
-                                                Approved: {{ $approved }}
+                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                
+                                {{-- Judul & Meta --}}
+                                <td class="px-6 py-4">
+                                    <div class="font-bold text-text-main text-base mb-1">{{ $l->title }}</div>
+                                    <div class="flex items-center gap-2 mt-2">
+                                        @if($videoCount > 0)
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-red-50 text-red-600 border border-red-100">
+                                                <svg class="w-3 h-3" fill="currentColor" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"></path></svg>
+                                                {{ $videoCount }} Video
                                             </span>
                                         @endif
-
-                                        @if ($pending > 0)
-                                            <span
-                                                class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-yellow-100 text-yellow-700 text-xs">
-                                                Pending: {{ $pending }}
+                                        
+                                        @if(!empty($l->content))
+                                            <span class="inline-flex items-center gap-1 px-2 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wider bg-blue-50 text-blue-600 border border-blue-100">
+                                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                                                Artikel
                                             </span>
                                         @endif
                                     </div>
                                 </td>
 
-                                <td class="p-3">{{ $l->ordering }}</td>
+                                {{-- Struktur --}}
+                                <td class="px-6 py-4">
+                                    <div class="text-sm">
+                                        <div class="font-bold text-text-main truncate max-w-[250px]" title="{{ $l->module?->course?->title ?? '-' }}">
+                                            {{ $l->module?->course?->title ?? '-' }}
+                                        </div>
+                                        <div class="text-xs text-text-soft font-medium mt-1 truncate max-w-[250px]" title="{{ $l->module?->title ?? '-' }}">
+                                            Modul: {{ $l->module?->title ?? '-' }}
+                                        </div>
+                                    </div>
+                                </td>
 
-                                <td class="p-3">
+                                {{-- Urutan --}}
+                                <td class="px-6 py-4 text-center">
+                                    <div class="inline-flex items-center justify-center min-w-[3rem] h-8 rounded-lg bg-gray-50 border border-gray-200 font-bold text-text-main text-sm">
+                                        {{ $l->ordering }}
+                                    </div>
+                                </td>
+
+                                {{-- Akses Free --}}
+                                <td class="px-6 py-4 text-center">
                                     @if ($l->is_free)
-                                        <span
-                                            class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">Yes</span>
+                                        <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border bg-green-50 text-green-700 border-green-200">
+                                            Gratis
+                                        </span>
                                     @else
-                                        <span
-                                            class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">No</span>
+                                        <span class="inline-flex items-center justify-center px-3 py-1.5 rounded-lg text-[10px] font-bold uppercase tracking-wider border bg-gray-100 text-gray-500 border-gray-200">
+                                            Premium
+                                        </span>
                                     @endif
                                 </td>
 
-                                <td class="p-3 text-center">
-                                    <div class="flex items-center justify-center gap-2">
-                                        <a href="{{ route('admin.lessons.show', $l) }}"
-                                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition"
-                                            title="View / Play">
-                                            View
+                                {{-- Aksi --}}
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center justify-end gap-2">
+                                        <a href="{{ route('admin.lessons.show', $l) }}" class="inline-flex items-center justify-center p-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 hover:text-blue-600 transition-colors" title="Lihat Pelajaran">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
                                         </a>
-                                        <a href="{{ route('admin.lessons.edit', $l) }}"
-                                            class="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border hover:bg-gray-50 transition"
-                                            title="Edit">
-                                            Edit
+                                        <a href="{{ route('admin.lessons.edit', $l) }}" class="inline-flex items-center justify-center p-2 bg-white border border-gray-200 text-gray-700 rounded-lg hover:bg-gray-50 hover:border-gray-300 hover:text-tosca transition-colors" title="Edit Pelajaran">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
                                         </a>
-                                        <form method="POST" action="{{ route('admin.lessons.destroy', $l) }}"
-                                            class="js-delete-form inline" data-title="{{ $l->title }}">
-                                            @csrf @method('DELETE')
-
-                                            <button type="button" {{-- penting: button, bukan submit --}}
-                                                class="js-delete-btn inline-flex items-center gap-1 px-3 py-1.5 rounded-lg border border-red-200 text-red-700 hover:bg-red-50 transition"
-                                                title="Delete">
-                                                Delete
+                                        <form method="POST" action="{{ route('admin.lessons.destroy', $l) }}" class="inline js-delete-form" data-title="{{ $l->title }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="button" class="js-delete-btn inline-flex items-center justify-center p-2 bg-white border border-gray-200 text-gray-400 rounded-lg hover:bg-red-50 hover:border-red-200 hover:text-red-600 transition-colors" title="Hapus Pelajaran">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
                                             </button>
                                         </form>
-
                                     </div>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="9" class="p-10 text-center text-sm opacity-70">
-                                    Belum ada lesson.
+                                <td colspan="5">
+                                    <div class="py-16 text-center flex flex-col items-center justify-center">
+                                        <div class="w-20 h-20 rounded-3xl bg-softbg flex items-center justify-center mb-6">
+                                            <svg class="w-10 h-10 text-tosca" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        </div>
+                                        <h3 class="text-xl font-bold text-text-main mb-2">Belum Ada Pelajaran</h3>
+                                        <p class="text-text-soft max-w-sm mb-6">Mulai tambahkan pelajaran baru ke dalam modul untuk melengkapi materi kursus Anda.</p>
+                                        <a href="{{ route('admin.lessons.create') }}" class="px-6 py-3 rounded-xl bg-tosca text-white font-bold hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/20 flex items-center gap-2">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                                            Buat Pelajaran Pertama
+                                        </a>
+                                    </div>
                                 </td>
                             </tr>
                         @endforelse
@@ -384,30 +220,21 @@
                 </table>
             </div>
 
-            {{-- Pagination strip --}}
-            <div class="px-4 py-3 border-t bg-gray-50 flex flex-col md:flex-row items-center justify-between gap-3">
-                <div class="text-sm opacity-70">
-                    Showing
-                    <span class="font-semibold">{{ $lessons->firstItem() ?? 0 }}</span>
-                    to
-                    <span class="font-semibold">{{ $lessons->lastItem() ?? 0 }}</span>
-                    of
-                    <span class="font-semibold">{{ $lessons->total() }}</span>
-                    results
-                </div>
-                <div>
+            @if($lessons->hasPages())
+                <div class="px-6 py-4 border-t border-gray-50 bg-gray-50/50 flex justify-center">
                     {{ $lessons->withQueryString()->links() }}
                 </div>
-            </div>
+            @endif
         </div>
     </div>
+    
     @push('scripts')
         <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
         <script>
             (function() {
                 function bindDeleteButtons() {
                     document.querySelectorAll('.js-delete-btn').forEach(btn => {
-                        if (btn.dataset.bound) return; // cegah double binding
+                        if (btn.dataset.bound) return; 
                         btn.dataset.bound = '1';
 
                         btn.addEventListener('click', (e) => {
@@ -415,25 +242,27 @@
                             const title = form?.dataset.title || 'item ini';
 
                             Swal.fire({
-                                title: 'Hapus lesson?',
-                                html: `Lesson <b>${title}</b> akan dihapus permanen.`,
+                                title: 'Hapus Pelajaran?',
+                                html: `Pelajaran <br><b class="text-text-main">${title}</b><br> beserta seluruh materinya akan dihapus permanen.`,
                                 icon: 'warning',
                                 showCancelButton: true,
-                                confirmButtonText: 'Ya, hapus',
+                                confirmButtonText: 'Ya, Hapus',
                                 cancelButtonText: 'Batal',
                                 reverseButtons: true,
                                 focusCancel: true,
-                                cancelButtonColor: '#5726dcff',
-                                confirmButtonColor: '#dc2626'
+                                customClass: {
+                                    popup: 'rounded-3xl',
+                                    confirmButton: 'rounded-xl font-bold px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white border-0',
+                                    cancelButton: 'rounded-xl font-bold px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 border-0'
+                                }
                             }).then((res) => {
                                 if (res.isConfirmed) {
-                                    // anti double-submit + UX kecil
                                     if (!form.dataset.submitting) {
                                         form.dataset.submitting = '1';
                                         const b = form.querySelector('.js-delete-btn');
                                         if (b) {
                                             b.disabled = true;
-                                            b.textContent = 'Menghapus…';
+                                            b.innerHTML = '<span class="animate-spin mr-2">⏳</span>';
                                         }
                                         form.submit();
                                     }
@@ -444,13 +273,11 @@
                 }
 
                 document.addEventListener('DOMContentLoaded', bindDeleteButtons);
-                // dukung navigasi SPA (opsional)
                 document.addEventListener('turbo:load', bindDeleteButtons);
                 document.addEventListener('livewire:navigated', bindDeleteButtons);
             })();
         </script>
 
-        {{-- (Opsional) Toast sukses setelah delete --}}
         @if (session('ok'))
             <script>
                 document.addEventListener('DOMContentLoaded', () => {
@@ -460,8 +287,9 @@
                         icon: 'success',
                         title: @json(session('ok')),
                         showConfirmButton: false,
-                        timer: 2200,
-                        timerProgressBar: true
+                        timer: 2500,
+                        timerProgressBar: true,
+                        customClass: { popup: 'rounded-2xl' }
                     });
                 });
             </script>

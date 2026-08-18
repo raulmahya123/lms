@@ -39,10 +39,26 @@ class PsyProfile extends Model
     }
     public static function findForScore(string $testId, int $total): ?self
     {
-        return self::where('test_id', $testId)
+        $profile = self::where('test_id', $testId)
             ->where('min_total', '<=', $total)
+            ->where(function ($q) use ($total) {
+                $q->whereNull('max_total')->orWhere('max_total', '>=', $total);
+            })
+            ->orderByDesc('min_total')
+            ->first();
+
+        if ($profile) {
+            return $profile;
+        }
+
+        $profile = self::where('test_id', $testId)
+            ->where('min_total', '<=', $total)
+            ->orderByDesc('min_total')
+            ->first();
+
+        return $profile ?: self::where('test_id', $testId)
             ->where('max_total', '>=', $total)
-            ->orderBy('min_total')
+            ->orderBy('max_total')
             ->first();
     }
 }

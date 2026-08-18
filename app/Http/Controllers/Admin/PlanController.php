@@ -5,17 +5,27 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\{Plan, Course, PlanCourse};
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class PlanController extends Controller
 {
     public function index(\Illuminate\Http\Request $r)
 {
+    $filters = $r->validate([
+        'q'      => ['nullable', 'string', 'max:100'],
+        'period' => ['nullable', Rule::in(['monthly', 'yearly'])],
+        'min'    => ['nullable', 'numeric', 'min:0'],
+        'max'    => ['nullable', 'numeric', 'min:0'],
+    ]);
+    $term = trim((string) ($filters['q'] ?? ''));
+
     $plans = \App\Models\Plan::query()
+        ->select(['id', 'name', 'price', 'period', 'features', 'created_at'])
         ->withCount(['planCourses', 'memberships'])
-        ->when($r->filled('q'), fn($q) => $q->where('name','like','%'.$r->q.'%'))
-        ->when($r->filled('period'), fn($q) => $q->where('period', $r->period))
-        ->when($r->filled('min'), fn($q) => $q->where('price','>=',(float)$r->min))
-        ->when($r->filled('max'), fn($q) => $q->where('price','<=',(float)$r->max))
+        ->when($term !== '', fn($q) => $q->where('name','like','%'.$term.'%'))
+        ->when($filters['period'] ?? null, fn($q, $period) => $q->where('period', $period))
+        ->when(isset($filters['min']), fn($q) => $q->where('price','>=',(float)$filters['min']))
+        ->when(isset($filters['max']), fn($q) => $q->where('price','<=',(float)$filters['max']))
         ->orderBy('id','desc')
         ->paginate(12)
         ->withQueryString();

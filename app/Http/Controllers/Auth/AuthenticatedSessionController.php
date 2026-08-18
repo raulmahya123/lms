@@ -65,10 +65,15 @@ class AuthenticatedSessionController extends Controller
             ->delete();
 
         // redirect
-        $role = optional($user->role)->name;
-        return in_array($role, ['admin', 'mentor'], true)
-            ? redirect()->route('admin.dashboard')
-            : redirect()->route('home');
+        if ($user->isAdmin()) {
+            return redirect()->route('admin.dashboard');
+        }
+
+        if ($user->isMentor()) {
+            return redirect()->route('admin.courses.index');
+        }
+
+        return redirect()->route('dashboard');
     }
 
 

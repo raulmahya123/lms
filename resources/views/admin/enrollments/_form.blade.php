@@ -10,95 +10,154 @@
   $notes  = old('notes',          optional($enrollment)->notes);
 @endphp
 
-<div class="grid md:grid-cols-2 gap-4">
-  {{-- USER --}}
-  <div>
-    <label class="block text-sm font-medium mb-1">Pengguna <span class="text-red-500">*</span></label>
-    <select name="user_id" required class="w-full border rounded-xl px-3 py-2">
-      <option value="" disabled {{ $uVal ? '' : 'selected' }}>— pilih user —</option>
-      @foreach ($users as $user)
-        <option value="{{ $user->id }}" {{ (string)$uVal === (string)$user->id ? 'selected' : '' }}>
-          {{ $user->name ?? $user->email ?? ('User #'.$user->id) }}
-        </option>
-      @endforeach
-    </select>
-    @error('user_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
+<div class="space-y-8">
+    {{-- Hubungan Data --}}
+    <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
+        <div class="px-8 py-5 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+            <h2 class="text-lg font-extrabold text-text-main flex items-center gap-2">
+                <svg class="w-5 h-5 text-tosca" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"></path></svg>
+                Hubungan Data
+            </h2>
+        </div>
+        <div class="p-8 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {{-- USER --}}
+                <div>
+                    <label class="block text-sm font-bold text-text-main mb-2">Pengguna <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <select name="user_id" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main appearance-none cursor-pointer">
+                            <option value="" disabled {{ $uVal ? '' : 'selected' }}>— Pilih Pengguna —</option>
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}" {{ (string)$uVal === (string)$user->id ? 'selected' : '' }}>
+                                    {{ $user->name ?? $user->email ?? ('User #'.$user->id) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
 
-  {{-- COURSE --}}
-  <div>
-    <label class="block text-sm font-medium mb-1">Course/Kelas <span class="text-red-500">*</span></label>
-    <select name="course_id" required class="w-full border rounded-xl px-3 py-2">
-      <option value="" disabled {{ $cVal ? '' : 'selected' }}>— pilih course —</option>
-      @foreach ($courses as $course)
-        <option value="{{ $course->id }}" {{ (string)$cVal === (string)$course->id ? 'selected' : '' }}>
-          {{ $course->title ?? $course->name ?? ('Course #'.$course->id) }}
-        </option>
-      @endforeach
-    </select>
-    @error('course_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
+                {{-- COURSE --}}
+                <div>
+                    <label class="block text-sm font-bold text-text-main mb-2">Course / Kelas <span class="text-red-500">*</span></label>
+                    <div class="relative">
+                        <select name="course_id" required class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main appearance-none cursor-pointer">
+                            <option value="" disabled {{ $cVal ? '' : 'selected' }}>— Pilih Course —</option>
+                            @foreach ($courses as $course)
+                                <option value="{{ $course->id }}" {{ (string)$cVal === (string)$course->id ? 'selected' : '' }}>
+                                    {{ $course->title ?? $course->name ?? ('Course #'.$course->id) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
 
-  {{-- MEMBERSHIP/PLAN (opsional) --}}
-  <div>
-    <label class="block text-sm font-medium mb-1">Membership/Plan (opsional)</label>
-    <select name="membership_id" class="w-full border rounded-xl px-3 py-2">
-      <option value="" {{ $mVal ? '' : 'selected' }}>— tanpa membership —</option>
-      @foreach ($memberships as $plan)
-        <option value="{{ $plan->id }}" {{ (string)$mVal === (string)$plan->id ? 'selected' : '' }}>
-          {{ $plan->name ?? ('Plan #'.$plan->id) }}
-        </option>
-      @endforeach
-    </select>
-    @error('membership_id') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
+                {{-- MEMBERSHIP --}}
+                <div class="md:col-span-2">
+                    <label class="block text-sm font-bold text-text-main mb-2">Membership / Plan Terkait (Opsional)</label>
+                    <div class="relative">
+                        <select name="membership_id" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main appearance-none cursor-pointer">
+                            <option value="" {{ $mVal ? '' : 'selected' }}>— Tanpa Membership (Pembelian Langsung) —</option>
+                            @foreach ($memberships as $plan)
+                                <option value="{{ $plan->id }}" {{ (string)$mVal === (string)$plan->id ? 'selected' : '' }}>
+                                    {{ $plan->name ?? ('Plan #'.$plan->id) }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                    <p class="text-xs text-text-soft mt-2">Pilih ini jika pendaftaran diberikan otomatis karena pengguna berlangganan suatu membership.</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
-  {{-- STATUS ENROLLMENT --}}
-  <div>
-    <label class="block text-sm font-medium mb-1">Status</label>
-    <select name="status" class="w-full border rounded-xl px-3 py-2">
-      @foreach (['pending'=>'Pending','active'=>'Active','completed'=>'Completed','cancelled'=>'Cancelled','expired'=>'Expired'] as $k => $v)
-        <option value="{{ $k }}" {{ $status === $k ? 'selected' : '' }}>{{ $v }}</option>
-      @endforeach
-    </select>
-    @error('status') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
+    {{-- Status & Periode --}}
+    <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
+        <div class="px-8 py-5 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+            <h2 class="text-lg font-extrabold text-text-main flex items-center gap-2">
+                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Status & Periode
+            </h2>
+        </div>
+        
+        <div class="p-8 space-y-6">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                {{-- STATUS ENROLLMENT --}}
+                <div>
+                    <label class="block text-sm font-bold text-text-main mb-2">Status Pendaftaran</label>
+                    <div class="relative">
+                        <select name="status" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main appearance-none cursor-pointer">
+                            @foreach (['pending'=>'Menunggu (Pending)','active'=>'Aktif (Active)','completed'=>'Selesai (Completed)','cancelled'=>'Dibatalkan (Cancelled)','expired'=>'Kadaluarsa (Expired)'] as $k => $v)
+                                <option value="{{ $k }}" {{ $status === $k ? 'selected' : '' }}>{{ $v }}</option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
 
-  {{-- PAYMENT STATUS --}}
-  <div>
-    <label class="block text-sm font-medium mb-1">Payment Status</label>
-    <select name="payment_status" class="w-full border rounded-xl px-3 py-2">
-      @foreach (['pending'=>'Pending','paid'=>'Paid','failed'=>'Failed','refunded'=>'Refunded'] as $k => $v)
-        <option value="{{ $k }}" {{ $pay === $k ? 'selected' : '' }}>{{ $v }}</option>
-      @endforeach
-    </select>
-    @error('payment_status') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
+                {{-- PAYMENT STATUS --}}
+                <div>
+                    <label class="block text-sm font-bold text-text-main mb-2">Status Pembayaran</label>
+                    <div class="relative">
+                        <select name="payment_status" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main appearance-none cursor-pointer">
+                            @foreach (['pending'=>'Menunggu (Pending)','paid'=>'Berhasil (Paid)','failed'=>'Gagal (Failed)','refunded'=>'Dikembalikan (Refunded)'] as $k => $v)
+                                <option value="{{ $k }}" {{ $pay === $k ? 'selected' : '' }}>{{ $v }}</option>
+                            @endforeach
+                        </select>
+                        <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+                            <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                        </div>
+                    </div>
+                </div>
 
-  {{-- START & END DATE --}}
-  <div>
-    <label class="block text-sm font-medium mb-1">Mulai</label>
-    <input type="date" name="starts_at" value="{{ $start }}" class="w-full border rounded-xl px-3 py-2">
-    @error('starts_at') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
+                {{-- START DATE --}}
+                <div>
+                    <label class="block text-sm font-bold text-text-main mb-2">Tanggal Mulai</label>
+                    <input type="date" name="starts_at" value="{{ $start }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main">
+                </div>
 
-  <div>
-    <label class="block text-sm font-medium mb-1">Berakhir</label>
-    <input type="date" name="ends_at" value="{{ $end }}" class="w-full border rounded-xl px-3 py-2">
-    @error('ends_at') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
+                {{-- END DATE --}}
+                <div>
+                    <label class="block text-sm font-bold text-text-main mb-2">Tanggal Berakhir</label>
+                    <input type="date" name="ends_at" value="{{ $end }}" class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main">
+                </div>
+            </div>
+        </div>
+    </div>
 
-  {{-- REFERENCE / INVOICE --}}
-  <div class="md:col-span-2">
-    <label class="block text-sm font-medium mb-1">No. Referensi/Invoice (opsional)</label>
-    <input type="text" name="reference" value="{{ $ref }}" class="w-full border rounded-xl px-3 py-2" placeholder="INV-2025-0001">
-    @error('reference') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
+    {{-- Detail Tambahan --}}
+    <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
+        <div class="px-8 py-5 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+            <h2 class="text-lg font-extrabold text-text-main flex items-center gap-2">
+                <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Informasi Tambahan
+            </h2>
+        </div>
+        
+        <div class="p-8 space-y-6">
+            {{-- REFERENCE --}}
+            <div>
+                <label class="block text-sm font-bold text-text-main mb-2">No. Referensi / Invoice (Opsional)</label>
+                <input type="text" name="reference" value="{{ $ref }}" placeholder="Misal: INV-2024-0001"
+                       class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main placeholder-gray-400">
+            </div>
 
-  {{-- NOTES --}}
-  <div class="md:col-span-2">
-    <label class="block text-sm font-medium mb-1">Catatan (opsional)</label>
-    <textarea name="notes" rows="4" class="w-full border rounded-xl px-3 py-2" placeholder="Catatan tambahan...">{{ $notes }}</textarea>
-    @error('notes') <p class="text-xs text-red-600 mt-1">{{ $message }}</p> @enderror
-  </div>
+            {{-- NOTES --}}
+            <div>
+                <label class="block text-sm font-bold text-text-main mb-2">Catatan Internal (Opsional)</label>
+                <textarea name="notes" rows="4" placeholder="Tambahkan catatan khusus untuk pendaftaran ini..."
+                          class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-medium text-text-main placeholder-gray-400 resize-none">{{ $notes }}</textarea>
+            </div>
+        </div>
+    </div>
 </div>

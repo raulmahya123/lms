@@ -4,7 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
-use Illuminate\Database\Eloquent\Relations\{BelongsTo, HasMany, HasManyThrough};
+use Illuminate\Database\Eloquent\Relations\{BelongsTo, BelongsToMany, HasMany, HasManyThrough};
 
 class Course extends Model
 {
@@ -65,6 +65,31 @@ class Course extends Model
     public function planCourses(): HasMany
     {
         return $this->hasMany(PlanCourse::class, 'course_id', 'id');
+    }
+
+    public function mentors(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'course_mentors', 'course_id', 'user_id')
+            ->withTimestamps();
+    }
+
+    public function scopeManageableBy($query, User $user)
+    {
+        if ($user->isAdmin()) {
+            return $query;
+        }
+
+        return $query->where(function ($q) use ($user) {
+            $q->where('created_by', $user->id)
+                ->orWhereHas('mentors', fn ($mentor) => $mentor->whereKey($user->id));
+        });
+    }
+
+    public function manageableBy(User $user): bool
+    {
+        return $user->isAdmin()
+            || $this->created_by === $user->id
+            || $this->mentors()->whereKey($user->id)->exists();
     }
 
     /** Total lessons lewat modules (courses -> modules -> lessons) */

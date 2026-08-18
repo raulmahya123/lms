@@ -11,17 +11,26 @@ class EnrollmentController extends Controller
 {
     public function index(\Illuminate\Http\Request $r)
 {
+    $filters = $r->validate([
+        'q'      => ['nullable', 'string', 'max:100'],
+        'status' => ['nullable', Rule::in(['pending','active','inactive'])],
+    ]);
+    $term = trim((string) ($filters['q'] ?? ''));
+
     $items = \App\Models\Enrollment::query()
+        ->select(['id', 'user_id', 'course_id', 'status', 'activated_at', 'access_via', 'access_expires_at', 'created_at'])
         ->with(['user:id,name,email', 'course:id,title'])
-        ->when($r->filled('q'), function($q) use ($r) {
-            $q->whereHas('user', function($u) use ($r) {
-                $u->where('name','like','%'.$r->q.'%')
-                  ->orWhere('email','like','%'.$r->q.'%');
-            })->orWhereHas('course', function($c) use ($r) {
-                $c->where('title','like','%'.$r->q.'%');
+        ->when($term !== '', function($q) use ($term) {
+            $q->where(function ($w) use ($term) {
+                $w->whereHas('user', function($u) use ($term) {
+                    $u->where('name','like','%'.$term.'%')
+                      ->orWhere('email','like','%'.$term.'%');
+                })->orWhereHas('course', function($c) use ($term) {
+                    $c->where('title','like','%'.$term.'%');
+                });
             });
         })
-        ->when($r->filled('status'), fn($q) => $q->where('status', $r->status))
+        ->when($filters['status'] ?? null, fn($q, $status) => $q->where('status', $status))
         ->latest('id')
         ->paginate(12)
         ->withQueryString();

@@ -45,11 +45,9 @@
 
 @section('content')
 @php
-  $ids      = $test->questions()->orderBy('ordering')->orderBy('created_at')->pluck('id')->all();
-  $pos      = array_search($question->id, $ids, true);
-  $current  = $pos === false ? 1 : ($pos + 1);
-  $total    = count($ids);
-  $pct      = $total ? intval($current / $total * 100) : 0;
+  $current  = (int)($current ?? 1);
+  $total    = (int)($total ?? 0);
+  $pct      = (int)($pct ?? ($total ? floor($current / $total * 100) : 0));
 
   $answerOptionId  = old('option_id', $selectedOptionId ?? ($currentAnswer->option_id ?? null));
   $answerValue     = old('value',     $typedValue       ?? ($currentAnswer->value     ?? null));

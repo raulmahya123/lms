@@ -1,988 +1,474 @@
 {{-- resources/views/welcome.blade.php --}}
 @extends('app.layouts.base')
 
-@section('title', 'Belajar Coding')
+@section('title', 'BERKEMAH - LMS Coding Modern')
 
 @push('styles')
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
-    [x-cloak]{display:none}
-    .text-balance{text-wrap:balance}
-
-    /* Motion */
-    .hover-lift{transition:transform .2s ease, box-shadow .2s ease}
-    .hover-lift:hover{transform:translateY(-2px);box-shadow:0 10px 30px rgba(2,6,23,.08)}
-    .shine{position:relative;overflow:hidden}
-    .shine::after{content:"";position:absolute;inset:-100% -60% auto;height:160%;width:30%;
-        background:linear-gradient(120deg,transparent,rgba(255,255,255,.35),transparent);
-        transform:skewX(-20deg);animation:shine 3.8s ease-in-out infinite}
-    @keyframes shine{0%{left:-60%}60%,100%{left:120%}}
-
-    /* Divider & chips */
-    .divider{height:3px;width:68px;border-radius:999px;background:linear-gradient(90deg,#0ea5e9,#2563eb,#1e40af)}
-    .chip{border:1px solid rgba(2,6,23,.08);background:#fff;border-radius:9999px;padding:.4rem .7rem}
-
-    /* Cards */
-    .card{background:#fff;border:1px solid rgba(2,6,23,.06);border-radius:1rem;box-shadow:0 4px 24px rgba(2,6,23,.06)}
-    .card-lg{border-radius:1.25rem}
-    .card-ghost{background:rgba(255,255,255,.9);backdrop-filter:saturate(120%) blur(6px)}
-    .card-locked{position:relative;overflow:hidden}
-    .card-locked::after{content:"";position:absolute;inset:0;background:rgba(2,6,23,.45);backdrop-filter:blur(2px)}
-    .lock-badge{position:absolute;top:.75rem;right:.75rem;display:inline-flex;align-items:center;gap:.4rem;
-        padding:.35rem .55rem;border-radius:.6rem;background:rgba(15,23,42,.75);color:#fff;font-size:.72rem;font-weight:600;z-index:2}
-    .lock-badge svg{width:14px;height:14px}
-    .btn-disabled{opacity:.85;pointer-events:none}
-
-    /* Progress */
-    .progress-rail{height:6px;width:100%;background:#e2e8f0;border-radius:999px;overflow:hidden}
-    .progress-fill{height:100%;background:linear-gradient(90deg,#2563eb,#1e40af)}
-
-    /* Course card */
-    .course-card{background:#fff;border:1px solid rgba(2,6,23,.06);border-radius:1rem;box-shadow:0 8px 30px rgba(2,6,23,.06)}
-    .course-card .thumb{position:relative;aspect-ratio:16/9;overflow:hidden;background:#f1f5f9}
-    .course-card .thumb img{width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
-    .course-card:hover .thumb img{transform:scale(1.06)}
-    .course-pill{position:absolute;top:.6rem;right:.6rem;z-index:10;display:inline-flex;align-items:center;gap:.35rem;
-        padding:.35rem .55rem;border-radius:999px;font-size:.7rem;font-weight:700;background:#fff;color:#0f172a;border:1px solid rgba(2,6,23,.08);box-shadow:0 6px 20px rgba(2,6,23,.08)}
-
-    /* Profile */
-    .avatar-dot{display:inline-flex;align-items:center;justify-content:center;width:40px;height:40px;border-radius:9999px;
-        background:#e0f2fe;color:#1d4ed8;font-weight:700;border:1px solid rgba(2,6,23,.06)}
-
-    /* Logo ticker */
-    .logo-viewport{overflow:hidden}
-    .logo-track{display:flex;gap:1rem;align-items:center;white-space:nowrap;width:max-content;animation:logo-scroll 28s linear infinite}
-    .logo-track:hover{animation-play-state:paused}
-    .logo-chip{height:40px;width:40px;border-radius:9999px;background:#fff;display:flex;align-items:center;justify-content:center;
-        border:1px solid rgba(15,23,42,.08);box-shadow:0 2px 10px rgba(2,6,23,.06);padding:.5rem;filter:grayscale(1) opacity(.85);transition:.2s}
-    .logo-chip:hover{filter:grayscale(0) opacity(1);transform:translateY(-2px) scale(1.02)}
-    .logo-chip img{height:100%;width:auto;object-fit:contain}
-    @keyframes logo-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+  body { font-family: 'Poppins', ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+  .landing-shell { background: #f7fbfa; color: #10201d; }
+  .text-balance { text-wrap: balance; }
+  .section-kicker {
+    display: inline-flex; align-items: center; gap: .5rem; border-radius: 999px;
+    border: 1px solid rgba(15,157,138,.16); background: rgba(15,157,138,.08);
+    color: #087A6C; padding: .42rem .8rem; font-size: .72rem; font-weight: 800;
+    letter-spacing: .08em; text-transform: uppercase;
+  }
+  .soft-card {
+    background: rgba(255,255,255,.88); border: 1px solid rgba(15,157,138,.12);
+    box-shadow: 0 18px 50px rgba(16,32,29,.07); backdrop-filter: blur(18px);
+  }
+  .lift { transition: transform .25s ease, box-shadow .25s ease, border-color .25s ease; }
+  .lift:hover { transform: translateY(-5px); box-shadow: 0 24px 70px rgba(15,157,138,.14); border-color: rgba(15,157,138,.24); }
+  .progress-track { height: .45rem; border-radius: 999px; background: #dff5f1; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg,#0F9D8A,#075E54); }
+  .logo-ticker { mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent); }
+  .logo-track { animation: ticker 28s linear infinite; }
+  @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+  @media (prefers-reduced-motion: reduce) {
+    .logo-track { animation: none; }
+    .lift, .lift:hover { transition: none; transform: none; }
+  }
 </style>
 @endpush
 
 @section('content')
-
 @php
-  /* === Auth helper === */
   $isGuest = auth()->guest();
+  $fallbackCover = asset('assets/images/foto-belajar.jpg');
+  $heroImage = asset('assets/images/foto-berkemah.png');
+  $statsCards = [
+    ['label' => 'Kelas', 'value' => $stats['courses'] ?? 0, 'tone' => 'bg-[#0F9D8A]'],
+    ['label' => 'Modul', 'value' => $stats['modules'] ?? 0, 'tone' => 'bg-slate-900'],
+    ['label' => 'Pelajaran', 'value' => $stats['lessons'] ?? 0, 'tone' => 'bg-emerald-600'],
+    ['label' => 'Enrollment', 'value' => $stats['enrollments'] ?? 0, 'tone' => 'bg-cyan-700'],
+    ['label' => 'Kuis', 'value' => $stats['quizzes'] ?? 0, 'tone' => 'bg-teal-800'],
+  ];
+  $techLogos = collect([
+    ['name' => 'Laravel', 'src' => asset('assets/logos/laravel.png')],
+    ['name' => 'Vue', 'src' => asset('assets/logos/vue.png')],
+    ['name' => 'React', 'src' => asset('assets/logos/react.png')],
+    ['name' => 'Tailwind', 'src' => asset('assets/logos/tailwind.png')],
+    ['name' => 'Node', 'src' => asset('assets/logos/node.png')],
+    ['name' => 'Python', 'src' => asset('assets/logos/python.png')],
+    ['name' => 'Postgres', 'src' => asset('assets/logos/postgres.png')],
+    ['name' => 'Docker', 'src' => asset('assets/logos/docker.png')],
+  ]);
 @endphp
 
-{{-- ===================== HERO ===================== --}}
-<section class="relative overflow-hidden bg-gradient-to-b from-sky-50 via-white to-white">
-  <!-- Dekor -->
-  <div aria-hidden="true" class="pointer-events-none absolute inset-0 -z-10">
-    <div class="absolute inset-0 opacity-[.06]"
-         style="background-size:22px 22px;
-                background-image:radial-gradient(circle at 1px 1px, rgba(2,6,23,.45) 1px, transparent 0);">
+<div class="landing-shell">
+  <section class="relative overflow-hidden bg-[radial-gradient(circle_at_18%_16%,rgba(15,157,138,.16),transparent_28%),radial-gradient(circle_at_82%_18%,rgba(7,94,84,.13),transparent_26%),linear-gradient(180deg,#f2fffc,#ffffff_70%)]">
+    <div class="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[#0F9D8A]/40 to-transparent"></div>
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-16 pb-12 lg:pt-24 lg:pb-16">
+      <div class="grid lg:grid-cols-[1.02fr_.98fr] gap-12 items-center">
+        <div>
+          <span class="section-kicker">Belajar coding lebih terarah</span>
+          <h1 class="mt-6 text-4xl sm:text-5xl lg:text-6xl font-black leading-tight tracking-tight text-balance">
+            Upgrade skill digitalmu lewat kelas online yang rapi, praktis, dan terukur.
+          </h1>
+          <p class="mt-6 max-w-2xl text-base sm:text-lg leading-8 text-slate-600">
+            BERKEMAH membantu pemula, mahasiswa, dan fresh graduate belajar coding dari dasar sampai siap membuat portfolio dengan modul, kuis, forum, sertifikat, dan assessment psikologi.
+          </p>
+
+          <div class="mt-7 grid sm:grid-cols-2 gap-3 max-w-2xl">
+            @foreach (['Roadmap belajar jelas', 'Project praktik bertahap', 'Kuis dan progres otomatis', 'Sertifikat digital'] as $benefit)
+              <div class="flex items-center gap-3 rounded-2xl bg-white/80 border border-[#0F9D8A]/12 px-4 py-3 text-sm font-semibold text-slate-700 shadow-sm">
+                <span class="grid h-6 w-6 place-items-center rounded-full bg-[#DFF5F1] text-[#087A6C]">
+                  <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                </span>
+                {{ $benefit }}
+              </div>
+            @endforeach
+          </div>
+
+          <div class="mt-8 flex flex-col sm:flex-row gap-3">
+            <a href="#kelas-terbaru" class="inline-flex justify-center items-center gap-2 rounded-2xl bg-[#0F9D8A] px-7 py-4 text-sm font-extrabold text-white shadow-lg shadow-[#0F9D8A]/25 hover:bg-[#087A6C] transition">
+              Jelajah Kelas
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/></svg>
+            </a>
+            @guest
+              <a href="{{ route('register') }}" class="inline-flex justify-center items-center gap-2 rounded-2xl border border-[#0F9D8A]/20 bg-white px-7 py-4 text-sm font-extrabold text-[#087A6C] hover:bg-[#DFF5F1] transition">
+                Daftar Gratis
+              </a>
+            @else
+              <a href="{{ route('app.dashboard') }}" class="inline-flex justify-center items-center gap-2 rounded-2xl border border-slate-200 bg-white px-7 py-4 text-sm font-extrabold text-slate-800 hover:border-[#0F9D8A]/30 transition">
+                Buka Dashboard
+              </a>
+            @endguest
+          </div>
+        </div>
+
+        <div class="relative">
+          <div class="soft-card rounded-[2rem] p-3 lift">
+            <div class="relative overflow-hidden rounded-[1.45rem] bg-slate-900">
+              <img src="{{ $heroImage }}" alt="BERKEMAH online learning" class="h-[350px] sm:h-[470px] w-full object-cover opacity-95">
+              <div class="absolute inset-0 bg-gradient-to-t from-slate-950/70 via-slate-950/10 to-transparent"></div>
+              <div class="absolute left-5 right-5 bottom-5 rounded-2xl bg-white/90 backdrop-blur px-5 py-4 shadow-xl">
+                <div class="flex items-center justify-between gap-4">
+                  <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-[#087A6C]">Learning progress</p>
+                    <p class="mt-1 text-sm font-bold text-slate-900">Belajar, latihan, diskusi, lalu dapat sertifikat.</p>
+                  </div>
+                  <div class="shrink-0 rounded-2xl bg-[#0F9D8A] px-4 py-3 text-center text-white">
+                    <div class="text-xl font-black">{{ number_format($stats['courses'] ?? 0) }}+</div>
+                    <div class="text-[10px] font-bold uppercase">kelas</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="hidden lg:block absolute -left-8 top-10 rounded-2xl bg-white px-5 py-4 shadow-xl border border-[#0F9D8A]/10">
+            <p class="text-xs text-slate-500">Member aktif</p>
+            <p class="text-2xl font-black text-[#075E54]">{{ number_format($stats['enrollments'] ?? 0) }}+</p>
+          </div>
+          <div class="hidden lg:block absolute -right-6 bottom-20 rounded-2xl bg-slate-950 px-5 py-4 shadow-xl">
+            <p class="text-xs text-white/60">Assessment</p>
+            <p class="text-lg font-black text-white">IQ + Psy Test</p>
+          </div>
+        </div>
+      </div>
     </div>
-    <div class="absolute left-1/3 top-[280px] -translate-x-1/2 w-[780px] h-[780px] rounded-full blur-3xl
-                bg-[radial-gradient(circle_at_center,_rgba(96,165,250,0.30),_transparent_60%)]"></div>
-    <div class="absolute left-[54%] top-[320px] -translate-x-1/2 w-[600px] h-[600px] rounded-full border border-blue-300/60"></div>
-    <div class="absolute left-[54%] top-[320px] -translate-x-1/2 w-[480px] h-[480px] rounded-full border border-blue-300/40"></div>
-    <div class="absolute left-[54%] top-[320px] -translate-x-1/2 w-[360px] h-[360px] rounded-full border border-blue-300/30"></div>
-    <div class="absolute left-[54%] top-[320px] -translate-x-1/2 -translate-y-1/2 w-[520px] h-[220px]
-                rounded-b-[520px] bg-gradient-to-b from-sky-100 to-blue-100 shadow-[0_24px_80px_rgba(2,6,23,.08)]"></div>
-  </div>
+  </section>
 
-  <div class="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20 grid lg:grid-cols-2 gap-10 z-10">
-    <div class="flex flex-col justify-center">
-      <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-100 text-sky-800 text-xs font-medium w-max">
-        <span class="h-2 w-2 rounded-full bg-sky-500"></span> Belajar Fleksibel, Karier Melesat
+  <section class="bg-white py-6 border-y border-slate-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        @foreach ($statsCards as $item)
+          <div class="soft-card rounded-2xl p-5 lift">
+            <div class="flex items-center gap-3">
+              <span class="h-10 w-10 rounded-2xl {{ $item['tone'] }} grid place-items-center text-white">
+                <svg class="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h10"/></svg>
+              </span>
+              <div>
+                <div class="text-2xl font-black text-slate-950">{{ number_format($item['value']) }}</div>
+                <div class="text-xs font-semibold text-slate-500">{{ $item['label'] }}</div>
+              </div>
+            </div>
+          </div>
+        @endforeach
       </div>
+    </div>
+  </section>
 
-      <h1 class="mt-4 text-4xl sm:text-5xl font-extrabold leading-tight text-balance">
-        Kuasai <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-900">Skill Programming</span>
-        lewat <span class="bg-clip-text text-transparent bg-gradient-to-r from-blue-900 to-sky-900">praktik nyata</span>
-      </h1>
-
-      <p class="mt-4 text-gray-700 max-w-2xl">
-        Kelas terarah + tugas real, kuis interaktif, tracking progres, dan sertifikat. Cocok buat pemula yang mau mulai,
-        sampai pro yang butuh naik level cepat.
-      </p>
-
-      <ul class="mt-4 grid grid-cols-2 gap-2 max-w-md text-sm text-slate-700">
-        <li class="flex items-center gap-2"><span class="text-blue-700">✓</span> Roadmap jelas</li>
-        <li class="flex items-center gap-2"><span class="text-blue-700">✓</span> Project portfolio</li>
-        <li class="flex items-center gap-2"><span class="text-blue-700">✓</span> Kuis & pembahasan</li>
-        <li class="flex items-center gap-2"><span class="text-blue-700">✓</span> Sertifikat verifiable</li>
-      </ul>
-
-      <div class="mt-6 flex flex-col sm:flex-row gap-3">
-        <a href="#kursus-baru" class="shine hover-lift px-5 py-3 rounded-xl bg-blue-600 text-white text-center">
-          <span class="inline-flex items-center gap-2">
-            Jelajah Kelas
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </span>
-        </a>
-
-        @guest
-        <a href="{{ route('register') }}" class="hover-lift px-5 py-3 rounded-xl border text-center hover:bg-gray-50 bg-white">
-          <span class="inline-flex items-center gap-2">
-            Daftar Gratis
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-            </svg>
-          </span>
-        </a>
-        @endguest
+  <section class="py-8 bg-[#f7fbfa]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex flex-col gap-5">
+        <div class="flex items-center justify-between gap-4">
+          <p class="text-sm font-bold text-slate-500">Trusted technologies behind the learning experience</p>
+          <span class="hidden sm:inline-flex text-xs font-bold text-[#087A6C]">Modern stack</span>
+        </div>
+        <div class="logo-ticker overflow-hidden rounded-3xl bg-white border border-slate-100 py-5">
+          <div class="logo-track flex w-max items-center gap-10 px-8">
+            @foreach ($techLogos->concat($techLogos) as $logo)
+              <div class="flex min-w-36 items-center gap-3">
+                <img src="{{ $logo['src'] }}" alt="{{ $logo['name'] }}" class="h-8 w-8 object-contain">
+                <span class="text-sm font-bold text-slate-600">{{ $logo['name'] }}</span>
+              </div>
+            @endforeach
+          </div>
+        </div>
       </div>
+    </div>
+  </section>
 
-      {{-- stats mini --}}
-      <div class="mt-8 grid grid-cols-3 sm:grid-cols-5 gap-3">
+  <section class="sticky top-16 z-30 border-y border-slate-100 bg-white/86 backdrop-blur-xl">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3">
+      <div class="flex items-center gap-2 overflow-x-auto">
         @php
-          $statItems = [
-            ['label' => 'Kelas', 'value' => $stats['courses'] ?? 0],
-            ['label' => 'Modul', 'value' => $stats['modules'] ?? 0],
-            ['label' => 'Pelajaran', 'value' => $stats['lessons'] ?? 0],
-            ['label' => 'Enrollment', 'value' => $stats['enrollments'] ?? 0],
-            ['label' => 'Kuis', 'value' => $stats['quizzes'] ?? 0],
+          $chips = [
+            ['label' => 'Kelas Terbaru', 'href' => '#kelas-terbaru'],
+            ['label' => 'Populer', 'href' => '#kelas-populer'],
+            ['label' => 'Tes Psikologi', 'href' => '#tes-psikologi'],
+            ['label' => 'Paket', 'href' => '#paket'],
+            ['label' => 'Kupon', 'href' => '#kupon'],
           ];
         @endphp
-        @foreach ($statItems as $s)
-          <div class="card p-4 text-center hover-lift">
-            <div class="text-2xl font-semibold text-blue-900">{{ number_format($s['value']) }}</div>
-            <div class="text-xs text-gray-600 mt-1">{{ $s['label'] }}</div>
-          </div>
+        @foreach ($chips as $chip)
+          <a href="{{ $chip['href'] }}" class="whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-600 hover:border-[#0F9D8A]/30 hover:bg-[#DFF5F1] hover:text-[#087A6C] transition">{{ $chip['label'] }}</a>
         @endforeach
+        <span class="min-w-4 flex-1"></span>
+        @auth
+          <a href="{{ route('app.dashboard') }}" class="whitespace-nowrap rounded-full bg-slate-950 px-4 py-2 text-xs font-bold text-white">Dashboard</a>
+        @else
+          <a href="{{ route('login') }}" class="whitespace-nowrap rounded-full border border-slate-200 bg-white px-4 py-2 text-xs font-bold text-slate-700">Login</a>
+          <a href="{{ route('register') }}" class="whitespace-nowrap rounded-full bg-[#0F9D8A] px-4 py-2 text-xs font-bold text-white">Daftar</a>
+        @endauth
       </div>
     </div>
+  </section>
 
-    <div class="relative">
-      <img src="{{ asset('assets/images/KKN.jpeg') }}" alt="Belajar"
-           class="w-full h-72 sm:h-96 object-cover rounded-2xl shadow-2xl border border-blue-100" />
-    </div>
-  </div>
-
-  {{-- LOGO TICKER --}}
-  <div class="py-6 border-t">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      @php $logos = ['laravel.png','vue.png']; @endphp
-      <div class="flex flex-wrap items-center gap-3">
-        @foreach ($logos as $logo)
-          <div class="logo-chip">
-            <img src="{{ asset('assets/logos/' . $logo) }}" alt="{{ pathinfo($logo, PATHINFO_FILENAME) }}">
-          </div>
-        @endforeach
-      </div>
-    </div>
-  </div>
-</section>
-
-<section class="py-4 bg-white border-y">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-wrap items-center gap-2 text-sm">
-    <a href="#kursus-baru" class="chip bg-sky-50 text-blue-800 hover:bg-sky-100">Kelas Terbaru</a>
-    <a href="#kursus-populer" class="chip bg-sky-50 text-blue-800 hover:bg-sky-100">Populer</a>
-    <a href="#psi" class="chip bg-sky-50 text-blue-800 hover:bg-sky-100">Tes Psikologi</a>
-    <a href="#plans" class="chip bg-sky-50 text-blue-800 hover:bg-sky-100">Paket</a>
-    <a href="#kupon" class="chip bg-sky-50 text-blue-800 hover:bg-sky-100">Kupon</a>
-    <div class="ms-auto flex items-center gap-2">
-      @auth
-      <a href="{{ route('app.dashboard') }}" class="px-3 py-2 rounded-lg bg-blue-900 text-white hover:bg-blue-800 hover-lift">Dashboard</a>
-      @else
-      <a href="{{ route('login') }}" class="px-3 py-2 rounded-lg border hover:bg-gray-50 hover-lift">Masuk</a>
-      <a href="{{ route('register') }}" class="px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 hover-lift">Daftar</a>
-      @endauth
-    </div>
-  </div>
-</section>
-
-{{-- ===================== PROFIL ===================== --}}
-@auth
-@php
-  $u = auth()->user();
-  $initial = strtoupper(mb_substr($u->name ?? 'U', 0, 1));
-  $membershipText = $isMember ?? false ? 'Member Aktif' : 'Belum Berlangganan';
-  $completedPct = (int) ($u->profile_progress_percent ?? 0);
-@endphp
-<section id="profil" class="py-8 bg-gradient-to-b from-white to-sky-50/40">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="card card-lg p-5 sm:p-6 hover-lift">
-      <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <div class="flex items-center gap-3">
-          <span class="avatar-dot">{{ $initial }}</span>
-          <div>
-            <div class="font-semibold text-blue-950 leading-tight">{{ $u->name }}</div>
-            <div class="text-xs text-slate-600">{{ $u->email }}</div>
-            <div class="mt-1 inline-flex items-center gap-2 text-xs">
-              <span class="px-2 py-0.5 rounded-full bg-sky-100 text-blue-800">{{ $membershipText }}</span>
-              @if ($completedPct > 0)
-                <span class="px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-700">{{ $completedPct }}% profil</span>
-              @endif
-            </div>
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 sm:flex sm:flex-wrap items-center gap-2">
-          <a href="{{ route('app.my.courses') }}" class="px-3 py-2 rounded-lg border hover:bg-gray-50 text-sm">My Courses</a>
-          <a href="{{ route('app.certificates.index') }}" class="px-3 py-2 rounded-lg border hover:bg-gray-50 text-sm">Certificates</a>
-          <a href="{{ route('app.payments.index') }}" class="px-3 py-2 rounded-lg border hover:bg-gray-50 text-sm">Payments</a>
-          <a href="{{ route('app.memberships.index') }}" class="px-3 py-2 rounded-lg border hover:bg-gray-50 text-sm">Memberships</a>
-          <a href="{{ route('app.psytests.index') }}" class="px-3 py-2 rounded-lg border hover:bg-gray-50 text-sm">Psy Tests</a>
-          <a href="{{ route('profile.edit') }}" class="px-3 py-2 rounded-lg bg-blue-600 text-white hover:bg-blue-700 text-sm">Edit Profile</a>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-@endauth
-
-{{-- ===================== KEUNGGULAN ===================== --}}
-<section class="py-12 bg-gradient-to-b from-white to-sky-50/40">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-center justify-between gap-4 mb-6">
-      <div>
-        <div class="divider"></div>
-        <h2 class="section-title mt-3 text-2xl sm:text-3xl font-extrabold text-blue-900">
-          Kenapa BERKEMAH?
-        </h2>
-        <p class="text-sm text-gray-600">
-          Belajar terarah, langsung praktik, hasil yang kerasa. Bukan cuma nonton—kamu beneran naik level.
-        </p>
-      </div>
-
-      <a href="#kursus-baru"
-         class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 hover-lift">
-        Lihat Kelas Baru
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-        </svg>
-      </a>
-    </div>
-
-    <div class="grid sm:grid-cols-3 gap-5">
-      <div class="card p-6 hover-lift">
-        <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-2xl bg-sky-100 flex items-center justify-center text-sky-700 text-lg">⚡</div>
-          <div>
-            <div class="font-semibold text-blue-900">Materi Terarah</div>
-            <div class="text-xs text-blue-700/80">Roadmap jelas • No bingung lagi</div>
-          </div>
-        </div>
-        <p class="mt-3 text-sm text-gray-600">
-          Kurikulum disusun step-by-step dari dasar ke mahir. Setiap modul punya tujuan jelas dan checklist progress.
-        </p>
-        <ul class="mt-3 space-y-1.5 text-sm text-gray-700">
-          <li>• Path pemula → siap kerja</li>
-          <li>• Studi kasus & best practice</li>
-          <li>• Tugas kecil tiap bab</li>
-        </ul>
-      </div>
-
-      <div class="card p-6 hover-lift">
-        <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-2xl bg-emerald-100 flex items-center justify-center text-emerald-700 text-lg">🧩</div>
-          <div>
-            <div class="font-semibold text-blue-900">Belajar Aktif</div>
-            <div class="text-xs text-blue-700/80">Kuis, kode, & feedback</div>
-          </div>
-        </div>
-        <p class="mt-3 text-sm text-gray-600">
-          Bukan sekadar video—ada kuis interaktif, challenge ngoding, dan pembahasan biar paham beneran.
-        </p>
-        <ul class="mt-3 space-y-1.5 text-sm text-gray-700">
-          <li>• Kuis real-time + pembahasan</li>
-          <li>• Project mini tiap section</li>
-          <li>• Forum tanya-jawab dengan mentor</li>
-        </ul>
-      </div>
-
-      <div class="card p-6 hover-lift">
-        <div class="flex items-center gap-3">
-          <div class="h-10 w-10 rounded-2xl bg-sky-100 flex items-center justify-center text-sky-700 text-lg">🎯</div>
-          <div>
-            <div class="font-semibold text-blue-900">Hasil Nyata</div>
-            <div class="text-xs text-blue-700/80">Portfolio & sertifikat</div>
-          </div>
-        </div>
-        <p class="mt-3 text-sm text-gray-600">
-          Setiap kelas diarahkan ke output nyata: aplikasi sederhana, komponen reusable, sampai sertifikat kelulusan.
-        </p>
-        <ul class="mt-3 space-y-1.5 text-sm text-gray-700">
-          <li>• Portfolio-ready project</li>
-          <li>• Sertifikat verifiable</li>
-          <li>• Rekomendasi next skill</li>
-        </ul>
-      </div>
-    </div>
-
-    <div class="sm:hidden mt-6">
-      <a href="#kursus-baru"
-         class="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 hover-lift">
-        Mulai Jelajah Kelas
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none"
-             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6"/>
-        </svg>
-      </a>
-    </div>
-  </div>
-</section>
-
-{{-- ===================== KELAS TERBARU ===================== --}}
-<section id="kursus-baru" class="py-12 bg-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-end justify-between gap-4">
-      <div>
-        <div class="divider"></div>
-        <h2 class="section-title mt-3 text-2xl sm:text-3xl font-bold text-blue-900">Kelas Terbaru</h2>
-        <p class="mt-2 text-gray-600">Konten fresh, langsung praktik.</p>
-      </div>
-      <a href="{{ auth()->check() ? route('app.courses.index') : route('register') }}" class="hidden sm:inline-flex items-center gap-2 text-blue-700 hover:underline hover-lift">Lihat Semua →</a>
-    </div>
-
-    <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-      @forelse ($latestCourses as $course)
-        @php
-          $cover = $course->cover
-              ? asset('storage/' . ltrim($course->cover, '/'))
-              : asset('assets/images/placeholder-course.png');
-          $level = trim($course->level ?? '') ?: 'All Levels';
-          $modules = (int) ($course->modules_count ?? 0);
-          $students = (int) ($course->enrollments_count ?? 0);
-          $pp = (int) ($course->progress_percent ?? 0);
-          $pd = (int) ($course->progress_done ?? 0);
-          $pt = max(1, (int) ($course->progress_total ?? 0));
-          $title = trim($course->title ?? '') ?: 'Kelas Tanpa Judul';
-          $isComplete = $pp >= 100;
-          $courseUrl = auth()->check() ? route('app.courses.show', $course) : route('register');
-        @endphp
-
-        <a href="{{ $courseUrl }}" class="group course-card overflow-hidden hover-lift block h-full flex flex-col {{ $isGuest ? 'card-locked' : '' }}">
-          @if ($isGuest)
-            <div class="lock-badge">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.105 0 2 .895 2 2v3H10v-3c0-1.105.895-2 2-2zm0-7a4 4 0 00-4 4v2h8V8a4 4 0 00-4-4z" />
-              </svg>
-              Terkunci
-            </div>
-          @endif
-
-          <div class="thumb">
-            @if (!$isGuest && $pp > 0)
-              <span class="course-pill">
-                {{ $pp }}%
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
-                </svg>
-              </span>
-            @endif
-            <img src="{{ $cover }}" alt="{{ $title }}">
-          </div>
-
-          <div class="p-4 flex-1">
-            <div class="text-xs font-medium text-blue-700/90">{{ $level }}</div>
-            <h3 class="font-semibold text-blue-950 leading-snug line-clamp-2">{{ $title }}</h3>
-
-            <div class="mt-2 text-sm text-gray-600 flex items-center gap-3">
-              <span>{{ $modules }} modul</span><span>•</span><span>{{ $students }} siswa</span>
-            </div>
-
-            @if (!$isGuest && isset($course->progress_percent))
-              <div class="mt-3">
-                <div class="progress-rail">
-                  <div class="progress-fill" style="width: {{ max(0, min(100, $pp)) }}%"></div>
-                </div>
-                <div class="mt-1 flex items-center justify-between text-xs text-gray-600">
-                  <span>{{ $pp }}% selesai</span><span>{{ $pd }}/{{ $pt }} pelajaran</span>
-                </div>
-              </div>
-            @endif
-
-            @if (!$isGuest && $isComplete)
-              <div class="mt-3 inline-flex items-center gap-2 text-emerald-700 text-xs font-semibold">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                </svg>
-                100% selesai — selamat!
-              </div>
-            @endif
-          </div>
-        </a>
-      @empty
-        <div class="sm:col-span-2 lg:col-span-3">
-          <div class="p-6 card bg-sky-50 border-sky-100 text-blue-900">Belum ada kelas terbaru.</div>
-        </div>
-      @endforelse
-    </div>
-  </div>
-</section>
-
-{{-- ===================== KELAS POPULER ===================== --}}
-<section id="kursus-populer" class="py-12 bg-gradient-to-b from-white to-sky-50/40">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-end justify-between gap-4">
-      <div>
-        <div class="divider"></div>
-        <h2 class="section-title mt-3 text-2xl sm:text-3xl font-bold text-blue-900">Kelas Populer</h2>
-        <p class="mt-2 text-gray-600">Paling banyak diikuti.</p>
-      </div>
-    </div>
-
-    <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      @forelse ($popularCourses as $course)
-        @php
-          $cover = $course->cover
-              ? asset('storage/' . ltrim($course->cover, '/'))
-              : asset('assets/images/placeholder-course.png');
-          $pp = (int) ($course->progress_percent ?? 0);
-          $pd = (int) ($course->progress_done ?? 0);
-          $pt = max(1, (int) ($course->progress_total ?? 0));
-          $title = trim($course->title ?? '') ?: 'Kelas';
-        @endphp
-
-        <a href="{{ auth()->check() ? route('app.courses.show', $course) : route('register') }}" class="group card card-lg overflow-hidden hover-lift transition block {{ $isGuest ? 'card-locked' : '' }}">
-          @if ($isGuest)
-            <div class="lock-badge">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.105 0 2 .895 2 2v3H10v-3c0-1.105.895-2 2-2zm0-7a4 4 0 00-4 4v2h8V8a4 4 0 00-4-4z" />
-              </svg>
-              Terkunci
-            </div>
-          @endif
-
-          <div class="relative aspect-[16/9] overflow-hidden bg-gray-100">
-            @if (!$isGuest && $pp > 0)
-              <div class="absolute top-2 right-2 z-10">
-                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full text-[10px] font-semibold bg-white/90 border border-slate-200 text-slate-700">
-                  {{ $pp }}%
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
-                  </svg>
-                </span>
-              </div>
-            @endif
-
-            <img src="{{ $cover }}" alt="{{ $title }}" class="w-full h-full object-cover group-hover:scale-105 transition" />
-          </div>
-          <div class="p-4">
-            <div class="text-xs text-blue-700/80 font-medium">Populer</div>
-            <h3 class="mt-1 font-semibold line-clamp-2 text-blue-950">{{ $course->title }}</h3>
-            <div class="mt-2 text-xs text-gray-600 flex items-center gap-3">
-              <span>{{ $course->modules_count ?? 0 }} modul</span><span>•</span><span>{{ $course->enrollments_count ?? 0 }} siswa</span>
-            </div>
-
-            @if (!$isGuest && isset($course->progress_percent))
-              <div class="mt-3">
-                <div class="h-1.5 w-full bg-gray-200 rounded-full overflow-hidden">
-                  <div class="h-full bg-gradient-to-r from-blue-600 to-blue-800" style="width: {{ $pp }}%"></div>
-                </div>
-                <div class="mt-1 text-xs text-gray-600 flex items-center justify-between">
-                  <span>{{ $pp }}% selesai</span><span>{{ $pd }}/{{ $pt }} pelajaran</span>
-                </div>
-              </div>
-            @endif
-          </div>
-        </a>
-      @empty
-        <div class="sm:col-span-2 lg:col-span-3">
-          <div class="p-6 card bg-sky-50 border-sky-100 text-blue-900">Belum ada kelas populer.</div>
-        </div>
-      @endforelse
-    </div>
-  </div>
-</section>
-
-{{-- ===================== TES PSIKOLOGI (PSI) ===================== --}}
-<section id="psi" class="relative py-14">
-  <div class="pointer-events-none absolute inset-0 -z-10">
-    <div class="absolute -top-16 -right-10 w-72 h-72 rounded-full bg-sky-200/50 blur-3xl"></div>
-    <div class="absolute -bottom-20 -left-10 w-72 h-72 rounded-full bg-blue-200/40 blur-3xl"></div>
-  </div>
-
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4">
-      <div>
-        <div class="divider"></div>
-        <h2 class="section-title mt-3 text-2xl sm:text-3xl font-extrabold tracking-tight text-slate-900">Tes Psikologi</h2>
-        <p class="mt-2 text-slate-600 max-w-2xl">Kenali kekuatan & preferensimu. Hasil langsung dengan rekomendasi otomatis.</p>
-      </div>
-      <a href="{{ route('app.psytests.index') }}" class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border border-blue-200 text-blue-700 hover:bg-blue-50 transition hover-lift">
-        Lihat Semua Tes
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-          <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-        </svg>
-      </a>
-    </div>
-
-    @if (($isMember ?? false) !== true)
-      <div class="mt-6 card p-4 bg-gradient-to-r from-blue-50 to-sky-50 border-blue-100 hover-lift">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div class="flex items-center gap-3">
-            <div class="h-9 w-9 rounded-xl bg-blue-600 text-white flex items-center justify-center">🔒</div>
-            <div>
-              <div class="font-semibold text-blue-900">Akses Tes Premium Terkunci</div>
-              <div class="text-sm text-blue-800/80">Buka semua Tes IQ & Psikologi dengan berlangganan paket.</div>
-            </div>
-          </div>
-          <a href="#plans" class="shine inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover-lift">
-            Lihat Paket
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-            </svg>
-          </a>
-        </div>
-      </div>
-    @endif
-
+  @auth
     @php
-      $__iq = isset($iqTests) ? $iqTests : collect();
-      $canAccessPsi = ($isMember ?? false) === true;
+      $user = auth()->user();
+      $initial = strtoupper(mb_substr($user->name ?? 'U', 0, 1));
+      $membershipLabel = ($isMember ?? false) ? 'Member aktif' : 'Belum membership';
     @endphp
+    <section id="profil" class="py-12 bg-white">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="soft-card rounded-3xl p-6 sm:p-8">
+          <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div class="flex items-center gap-4">
+              <div class="grid h-16 w-16 place-items-center rounded-2xl bg-gradient-to-br from-[#0F9D8A] to-[#075E54] text-2xl font-black text-white shadow-lg shadow-[#0F9D8A]/20">{{ $initial }}</div>
+              <div>
+                <p class="text-xs font-black uppercase tracking-wider text-[#087A6C]">Profil belajar</p>
+                <h2 class="mt-1 text-2xl font-black text-slate-950">{{ $user->name }}</h2>
+                <p class="text-sm text-slate-500">{{ $user->email }}</p>
+                <span class="mt-2 inline-flex rounded-full bg-[#DFF5F1] px-3 py-1 text-xs font-bold text-[#087A6C]">{{ $membershipLabel }}</span>
+              </div>
+            </div>
+            <div class="grid grid-cols-2 sm:flex sm:flex-wrap gap-2">
+              <a href="{{ route('app.my.courses') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#DFF5F1]">My Courses</a>
+              <a href="{{ route('app.certificates.index') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#DFF5F1]">Certificates</a>
+              <a href="{{ route('app.payments.index') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#DFF5F1]">Payments</a>
+              <a href="{{ route('app.memberships.index') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#DFF5F1]">Memberships</a>
+              <a href="{{ route('app.psytests.index') }}" class="rounded-xl border border-slate-200 px-4 py-2 text-center text-xs font-bold hover:bg-[#DFF5F1]">Psy Tests</a>
+              <a href="{{ route('profile.edit') }}" class="rounded-xl bg-[#0F9D8A] px-4 py-2 text-center text-xs font-bold text-white hover:bg-[#087A6C]">Edit Profile</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  @endauth
 
-    @if ($__iq->count())
-      <div class="mt-8">
-        <div class="flex items-center justify-between">
-          <h3 class="text-lg sm:text-xl font-bold text-slate-900">Tes IQ</h3>
-          @unless ($canAccessPsi)
-          <a href="#plans" class="text-sm inline-flex items-center gap-1 text-blue-700 hover:underline">Buka akses dengan paket →</a>
+  <section class="py-20 bg-[#f7fbfa]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-2xl">
+        <span class="section-kicker">Kenapa BERKEMAH?</span>
+        <h2 class="mt-4 text-3xl sm:text-4xl font-black tracking-tight text-slate-950">Belajar terasa lebih fokus, aktif, dan punya hasil nyata.</h2>
+      </div>
+      <div class="mt-10 grid md:grid-cols-3 gap-6">
+        @foreach ([
+          ['title' => 'Materi Terarah', 'desc' => 'Kurikulum dibuat bertahap agar learner tahu mulai dari mana dan lanjut ke mana.', 'items' => ['Roadmap jelas', 'Modul ringkas', 'Urutan belajar rapi']],
+          ['title' => 'Belajar Aktif', 'desc' => 'Kelas tidak berhenti di teori, ada kuis, forum, dan latihan yang membuat materi menempel.', 'items' => ['Kuis interaktif', 'Forum tanya-jawab', 'Progress tracking']],
+          ['title' => 'Hasil Nyata', 'desc' => 'Setiap pembelajaran diarahkan menjadi output yang bisa ditunjukkan dan dievaluasi.', 'items' => ['Portfolio project', 'Sertifikat digital', 'Assessment diri']],
+        ] as $feature)
+          <div class="soft-card rounded-3xl p-7 lift">
+            <div class="grid h-12 w-12 place-items-center rounded-2xl bg-[#DFF5F1] text-[#087A6C]">
+              <svg class="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2m5-2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            </div>
+            <h3 class="mt-5 text-xl font-black text-slate-950">{{ $feature['title'] }}</h3>
+            <p class="mt-3 text-sm leading-7 text-slate-600">{{ $feature['desc'] }}</p>
+            <ul class="mt-5 space-y-2">
+              @foreach ($feature['items'] as $item)
+                <li class="flex items-center gap-2 text-sm font-semibold text-slate-700">
+                  <span class="h-1.5 w-1.5 rounded-full bg-[#0F9D8A]"></span>{{ $item }}
+                </li>
+              @endforeach
+            </ul>
+          </div>
+        @endforeach
+      </div>
+    </div>
+  </section>
+
+  <section id="kelas-terbaru" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <x-section-heading kicker="Kelas Terbaru" title="Mulai dari kelas paling baru." subtitle="Konten fresh untuk skill coding, web, backend, frontend, dan praktik digital." />
+      <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        @forelse ($latestCourses as $course)
+          @include('partials.landing-course-card', ['course' => $course, 'fallbackCover' => $fallbackCover, 'isGuest' => $isGuest, 'popular' => false])
+        @empty
+          <div class="sm:col-span-2 lg:col-span-3 soft-card rounded-3xl p-8 text-center font-bold text-slate-600">Belum ada kelas terbaru.</div>
+        @endforelse
+      </div>
+    </div>
+  </section>
+
+  <section id="kelas-populer" class="py-20 bg-[#f7fbfa]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <x-section-heading kicker="Kelas Populer" title="Kelas yang paling sering dipilih learner." subtitle="Bagian ini membantu user cepat menemukan kelas dengan demand tinggi." />
+      <div class="mt-10 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        @forelse ($popularCourses as $course)
+          @include('partials.landing-course-card', ['course' => $course, 'fallbackCover' => $fallbackCover, 'isGuest' => $isGuest, 'popular' => true])
+        @empty
+          <div class="sm:col-span-2 lg:col-span-3 soft-card rounded-3xl p-8 text-center font-bold text-slate-600">Belum ada kelas populer.</div>
+        @endforelse
+      </div>
+    </div>
+  </section>
+
+  <section id="tes-psikologi" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="grid lg:grid-cols-[.9fr_1.1fr] gap-8 items-start">
+        <div>
+          <span class="section-kicker">Tes Psikologi</span>
+          <h2 class="mt-4 text-3xl sm:text-4xl font-black tracking-tight text-slate-950">Kenali cara belajarmu sebelum melangkah lebih jauh.</h2>
+          <p class="mt-4 text-slate-600 leading-8">Section assessment dibuat berbeda dari course card agar terasa analitis, premium, dan relevan untuk self-development learner.</p>
+          @unless ($isMember ?? false)
+            <div class="mt-6 rounded-3xl bg-slate-950 p-6 text-white">
+              <p class="text-sm font-black uppercase tracking-wider text-[#DFF5F1]">Upgrade membership</p>
+              <p class="mt-2 text-sm leading-7 text-white/75">Non-member tetap bisa melihat daftar tes. Akses penuh dibuka melalui paket belajar.</p>
+              <a href="#paket" class="mt-5 inline-flex rounded-2xl bg-white px-5 py-3 text-sm font-black text-slate-950">Lihat Paket</a>
+            </div>
           @endunless
         </div>
-
-        <div class="mt-4 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          @foreach ($__iq as $t)
-            @php
-              $qs = is_array($t->questions ?? null) ? count($t->questions) : 0;
-              $est = $t->duration_minutes ?: max(5, round($qs * 0.75));
-            @endphp
-
-            <div class="group card card-lg overflow-hidden transition hover-lift {{ $canAccessPsi ? '' : 'card-locked' }}">
-              <div class="h-1.5 bg-gradient-to-r from-emerald-500 to-teal-500"></div>
-
-              @unless ($canAccessPsi)
-                <div class="lock-badge">
-                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.105 0 2 .895 2 2v3H10v-3c0-1.105.895-2 2-2zm0-7a4 4 0 00-4 4v2h8V8a4 4 0 00-4-4z" />
-                  </svg>
-                  Terkunci
-                </div>
-              @endunless
-
-              <div class="p-5">
-                <div class="flex flex-wrap items-center gap-2 text-xs">
-                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
-                    </svg>
-                    {{ $est }} menit
-                  </span>
-                  <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700">IQ</span>
-                  @if ($qs > 0)
-                    <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-teal-50 text-teal-700">{{ $qs }} soal</span>
-                  @endif
-                </div>
-
-                <h4 class="mt-3 text-lg font-semibold text-slate-900 line-clamp-2">
-                  {{ $t->title ?? 'Tes IQ' }}
-                </h4>
-
-                @if (!empty($t->description))
-                <p class="mt-2 text-sm text-slate-600 line-clamp-2">{{ $t->description }}</p>
-                @endif
-
-                <div class="mt-5 flex items-center gap-2">
-                  @if ($canAccessPsi)
-                    <a href="{{ route('user.test-iq.show', ['testIq' => $t->getRouteKey()]) }}" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-white bg-gradient-to-r from-blue-600 to-blue-800 hover:brightness-105 active:brightness-95 transition text-sm">
-                      Mulai Tes
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    </a>
-
-                    @auth
-                      @php
-                        $last = collect($t->submissions ?? [])->where('user_id', auth()->id())->values()->last();
-                      @endphp
-                      @if ($last)
-                        <a href="{{ route('user.test-iq.result', $t) }}" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-slate-700 hover:bg-slate-50 text-sm transition">
-                          Lihat Hasil
-                        </a>
-                      @endif
-                    @endauth
-                  @else
-                    <a href="#plans" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-white bg-gradient-to-r from-slate-500 to-slate-700 btn-disabled text-sm">
-                      Upgrade untuk Akses
-                    </a>
-                  @endif
-                </div>
+        <div class="grid sm:grid-cols-2 gap-5">
+          @foreach (($iqTests ?? collect())->take(2) as $test)
+            @php $questionCount = is_countable($test->questions ?? null) ? count($test->questions) : 0; @endphp
+            <div class="soft-card rounded-3xl p-6 lift">
+              <span class="rounded-full bg-slate-100 px-3 py-1 text-xs font-black text-slate-700">Tes IQ</span>
+              <h3 class="mt-4 text-lg font-black text-slate-950">{{ $test->title ?? 'Tes IQ' }}</h3>
+              <p class="mt-2 text-sm leading-6 text-slate-500 line-clamp-2">{{ $test->description ?? 'Ukur kemampuan penalaran dengan soal bertahap.' }}</p>
+              <div class="mt-5 flex flex-wrap gap-2 text-xs font-bold text-slate-600">
+                <span class="rounded-full bg-[#DFF5F1] px-3 py-1">{{ $test->duration_minutes ?: 15 }} menit</span>
+                <span class="rounded-full bg-[#DFF5F1] px-3 py-1">{{ $questionCount }} soal</span>
               </div>
+              <a href="{{ ($isMember ?? false) ? route('app.test-iq.show', $test) : '#paket' }}" class="mt-6 inline-flex rounded-2xl bg-[#0F9D8A] px-5 py-3 text-sm font-black text-white">Mulai Tes</a>
+            </div>
+          @endforeach
+
+          @foreach (($psyTests ?? collect())->take(4) as $test)
+            @php $questions = (int)($test->questions_count ?? 0); @endphp
+            <div class="soft-card rounded-3xl p-6 lift">
+              <span class="rounded-full bg-[#DFF5F1] px-3 py-1 text-xs font-black text-[#087A6C]">{{ strtoupper($test->type ?? 'Psy Test') }}</span>
+              <h3 class="mt-4 text-lg font-black text-slate-950">{{ $test->name }}</h3>
+              <p class="mt-2 text-sm leading-6 text-slate-500">{{ ucfirst($test->track ?? 'general') }} assessment untuk memahami preferensi belajar.</p>
+              <div class="mt-5 flex flex-wrap gap-2 text-xs font-bold text-slate-600">
+                <span class="rounded-full bg-slate-100 px-3 py-1">{{ max(5, round($questions * .75)) }} menit</span>
+                <span class="rounded-full bg-slate-100 px-3 py-1">{{ $questions }} soal</span>
+              </div>
+              @if ($isMember ?? false)
+                <form method="POST" action="{{ route('app.psy.attempts.start', $test) }}" class="mt-6">
+                  @csrf
+                  <button class="rounded-2xl bg-[#0F9D8A] px-5 py-3 text-sm font-black text-white">Mulai Tes</button>
+                </form>
+              @else
+                <a href="#paket" class="mt-6 inline-flex rounded-2xl bg-slate-200 px-5 py-3 text-sm font-black text-slate-500">Upgrade</a>
+              @endif
             </div>
           @endforeach
         </div>
       </div>
-    @endif
+    </div>
+  </section>
 
-    @php
-      $__psy = isset($psyTests) ? $psyTests : collect();
-      $typeColors = [
-        'likert' => 'from-blue-600 to-blue-800',
-        'mcq'    => 'from-sky-600 to-blue-700',
-        'iq'     => 'from-emerald-500 to-teal-500',
-        'disc'   => 'from-amber-500 to-orange-500',
-        'big5'   => 'from-blue-700 to-indigo-800',
-        'custom' => 'from-slate-500 to-slate-700',
-      ];
-    @endphp
-
-    @if ($__psy->count())
-      <div class="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3 md:[&>*]:snap-none [&>*]:snap-start overflow-x-auto md:overflow-visible scroll-smooth">
-        @foreach ($__psy as $t)
-          @php
-            $type = strtolower($t->type ?? 'custom');
-            $grad = $typeColors[$type] ?? $typeColors['custom'];
-            $qs = (int) ($t->questions_count ?? 0);
-            $est = max(5, round($qs * 0.75));
-          @endphp
-
-          <div class="min-w-[88%] sm:min-w-0 group card card-lg overflow-hidden transition hover-lift {{ $isMember ?? false ? '' : 'card-locked' }}">
-            <div class="h-1.5 bg-gradient-to-r {{ $grad }}"></div>
-
-            @unless ($isMember ?? false)
-              <div class="lock-badge">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 11c1.105 0 2 .895 2 2v3H10v-3c0-1.105.895-2 2-2zm0-7a4 4 0 00-4 4v2h8V8a4 4 0 00-4-4z" />
-                </svg>
-                Terkunci
-              </div>
-            @endunless
-
-            <div class="p-5">
-              <div class="flex flex-wrap items-center gap-2 text-xs">
-                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-700">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6l4 2" />
-                  </svg>
-                  {{ $est }} menit
-                </span>
-                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-blue-50 text-blue-700">
-                  {{ strtoupper($t->type ?? 'custom') }}
-                </span>
-                <span class="inline-flex items-center gap-1 px-2 py-1 rounded-full bg-sky-50 text-sky-700">
-                  {{ ucfirst($t->track ?? 'general') }}
-                </span>
-              </div>
-
-              <h3 class="mt-3 text-lg font-semibold text-slate-900 line-clamp-2">{{ $t->name }}</h3>
-
-              <div class="mt-1 text-xs text-slate-500 flex items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 12h16M4 18h7" />
-                </svg>
-                {{ $qs }} soal
-              </div>
-
-              @if (!empty($t->description))
-                <p class="mt-3 text-sm text-slate-600">{{ $t->description }}</p>
-              @endif
-
-              <div class="mt-5 flex items-center gap-2">
-                @if ($isMember ?? false)
-                  <form method="POST" action="{{ route('app.psy.attempts.start', $t) }}">
-                    @csrf
-                    <button class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-white bg-gradient-to-r {{ $grad }} hover:brightness-105 active:brightness-95 transition text-sm">
-                      Mulai Tes
-                      <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-                      </svg>
-                    </button>
-                  </form>
-
-                  <a href="{{ route('app.psytests.show', $t->slug ?: $t->id) }}" class="inline-flex items-center gap-1.5 px-3 py-2 rounded-lg border text-slate-700 hover:bg-slate-50 text-sm transition">
-                    Detail
-                  </a>
-                @else
-                  <a href="#plans" class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg text-white bg-gradient-to-r from-slate-500 to-slate-700 btn-disabled text-sm">
-                    Upgrade untuk Akses
-                  </a>
-                @endif
-              </div>
+  <section id="forum" class="py-20 bg-[#f7fbfa]">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <x-section-heading kicker="Forum Tanya-Jawab" title="Belajar tidak sendirian." subtitle="Thread terbaru dari learner dan mentor membuat platform terasa aktif." />
+      <div class="mt-10 grid md:grid-cols-3 gap-6">
+        @forelse (($latestThreads ?? collect()) as $thread)
+          <a href="{{ route('app.qa-threads.show', $thread) }}" class="soft-card rounded-3xl p-6 lift block">
+            <div class="flex items-center justify-between gap-3">
+              <span class="rounded-full px-3 py-1 text-xs font-black {{ ($thread->status ?? 'open') === 'resolved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700' }}">{{ ucfirst($thread->status ?? 'open') }}</span>
+              <span class="text-xs font-semibold text-slate-400">{{ $thread->created_at?->diffForHumans() }}</span>
             </div>
-          </div>
-        @endforeach
-      </div>
-    @else
-      <div class="mt-8 card border-dashed p-8 text-center">
-        <div class="mx-auto mb-3 h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-700" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-          </svg>
-        </div>
-        <h3 class="text-lg font-semibold text-slate-900">Belum ada tes tersedia</h3>
-        <p class="mt-1 text-slate-600">Saat tes sudah aktif, kamu bisa mulai dari sini.</p>
-        <a href="{{ route('app.psytests.index') }}" class="mt-4 inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition">
-          Jelajahi Tes
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
-          </svg>
-        </a>
-      </div>
-    @endif
-  </div>
-</section>
-
-{{-- ===================== FORUM TANYA-JAWAB ===================== --}}
-<section id="forum" class="py-12 bg-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-end justify-between gap-4">
-      <div>
-        <div class="divider"></div>
-        <h2 class="section-title mt-3 text-2xl sm:text-3xl font-bold text-blue-900">Forum Tanya-Jawab</h2>
-        <p class="mt-2 text-gray-600">Tanya apa saja soal materi. Dapat bantuan dari mentor & komunitas.</p>
-      </div>
-      <div class="flex items-center gap-2">
-        <a href="{{ route('app.qa-threads.create') }}" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 hover-lift">Buat Thread</a>
-        <a href="{{ route('app.qa-threads.index') }}" class="hidden sm:inline-flex items-center gap-2 px-4 py-2 rounded-xl border hover:bg-gray-50 hover-lift">Lihat Semua</a>
-      </div>
-    </div>
-
-    @php $__threads = isset($latestThreads) ? $latestThreads : collect(); @endphp
-
-    <div class="mt-8 grid sm:grid-cols-2 lg:grid-cols-3 gap-6">
-      @forelse($__threads as $t)
-        <a href="{{ route('app.qa-threads.show', $t) }}" class="group card card-lg p-5 block hover-lift">
-          <div class="flex items-start justify-between gap-3">
-            <span class="inline-block text-xs px-2 py-0.5 rounded-full
-              {{ ($t->status ?? 'open') === 'resolved' ? 'bg-emerald-100 text-emerald-700' : (($t->status ?? 'open') === 'closed' ? 'bg-gray-200 text-gray-700' : 'bg-amber-100 text-amber-700') }}">
-              {{ ucfirst($t->status ?? 'open') }}
-            </span>
-            <span class="text-xs text-gray-500">{{ $t->created_at?->diffForHumans() }}</span>
-          </div>
-
-          <h3 class="mt-3 font-semibold text-blue-950 line-clamp-2 group-hover:underline">
-            {{ $t->title }}
-          </h3>
-
-          @if (!empty($t->body))
-            <p class="mt-2 text-sm text-gray-600 line-clamp-2">{{ strip_tags($t->body) }}</p>
-          @endif
-
-          <div class="mt-4 flex items-center justify-between text-xs text-gray-600">
-            <div class="flex items-center gap-2 truncate">
-              <span class="font-medium text-gray-700">{{ $t->user?->name ?? 'User' }}</span>
-              @if ($t->course) <span>• {{ $t->course->title }}</span> @endif
-              @if ($t->lesson) <span>• {{ $t->lesson->title }}</span> @endif
+            <h3 class="mt-5 line-clamp-2 text-lg font-black text-slate-950">{{ $thread->title }}</h3>
+            <p class="mt-3 line-clamp-2 text-sm leading-6 text-slate-500">{{ strip_tags($thread->body ?? 'Diskusi terbaru dari komunitas BERKEMAH.') }}</p>
+            <div class="mt-6 flex items-center justify-between text-xs font-bold text-slate-500">
+              <span class="truncate">{{ $thread->user?->name ?? 'Learner' }}</span>
+              <span>{{ $thread->course?->title ?? 'General' }}</span>
+              <span>{{ $thread->replies_count ?? 0 }} replies</span>
             </div>
-            <div>💬 {{ $t->replies_count ?? 0 }}</div>
-          </div>
-        </a>
-      @empty
-        <div class="sm:col-span-2 lg:col-span-3">
-          <div class="p-6 card bg-sky-50 border-sky-100 text-blue-900">
-            Belum ada diskusi terbaru. <a class="underline" href="{{ route('app.qa-threads.create') }}">Mulai bertanya</a>.
-          </div>
-        </div>
-      @endforelse
-    </div>
-
-    <div class="mt-6 flex items-center gap-3 sm:hidden">
-      <a href="{{ route('app.qa-threads.create') }}" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover-lift">Buat Thread</a>
-      <a href="{{ route('app.qa-threads.index') }}" class="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2 rounded-xl border hover-lift">Lihat Semua</a>
-    </div>
-  </div>
-</section>
-
-{{-- ===================== PLANS ===================== --}}
-{{-- resources/views/partials/plans.blade.php --}}
-<section id="plans" class="py-12 bg-gradient-to-r from-blue-900 via-blue-800 to-blue-700 text-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-
-    <div class="flex items-end justify-between gap-4">
-      <div>
-        <div class="divider"></div>
-        <h2 class="section-title mt-3 text-2xl sm:text-3xl font-bold">Paket Belajar</h2>
-        <p class="mt-2 text-blue-100">Akses fleksibel sesuai kebutuhanmu.</p>
-      </div>
-    </div>
-
-    <div class="mt-8 grid md:grid-cols-3 gap-6">
-      @forelse ($plans as $plan)
-        @php
-          // ===== Harga & Periode
-          $price       = (int) ($plan->price ?? 0);
-          $period      = (string) ($plan->period ?? 'monthly');
-          $periodLabel = $period === 'yearly' ? 'tahun' : 'bulan';
-
-          // ===== Normalisasi fitur
-          // 1) Relasi: $plan->features()->pluck('label')
-          // 2) Kolom JSON string: $plan->features
-          // 3) Array langsung / string multiline
-          $featureItems = collect();
-
-          try {
-            if (method_exists($plan, 'features')) {
-              // kalau relasi ada, pakai label-nya
-              $featureItems = collect($plan->features()->pluck('label')->all());
-            }
-          } catch (\Throwable $e) {}
-
-          if ($featureItems->isEmpty()) {
-            $raw = $plan->features
-                 ?? $plan->feature_list
-                 ?? $plan->plan_features
-                 ?? null;
-
-            if (is_iterable($raw)) {
-              $featureItems = collect($raw);
-            } elseif (is_string($raw)) {
-              // coba decode JSON
-              $decoded = json_decode($raw, true);
-              if (json_last_error() === JSON_ERROR_NONE && is_array($decoded)) {
-                $featureItems = collect($decoded);
-              } else {
-                // anggap string multi-baris
-                $featureItems = collect(preg_split('/\r\n|\r|\n/', trim($raw)) ?: []);
-              }
-            }
-          }
-
-          // Fallback jika kosong
-          if ($featureItems->filter(fn($v)=>filled($v))->isEmpty()) {
-            $featureItems = collect([
-              'Akses 1 kelas terpilih',
-              'Kuis & sertifikat',
-              'Pelacakan progres',
-              'Dukungan komunitas',
-            ]);
-          }
-
-          $coursesCount = $plan->plan_courses_count ?? ($plan->courses_count ?? null);
-          $recommended  = (bool) ($plan->is_recommended ?? false);
-        @endphp
-
-        <div class="relative rounded-2xl border border-white/15 p-6 bg-white/10 backdrop-blur hover:-translate-y-1 hover:shadow-lg transition
-                    @if($recommended) ring-2 ring-yellow-300/60 @endif">
-
-          {{-- Badge Rekomendasi --}}
-          @if($recommended)
-            <span class="absolute -top-3 right-4 text-[11px] px-2 py-1 rounded-full bg-yellow-300 text-blue-900 font-semibold shadow">
-              Rekomendasi
-            </span>
-          @endif
-
-          {{-- Header --}}
-          <div class="flex items-baseline justify-between">
-            <h3 class="text-xl font-semibold truncate">{{ $plan->name ?? 'Plan' }}</h3>
-          </div>
-
-          {{-- Harga --}}
-          <div class="mt-3">
-            <div class="text-3xl font-extrabold">Rp {{ number_format($price, 0, ',', '.') }}</div>
-            <div class="text-xs text-blue-100 mt-1">/ {{ $periodLabel }}</div>
-            @if(!is_null($coursesCount))
-              <div class="text-xs text-blue-100 mt-1">Termasuk akses {{ (int) $coursesCount }} kelas</div>
-            @endif
-          </div>
-
-          {{-- Fitur --}}
-          <ul class="mt-4 space-y-2 text-sm">
-            @foreach($featureItems->filter(fn($v)=>filled($v)) as $feat)
-              <li class="flex gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 flex-none mt-0.5" viewBox="0 0 20 20" fill="currentColor">
-                  <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 0 1 0 1.414l-7.5 7.5a1 1 0 0 1-1.414 0l-3-3a1 1 0 1 1 1.414-1.414L8.5 12.086l6.793-6.793a1 1 0 0 1 1.414 0z" clip-rule="evenodd"/>
-                </svg>
-                <span class="text-blue-100/95">{{ is_array($feat) ? ($feat['label'] ?? json_encode($feat)) : $feat }}</span>
-              </li>
-            @endforeach
-          </ul>
-
-          {{-- CTA --}}
-          <div class="mt-6">
-            @auth
-              <form method="POST" action="{{ route('app.memberships.subscribe', $plan) }}">
-                @csrf
-                <button class="w-full px-4 py-2 rounded-xl bg-white text-blue-800 font-semibold hover:bg-blue-50">
-                  Pilih Paket
-                </button>
-              </form>
-            @else
-              <a href="{{ route('register') }}"
-                 class="w-full inline-flex justify-center px-4 py-2 rounded-xl bg-white text-blue-800 font-semibold hover:bg-blue-50">
-                Daftar untuk Memilih
-              </a>
-            @endauth
-          </div>
-        </div>
-      @empty
-        <div class="md:col-span-3">
-          <div class="rounded-2xl border border-white/20 p-6 bg-white/10">Belum ada paket tersedia.</div>
-        </div>
-      @endforelse
-    </div>
-  </div>
-</section>
-
-
-{{-- ===================== COUPONS ===================== --}}
-<section id="kupon" class="py-12 bg-white">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-    <div class="flex items-end justify-between gap-4">
-      <div>
-        <div class="divider"></div>
-        <h2 class="section-title mt-3 text-2xl sm:text-3xl font-bold text-blue-900">Kupon Aktif</h2>
-        <p class="mt-2 text-gray-600">Gunakan saat checkout untuk potongan harga.</p>
-      </div>
-    </div>
-
-    <div class="mt-6 grid md:grid-cols-3 gap-4">
-      @forelse ($activeCoupons as $cp)
-        <div class="card p-5 bg-gradient-to-br from-white to-sky-50 hover-lift">
-          <div class="flex items-center justify-between">
-            <div>
-              <div class="text-sm text-gray-600">Kode Kupon</div>
-              <div class="text-xl font-bold tracking-wide text-blue-900">{{ $cp->code }}</div>
-            </div>
-            <span class="px-2 py-1 text-xs rounded-lg bg-blue-600 text-white">
-              {{ number_format($cp->discount_percent, 0) }}%
-            </span>
-          </div>
-
-          <div class="mt-3 text-xs text-gray-600">
-            @php
-              $vf = $cp->valid_from ? \Carbon\Carbon::parse($cp->valid_from)->isoFormat('D MMM Y') : 'Sekarang';
-              $vu = $cp->valid_until ? \Carbon\Carbon::parse($cp->valid_until)->isoFormat('D MMM Y') : 'Tanpa batas';
-            @endphp
-            Berlaku: {{ $vf }} — {{ $vu }}
-          </div>
-
-          <a href="{{ route('app.memberships.plans') }}" class="mt-4 shine inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover-lift">
-            Lihat Paket
           </a>
+        @empty
+          <div class="md:col-span-3 soft-card rounded-3xl p-8 text-center font-bold text-slate-600">Belum ada forum tanya-jawab.</div>
+        @endforelse
+      </div>
+    </div>
+  </section>
+
+  <section id="paket" class="py-20 bg-slate-950 text-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="max-w-2xl mx-auto text-center">
+        <span class="inline-flex rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-black uppercase tracking-wider text-[#DFF5F1]">Paket Belajar</span>
+        <h2 class="mt-5 text-3xl sm:text-4xl font-black tracking-tight">Pricing yang jelas untuk mulai belajar.</h2>
+        <p class="mt-4 text-white/65 leading-8">Pilih paket sesuai ritme belajar. Satu card dapat dibuat recommended dari data plan.</p>
+      </div>
+      <div class="mt-12 grid md:grid-cols-3 gap-6">
+        @forelse ($plans as $plan)
+          @php
+            $rawFeatures = $plan->features ?? null;
+            $features = collect();
+            if (is_array($rawFeatures)) {
+              $features = collect($rawFeatures);
+            } elseif (is_string($rawFeatures)) {
+              $decoded = json_decode($rawFeatures, true);
+              $features = json_last_error() === JSON_ERROR_NONE && is_array($decoded)
+                ? collect($decoded)
+                : collect(preg_split('/\r\n|\r|\n/', trim($rawFeatures)) ?: []);
+            }
+            if ($features->filter(fn ($feature) => filled($feature))->isEmpty()) {
+              $features = collect(['Akses kelas pilihan', 'Kuis dan sertifikat', 'Forum komunitas', 'Progress tracking']);
+            }
+            $isRecommended = $loop->iteration === 2 || (bool)($plan->is_recommended ?? false);
+          @endphp
+          <div class="relative rounded-3xl border {{ $isRecommended ? 'border-[#0F9D8A] bg-white text-slate-950 scale-[1.02]' : 'border-white/10 bg-white/7 text-white' }} p-7 lift">
+            @if ($isRecommended)
+              <span class="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[#0F9D8A] px-4 py-1.5 text-xs font-black text-white">Recommended</span>
+            @endif
+            <h3 class="text-xl font-black">{{ $plan->name ?? 'Plan' }}</h3>
+            <div class="mt-5">
+              <span class="text-4xl font-black">Rp {{ number_format((int)($plan->price ?? 0), 0, ',', '.') }}</span>
+              <span class="text-sm {{ $isRecommended ? 'text-slate-500' : 'text-white/55' }}">/{{ $plan->period ?? 'bulan' }}</span>
+            </div>
+            <ul class="mt-7 space-y-3">
+              @foreach ($features->filter(fn ($feature) => filled($feature))->take(6) as $feature)
+                <li class="flex gap-3 text-sm font-semibold {{ $isRecommended ? 'text-slate-700' : 'text-white/75' }}">
+                  <span class="mt-1 h-2 w-2 rounded-full bg-[#0F9D8A]"></span>
+                  {{ is_array($feature) ? ($feature['label'] ?? json_encode($feature)) : $feature }}
+                </li>
+              @endforeach
+            </ul>
+            <div class="mt-8">
+              @auth
+                <form method="POST" action="{{ route('app.memberships.subscribe', $plan) }}">
+                  @csrf
+                  <button class="w-full rounded-2xl {{ $isRecommended ? 'bg-[#0F9D8A] text-white' : 'bg-white text-slate-950' }} px-5 py-3 text-sm font-black">Pilih Paket</button>
+                </form>
+              @else
+                <a href="{{ route('register') }}" class="block w-full rounded-2xl {{ $isRecommended ? 'bg-[#0F9D8A] text-white' : 'bg-white text-slate-950' }} px-5 py-3 text-center text-sm font-black">Daftar Dulu</a>
+              @endauth
+            </div>
+          </div>
+        @empty
+          <div class="md:col-span-3 rounded-3xl border border-white/10 bg-white/7 p-8 text-center font-bold text-white/70">Belum ada paket tersedia.</div>
+        @endforelse
+      </div>
+    </div>
+  </section>
+
+  <section id="kupon" class="py-20 bg-white">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <x-section-heading kicker="Kupon Aktif" title="Promo yang mudah ditemukan." subtitle="Voucher tampil bersih, kuat secara visual, tapi tetap profesional." />
+      <div class="mt-10 grid md:grid-cols-3 gap-6">
+        @forelse ($activeCoupons as $coupon)
+          <div class="soft-card rounded-3xl p-6 lift relative overflow-hidden">
+            <div class="absolute -right-10 -top-10 h-32 w-32 rounded-full bg-[#DFF5F1]"></div>
+            <div class="relative">
+              <p class="text-xs font-black uppercase tracking-wider text-slate-400">Kode Kupon</p>
+              <h3 class="mt-2 font-mono text-3xl font-black tracking-wider text-slate-950">{{ $coupon->code }}</h3>
+              <div class="mt-5 inline-flex rounded-2xl bg-[#0F9D8A] px-4 py-2 text-xl font-black text-white">{{ number_format($coupon->discount_percent, 0) }}% OFF</div>
+              @php
+                $from = $coupon->valid_from ? \Carbon\Carbon::parse($coupon->valid_from)->format('d M Y') : 'Sekarang';
+                $until = $coupon->valid_until ? \Carbon\Carbon::parse($coupon->valid_until)->format('d M Y') : 'Tanpa batas';
+              @endphp
+              <p class="mt-4 text-xs font-semibold text-slate-500">{{ $from }} sampai {{ $until }}</p>
+              <a href="{{ route('app.memberships.plans') }}" class="mt-6 inline-flex rounded-2xl bg-[#DFF5F1] px-5 py-3 text-sm font-black text-[#087A6C]">Lihat Paket</a>
+            </div>
+          </div>
+        @empty
+          <div class="md:col-span-3 soft-card rounded-3xl p-8 text-center font-bold text-slate-600">Belum ada kupon aktif.</div>
+        @endforelse
+      </div>
+    </div>
+  </section>
+
+  @guest
+    <section class="py-20 bg-[#f7fbfa]">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-[#075E54] via-[#087A6C] to-[#0F9D8A] px-6 py-14 text-center text-white shadow-2xl shadow-[#0F9D8A]/20 sm:px-12">
+          <div class="absolute inset-0 opacity-10" style="background-image: linear-gradient(90deg,#fff 1px,transparent 1px),linear-gradient(#fff 1px,transparent 1px); background-size: 32px 32px;"></div>
+          <div class="relative max-w-2xl mx-auto">
+            <h2 class="text-3xl sm:text-4xl font-black tracking-tight">Mulai gratis, upgrade kapan saja.</h2>
+            <p class="mt-4 text-white/80 leading-8">Buat akun untuk mulai menyusun progres belajar, mengambil kelas, mengikuti kuis, dan mengakses rekomendasi belajar.</p>
+            <a href="{{ route('register') }}" class="mt-8 inline-flex rounded-2xl bg-white px-8 py-4 text-sm font-black text-[#075E54]">Buat Akun</a>
+          </div>
         </div>
-      @empty
-        <div class="md:col-span-3">
-          <div class="p-6 card bg-sky-50 border-sky-100 text-blue-900">Belum ada kupon aktif.</div>
-        </div>
-      @endforelse
-    </div>
-  </div>
-
-  @push('scripts')
-  <script>
-    if (location.hash === '#alerts') {
-      const el = document.getElementById('alerts');
-      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    }
-  </script>
-  @endpush
-</section>
-
-{{-- ===================== CTA ===================== --}}
-@guest
-<section class="py-12 sm:py-16 bg-gradient-to-r from-sky-300 via-blue-600 to-blue-800">
-  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 grid md:grid-cols-2 gap-8 items-center text-white">
-    <div>
-      <h2 class="text-2xl sm:text-3xl font-bold">Mulai Gratis, Upgrade Kapan Saja</h2>
-      <p class="mt-2 text-blue-100">Akses kelas dasar tanpa biaya. Belajar dulu, upgrade kalau sudah siap.</p>
-    </div>
-    <div class="flex md:justify-end">
-      <a href="{{ route('register') }}" class="shine px-5 py-3 rounded-xl bg-white text-blue-800 font-semibold hover:bg-blue-50 hover-lift">
-        Buat Akun
-      </a>
-    </div>
-  </div>
-</section>
-@endguest
-
+      </div>
+    </section>
+  @endguest
+</div>
 @endsection

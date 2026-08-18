@@ -6,7 +6,7 @@ use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\Lesson;
-use App\Models\Enrollment;
+use App\Models\{Enrollment, Membership};
 
 class EnsureLessonAccessible
 {
@@ -36,13 +36,25 @@ class EnsureLessonAccessible
             return $next($request);
         }
 
-        // cek apakah user terdaftar di course
-        $enrolled = Enrollment::where('user_id', $user->id)
+        // cek akses efektif, bukan hanya pernah terdaftar
+        $enrollment = Enrollment::where('user_id', $user->id)
             ->where('course_id', $course->id)
+            ->where('status', 'active')
+            ->first();
+
+        if (! $enrollment) {
+            abort(403, 'Anda belum terdaftar pada kursus ini');
+        }
+
+        $hasActiveMembership = Membership::where('user_id', $user->id)
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
             ->exists();
 
-        if (! $enrolled) {
-            abort(403, 'Anda belum terdaftar pada kursus ini');
+        if (! $enrollment->hasEffectiveAccess($hasActiveMembership)) {
+            abort(403, 'Akses kursus sudah tidak aktif');
         }
 
         return $next($request);

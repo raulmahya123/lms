@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\{QaThread, Course, Lesson};
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 
 class QaThreadController extends Controller
 {
@@ -16,12 +17,20 @@ class QaThreadController extends Controller
      */
     public function index(Request $r)
     {
+        $filters = $r->validate([
+            'mine'   => ['nullable', 'boolean'],
+            'q'      => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', Rule::in(['open', 'resolved', 'closed'])],
+        ]);
+        $term = trim((string) ($filters['q'] ?? ''));
+
         $threads = QaThread::query()
+            ->select(['id', 'user_id', 'course_id', 'lesson_id', 'title', 'status', 'created_at'])
             ->with(['user:id,name', 'course:id,title', 'lesson:id,title'])
             ->withCount('replies')
             ->when($r->boolean('mine'), fn($q) => $q->where('user_id', Auth::id()))
-            ->when($r->filled('q'), fn($q) => $q->where('title', 'like', '%'.$r->q.'%'))
-            ->when($r->filled('status'), fn($q) => $q->where('status', $r->status))
+            ->when($term !== '', fn($q) => $q->where('title', 'like', '%' . $term . '%'))
+            ->when($filters['status'] ?? null, fn($q, $status) => $q->where('status', $status))
             ->latest('id')
             ->paginate(20)
             ->withQueryString();
@@ -71,13 +80,12 @@ class QaThreadController extends Controller
             'user:id,name',
             'course:id,title',
             'lesson:id,title',
-            'replies.user:id,name',
+            'replies' => fn($q) => $q
+                ->select(['id', 'thread_id', 'user_id', 'body', 'is_answer', 'created_at'])
+                ->with('user:id,name')
+                ->orderByDesc('is_answer')
+                ->orderBy('created_at'),
         ]);
-
-        // urutkan: jawaban yang ditandai (is_answer=1) ditaruh atas
-        $qa_thread->setRelation('replies',
-            $qa_thread->replies->sortByDesc('is_answer')->values()
-        );
 
         return view('app.qa_threads.show', ['thread' => $qa_thread]);
     }

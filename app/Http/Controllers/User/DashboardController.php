@@ -20,23 +20,37 @@ use App\Models\{
 
 class DashboardController extends Controller
 {
+    private function monthExpression(string $column): string
+    {
+        abort_unless(in_array($column, ['lp.completed_at', 'created_at'], true), 500, 'Invalid date grouping column');
+
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', {$column})"
+            : "DATE_FORMAT({$column}, '%Y-%m')";
+    }
+
     public function index()
     {
         $user  = Auth::user();
         $today = Carbon::today();
+        $activeMembership = Membership::where('user_id', $user->id)
+            ->with(['plan:id,name,period,price'])
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+            })
+            ->first();
 
         /** =========================
          * 1) Stats ringkas
          * =========================*/
         $stats = [
             'courses_count'     => Enrollment::where('user_id', $user->id)->count(),
-            'active_membership' => Membership::where('user_id', $user->id)
-                ->where('status', 'active')
-                ->where(function ($q) {
-                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                })
-                ->first(),
-            'last_attempt'      => QuizAttempt::where('user_id', $user->id)->latest('id')->first()
+            'active_membership' => $activeMembership,
+            'last_attempt'      => QuizAttempt::where('user_id', $user->id)
+                ->select(['id', 'quiz_id', 'score', 'created_at', 'submitted_at'])
+                ->latest('id')
+                ->first()
         ];
 
         /** =========================
@@ -46,6 +60,7 @@ class DashboardController extends Controller
 
         $myCourses = Course::query()
             ->whereIn('id', $myCourseIds)
+            ->select(['id', 'title', 'cover', 'is_free', 'price', 'is_published', 'created_at'])
             ->withCount(['modules', 'enrollments', 'lessons as lessons_count'])
             ->latest('id')
             ->take(12)
@@ -80,6 +95,7 @@ class DashboardController extends Controller
         $recommendedCourses = Course::query()
             ->where('is_published', 1)
             ->when($myCourseIds->isNotEmpty(), fn ($q) => $q->whereNotIn('id', $myCourseIds))
+            ->select(['id', 'title', 'cover', 'is_free', 'price', 'created_at'])
             ->withCount(['modules', 'enrollments', 'lessons as lessons_count'])
             ->orderByDesc('enrollments_count')
             ->take(6)
@@ -95,6 +111,7 @@ class DashboardController extends Controller
          * 4) Kupon aktif hari ini
          * =========================*/
         $activeCoupons = Coupon::query()
+            ->select(['id', 'code', 'discount_percent', 'valid_from', 'valid_until', 'usage_limit', 'created_at'])
             ->where(function ($q) use ($today) {
                 $q->whereNull('valid_from')->orWhereDate('valid_from', '<=', $today);
             })
@@ -140,12 +157,7 @@ class DashboardController extends Controller
         /** =========================
          * 7) Flag membership
          * =========================*/
-        $isMember = Membership::where('user_id', $user->id)
-            ->where('status', 'active')
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhereDate('expires_at', '>=', now()->toDateString());
-            })
-            ->exists();
+        $isMember = (bool) $activeMembership;
 
         /** =========================
          * 8) Dataset untuk Grafik
@@ -194,7 +206,7 @@ class DashboardController extends Controller
             ->where('lp.user_id', $user->id)
             ->whereNotNull('lp.completed_at')
             ->whereBetween('lp.completed_at', [$fromMonth, now()])
-            ->selectRaw("DATE_FORMAT(lp.completed_at, '%Y-%m') as ym, COUNT(*) as cnt")
+            ->selectRaw($this->monthExpression('lp.completed_at') . ' as ym, COUNT(*) as cnt')
             ->groupBy('ym')
             ->orderBy('ym')
             ->pluck('cnt', 'ym');
@@ -210,7 +222,7 @@ class DashboardController extends Controller
         // 8.6 Quiz attempts by month (6 bulan terakhir)
         $attemptsByMonthRaw = QuizAttempt::where('user_id', $user->id)
             ->whereBetween('created_at', [$fromMonth, now()])
-            ->selectRaw("DATE_FORMAT(created_at, '%Y-%m') as ym, COUNT(*) as cnt")
+            ->selectRaw($this->monthExpression('created_at') . ' as ym, COUNT(*) as cnt')
             ->groupBy('ym')
             ->orderBy('ym')
             ->pluck('cnt', 'ym');

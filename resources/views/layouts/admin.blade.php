@@ -1,400 +1,216 @@
 <!doctype html>
-<html lang="en" x-data="adminShell()" x-init="init()" :class="theme">
+<html lang="en" x-data="adminShell()">
 
 <head>
     <meta charset="utf-8">
-    <title>@yield('title', 'BERKEMAH Dashboard')</title>
+    <title>@yield('title', 'LMS Enterprise Dashboard')</title>
     <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-    {{-- Poppins --}}
+    {{-- Fonts --}}
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 
-    @vite(['resources/css/app.css', 'resources/js/app.js'])
+    {{-- Tailwind CDN & Config --}}
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                    colors: {
+                        tosca: {
+                            light: '#DFF5F1',
+                            DEFAULT: '#0F9D8A',
+                            dark: '#087A6C',
+                            deep: '#075E54',
+                        },
+                        softbg: '#F4FBF9',
+                        text: {
+                            main: '#1F2937',
+                            soft: '#475569'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    {{-- Alpine.js for interactions --}}
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
     <style>
-        :root {
-            --brand: #2563eb;
-        }
-
-        body {
-            font-family: 'Poppins', system-ui, -apple-system, Segoe UI, Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
-        }
-
-        [x-cloak] {
-            display: none !important;
-        }
+        [x-cloak] { display: none !important; }
+        body { font-family: 'Inter', sans-serif; }
     </style>
 </head>
 
-<body class="min-h-screen flex"
-    :class="theme === 'navy' ? 'bg-[#0b1220] text-white' : 'bg-[#f3f7ff] text-[#102a43]'">
+<body class="min-h-screen flex bg-softbg text-text-main antialiased">
 
     <!-- SIDEBAR -->
-    <aside
-        class="fixed inset-y-0 left-0 w-64 transform lg:transform-none lg:static z-40 transition-transform duration-300"
-        :class="[
-            sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
-            theme==='navy' ? 'bg-gradient-to-b from-[#0f1a33] to-[#0b1220] text-white' :
-            'bg-white text-[#102a43] shadow-lg'
-        ]"
-        aria-label="Main sidebar">
-
+    <aside class="fixed inset-y-0 left-0 w-64 bg-white shadow-[4px_0_24px_rgba(0,0,0,0.02)] transform lg:transform-none lg:static z-40 transition-transform duration-300 flex flex-col"
+        :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'">
+        
         <!-- BRAND -->
-        <div class="p-4 flex items-center justify-between">
-            <div class="flex items-center gap-3 select-none">
-                <img src="{{ asset('assets/images/foto-berkemah.png') }}" alt="Berkemah Logo"
-                    class="h-14 w-auto shrink-0">
-                <div class="leading-tight">
-                    <div class="text-[0.72rem] opacity-70 tracking-widest">BERKEMAH</div>
-                    <div class="text-2xl font-extrabold tracking-wide">
-                        <span :class="theme === 'navy' ? 'text-white' : 'text-blue-700'">DASHBOARD</span>
-                    </div>
+        <div class="h-16 flex items-center px-6 border-b border-gray-100 justify-between">
+            <div class="flex items-center gap-3 font-bold text-xl text-text-main tracking-tight">
+                <div class="w-8 h-8 bg-tosca rounded-lg flex items-center justify-center text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
                 </div>
+                LMS<span class="text-tosca">Enterprise</span>
             </div>
-            <!-- Close (mobile) -->
-            <button class="p-2 rounded lg:hidden focus:outline-none focus:ring-2 focus:ring-offset-2"
-                :class="theme === 'navy' ? 'hover:bg-white/10 ring-white/30' : 'hover:bg-blue-50 ring-blue-300'"
-                @click="sidebarOpen=false" aria-label="Close sidebar">
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5" fill="none"
-                    stroke="currentColor" stroke-width="2">
-                    <path d="M6 6l12 12M18 6L6 18" />
-                </svg>
+            <button class="lg:hidden text-gray-500 hover:text-tosca" @click="sidebarOpen = false">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
             </button>
         </div>
 
-        <nav class="px-3 space-y-1" aria-label="Primary">
-            @php
-                use Illuminate\Support\Facades\Gate;
+        <!-- NAVIGATION -->
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            
+            <!-- 1. Dashboard -->
+            <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium {{ request()->routeIs('admin.dashboard') ? 'bg-tosca-light text-tosca-dark' : 'text-text-soft hover:bg-gray-50 hover:text-text-main' }}">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                Dashboard
+            </a>
 
-                $isAdmin = Gate::allows('admin');
-                $isMentor = Gate::allows('mentor');
+            <!-- 2. Katalog & Edukasi -->
+            <div x-data="{ open: {{ request()->routeIs('admin.courses.*') || request()->routeIs('admin.modules.*') || request()->routeIs('admin.lessons.*') || request()->routeIs('admin.resources.*') ? 'true' : 'false' }} }">
+                <button @click="open = !open" class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium text-text-soft hover:bg-gray-50 hover:text-text-main">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+                        Katalog & Edukasi
+                    </div>
+                    <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div x-show="open" x-collapse class="pl-11 pr-3 py-1 space-y-1">
+                    <a href="{{ route('admin.courses.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.courses.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">Courses</a>
+                </div>
+            </div>
 
-                // FULL menu untuk admin
-                $navAll = [
-                    ['Dashboard', 'admin.dashboard'],
-                    ['Courses', 'admin.courses.index'],
-                    ['Modules', 'admin.modules.index'],
-                    ['Lessons', 'admin.lessons.index'],
-                    ['Quizzes', 'admin.quizzes.index'],
-                    ['Questions', 'admin.questions.index'],
-                    ['Options', 'admin.options.index'],
-                    ['Memberships', 'admin.memberships.index'],
-                    ['Enrollments', 'admin.enrollments.index'],
-                    ['Payments', 'admin.payments.index'],
-                    ['Plans', 'admin.plans.index'],
-                    ['Coupons', 'admin.coupons.index'],
-                    ['Resources', 'admin.resources.index'],
-                    ['Certificate Templates', 'admin.certificate-templates.index'],
-                    ['Certificate Issues', 'admin.certificate-issues.index'],
-                    ['Psych Tests', 'admin.psy-tests.index'],
-                    ['Psych Questions', 'admin.psy-questions.index'],
-                    ['Psych Attempts', 'admin.psy-attempts.index'],
-                    ['Psych Profiles', 'admin.psy-profiles.index'],
-                    // ['Psych Profiles','admin.psy-profiles.*'],
-                    ['Qa_Threads', 'admin.qa-threads.index'],
-                    ['Test Iq', 'admin.test-iq.index'],
-                    ['Lihat Situs', 'home'],
-                ];
+            <!-- 3. Assessment -->
+            <div x-data="{ open: {{ request()->routeIs('admin.quizzes.*') || request()->routeIs('admin.test-iq.*') || request()->routeIs('admin.psy-tests.*') || request()->routeIs('admin.questions.*') ? 'true' : 'false' }} }">
+                <button @click="open = !open" class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium text-text-soft hover:bg-gray-50 hover:text-text-main">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                        Assessment
+                    </div>
+                    <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div x-show="open" x-collapse class="pl-11 pr-3 py-1 space-y-1">
+                    <a href="{{ route('admin.quizzes.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.quizzes.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">Quizzes</a>
+                    <a href="{{ route('admin.test-iq.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.test-iq.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">IQ Tests</a>
+                    <a href="{{ route('admin.psy-tests.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.psy-tests.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">Psychology Tests</a>
+                    <a href="{{ route('admin.questions.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.questions.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">Question Bank</a>
+                </div>
+            </div>
 
-                // Menu khusus mentor
-                $navMentor = [
-                    ['Dashboard', 'admin.dashboard'],
-                    ['Courses', 'admin.courses.index'],
-                    ['Modules', 'admin.modules.index'],
-                    ['Lessons', 'admin.lessons.index'],
-                    ['Quizzes', 'admin.quizzes.index'],
-                    ['Questions', 'admin.questions.index'],
-                    ['Options', 'admin.options.index'],
-                    ['Lihat Situs', 'home'],
-                ];
+            <!-- 4. Sales & Membership -->
+            <div x-data="{ open: {{ request()->routeIs('admin.plans.*') || request()->routeIs('admin.memberships.*') || request()->routeIs('admin.enrollments.*') || request()->routeIs('admin.payments.*') || request()->routeIs('admin.coupons.*') ? 'true' : 'false' }} }">
+                <button @click="open = !open" class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium text-text-soft hover:bg-gray-50 hover:text-text-main">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+                        Sales & Membership
+                    </div>
+                    <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div x-show="open" x-collapse class="pl-11 pr-3 py-1 space-y-1">
+                    <a href="{{ route('admin.plans.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.plans.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">Plans</a>
+                    <a href="{{ route('admin.memberships.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.memberships.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">Memberships</a>
+                    <a href="{{ route('admin.enrollments.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.enrollments.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">Enrollments</a>
+                    <a href="{{ route('admin.payments.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.payments.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">Payments</a>
+                    <a href="{{ route('admin.coupons.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.coupons.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">Coupons</a>
+                </div>
+            </div>
 
-                $nav = $isAdmin ? $navAll : ($isMentor ? $navMentor : []);
-            @endphp
+            <!-- 5. Community & Achievement -->
+            <div x-data="{ open: {{ request()->routeIs('admin.qa-threads.*') || request()->routeIs('admin.certificate-*') ? 'true' : 'false' }} }">
+                <button @click="open = !open" class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium text-text-soft hover:bg-gray-50 hover:text-text-main">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a1.994 1.994 0 01-1.414-.586m0 0L11 14h4a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586z"></path></svg>
+                        Community & Awards
+                    </div>
+                    <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div x-show="open" x-collapse class="pl-11 pr-3 py-1 space-y-1">
+                    <a href="{{ route('admin.qa-threads.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.qa-threads.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">Q&A Moderation</a>
+                    <a href="{{ route('admin.certificate-templates.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.certificate-templates.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">Certificates</a>
+                </div>
+            </div>
 
-            @php
-                $icon = function (string $label): string {
-                    $base =
-                        'class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"';
+            <!-- 6. Users & Settings -->
+            <div x-data="{ open: {{ request()->routeIs('admin.psy-profiles.*') ? 'true' : 'false' }} }">
+                <button @click="open = !open" class="w-full flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg transition-colors font-medium text-text-soft hover:bg-gray-50 hover:text-text-main">
+                    <div class="flex items-center gap-3">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+                        Users & Settings
+                    </div>
+                    <svg class="w-4 h-4 transition-transform" :class="open ? 'rotate-180' : ''" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+                </button>
+                <div x-show="open" x-collapse class="pl-11 pr-3 py-1 space-y-1">
+                    <a href="{{ route('admin.psy-profiles.index') }}" class="block px-3 py-2 rounded-lg text-sm {{ request()->routeIs('admin.psy-profiles.*') ? 'text-tosca font-semibold' : 'text-text-soft hover:text-text-main hover:bg-gray-50' }}">Psych Profiles</a>
+                </div>
+            </div>
 
-                    return match ($label) {
-                        // --- CORE (mentor & admin) ---
-                        'Dashboard' => <<<SVG
-                          <svg $base>
-                            <path d="M3 13h8V3H3v10Z" />
-                            <path d="M13 21h8V11h-8v10Z" />
-                          </svg>
-                        SVG,
-                        'Courses' => <<<SVG
-                          <svg $base>
-                            <path d="M4 6.5L12 3l8 3.5V18l-8 3.5L4 18V6.5Z" />
-                            <path d="M12 6.5V21.5" />
-                          </svg>
-                        SVG,
-                        'Modules' => <<<SVG
-                          <svg $base>
-                            <rect x="3" y="3" width="7" height="7" rx="1.5" />
-                            <rect x="14" y="3" width="7" height="7" rx="1.5" />
-                            <rect x="3" y="14" width="7" height="7" rx="1.5" />
-                            <rect x="14" y="14" width="7" height="7" rx="1.5" />
-                          </svg>
-                        SVG,
-                        'Lessons' => <<<SVG
-                          <svg $base>
-                            <path d="M6 3h9l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2Z" />
-                            <path d="M15 3v5h5" />
-                          </svg>
-                        SVG,
-                        'Quizzes' => <<<SVG
-                          <svg $base>
-                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                            <path d="M8 8h8M8 12h8" />
-                            <path d="M6 8l-2 2 2 2" />
-                            <path d="M18 12l2 2-2 2" />
-                          </svg>
-                        SVG,
-                        'Questions' => <<<SVG
-                          <svg $base>
-                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                            <path d="M12 17h.01" />
-                            <path d="M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-1 .5-1.5 1.2-1.5 2.2" />
-                          </svg>
-                        SVG,
-                        'Options' => <<<SVG
-                          <svg $base>
-                            <circle cx="12" cy="12" r="3" />
-                            <path d="M19.4 15a1.7 1.7 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.7 1.7 0 0 0-1.82-.33 1.7 1.7 0 0 0-1 1.51V22a2 2 0 1 1-4 0v-.09a1.7 1.7 0 0 0-1-1.51 1.7 1.7 0 0 0-1.82.33l-.06.06A2 2 0 1 1 4.27 17.9l.06-.06a1.7 1.7 0 0 0 .33-1.82 1.7 1.7 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09c.66 0 1.26-.39 1.51-1 .35-.69.14-1.35-.33-1.82l-.06-.06A2 2 0 1 1 7.04 4.3l.06.06c.47.47 1.13.68 1.82.33.61-.25 1-.85 1-1.51V3a2 2 0 1 1 4 0v.09c0 .66.39 1.26 1 1.51.69.35 1.35.14 1.82-.33l.06-.06A2 2 0 1 1 21.73 7.1l-.06.06c-.47.47-.68 1.13-.33 1.82.25.61.85 1 1.51 1H22a2 2 0 1 1 0 4h-.09c-.66 0-1.26.39-1.51 1Z" />
-                          </svg>
-                        SVG,
-                        // --- EXTRA (admin only) ---
-                        'Memberships' => <<<SVG
-                          <svg $base>
-                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                            <circle cx="12" cy="7" r="4" />
-                          </svg>
-                        SVG,
-                        'Enrollments' => <<<SVG
-                          <svg $base>
-                            <rect x="3" y="4" width="18" height="12" rx="2" />
-                            <path d="M7 20h10M12 16v4" />
-                          </svg>
-                        SVG,
-                        'Payments' => <<<SVG
-                          <svg $base>
-                            <rect x="2" y="5" width="20" height="14" rx="2" />
-                            <path d="M2 10h20" />
-                          </svg>
-                        SVG,
-                        'Plans' => <<<SVG
-                          <svg $base>
-                            <path d="M4 6h16M6 10h12M8 14h8M10 18h4" />
-                          </svg>
-                        SVG,
-                        'Coupons' => <<<SVG
-                          <svg $base>
-                            <rect x="3" y="7" width="18" height="10" rx="2" />
-                            <path d="M7 7v10" />
-                            <path d="M17 10a2 2 0 1 0 0 4" />
-                          </svg>
-                        SVG,
-                        'Resources' => <<<SVG
-                          <svg $base>
-                            <rect x="4" y="4" width="16" height="16" rx="2" />
-                            <path d="M8 4v16M4 8h16" />
-                          </svg>
-                        SVG,
-                        'Certificate Templates' => <<<SVG
-                          <svg $base>
-                            <rect x="4" y="4" width="16" height="12" rx="2" />
-                            <path d="M8 9h8M8 12h5" />
-                            <path d="M6 20l3-3 3 3" />
-                          </svg>
-                        SVG,
-                        'Certificate Issues' => <<<SVG
-                          <svg $base>
-                            <rect x="4" y="4" width="16" height="12" rx="2" />
-                            <path d="M8 9h8M8 12h5" />
-                            <path d="M18 20l-3-3-3 3" />
-                          </svg>
-                        SVG,
-                        'Psych Tests' => <<<SVG
-                          <svg $base>
-                            <circle cx="12" cy="12" r="9" />
-                            <path d="M12 3v18M3 12h18" />
-                          </svg>
-                        SVG,
-                        'Psych Questions' => <<<SVG
-                          <svg $base>
-                            <rect x="3" y="3" width="18" height="18" rx="2" />
-                            <path d="M12 17h.01" />
-                            <path d="M10 9a3 3 0 1 1 4 2.7c-1 .5-1.5 1.2-1.5 2.3" />
-                          </svg>
-                        SVG,
-                        'Psych Attempts' => <<<SVG
-                          <svg $base>
-                            <circle cx="12" cy="12" r="9" />
-                            <polyline points="12 7 12 12 15 15" />
-                            <path d="M12 2v2M20 12h2M12 20v2M2 12h2" />
-                          </svg>
-                        SVG,
-                        'Qa_Threads' => <<<SVG
-                          <svg $base>
-                            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2Z" />
-                            <circle cx="9" cy="10" r="1" />
-                            <circle cx="13" cy="10" r="1" />
-                            <circle cx="17" cy="10" r="1" />
-                          </svg>
-                        SVG,
-                        'Test Iq' => <<<SVG
-                          <svg $base>
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-                            <circle cx="9" cy="9" r="1" />
-                            <circle cx="15" cy="9" r="1" />
-                          </svg>
-                        SVG,
-                        // --- COMMON ---
-                        'Lihat Situs' => <<<SVG
-                          <svg $base>
-                            <circle cx="12" cy="12" r="10" />
-                            <path d="M2 12h20" />
-                            <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z" />
-                          </svg>
-                        SVG,
-                        // fallback
-                        default => <<<SVG
-                          <svg $base><circle cx="12" cy="12" r="9" /></svg>
-                        SVG,
-                        'Psych Profiles' => <<<SVG
-                          <svg $base>
-                            <path d="M4 20v-2a4 4 0 0 1 4-4h8a4 4 0 0 1 4 4v2" />
-                            <circle cx="12" cy="8" r="3" />
-                            <path d="M3 8h3M18 8h3M6 5l2 2M16 5l-2 2" />
-                          </svg>
-                        SVG,
-                    };
-                };
-            @endphp
-            @php
-                // fallback kalau controller tidak mengirim $badges
-                $badges ??= [
-                    'Psych Tests' => \App\Models\PsyTest::count(),
-                    'Psych Questions' => \App\Models\PsyQuestion::count(),
-                    'Psych Attempts' => \App\Models\PsyAttempt::whereNotNull('submitted_at')->count(),
-                    'Psych Profiles' => \App\Models\PsyProfile::count(), // ⬅️ ini penting
-                ];
-            @endphp
-
-            @foreach ($nav as [$label, $route])
-                @php
-                    $active = request()->routeIs($route);
-                    $count = (int) ($badges[$label] ?? 0);
-                    $badgeText = $count > 99 ? '99+' : $count;
-                @endphp
-
-                <a href="{{ route($route) }}"
-                    class="flex items-center gap-3 px-4 py-2.5 rounded-xl transition justify-between focus:outline-none focus:ring-2 focus:ring-offset-2"
-                    :class="theme === 'navy' ?
-                        '{{ $active ? 'bg-blue-600 text-white ring-white/30' : 'hover:bg-white/10 text-blue-100 ring-white/20' }}' :
-                        '{{ $active ? 'bg-blue-600 text-white ring-blue-300' : 'hover:bg-blue-50 text-[#102a43] ring-blue-200' }}'"
-                    aria-current="{{ $active ? 'page' : 'false' }}">
-
-                    <span class="flex items-center gap-3 min-w-0">
-                        <span class="shrink-0 inline-flex items-center justify-center w-6 h-6"
-                            :class="theme === 'navy' ? '{{ $active ? '' : 'opacity-90' }}' :
-                                '{{ $active ? '' : 'opacity-80' }}'">
-                            {!! $icon($label) !!}
-                        </span>
-                        <span class="truncate">{{ $label }}</span>
-                    </span>
-
-                    @if ($count > 0)
-                        <span
-                            class="ml-3 shrink-0 text-xs font-semibold px-2 py-0.5 rounded-full
-                  {{ $active ? 'bg-white text-blue-700' : 'bg-blue-600 text-white' }}">
-                            {{ $badgeText }}
-                        </span>
-                    @endif
-                </a>
-            @endforeach
         </nav>
     </aside>
 
     <!-- MAIN -->
     <div class="flex-1 flex flex-col min-w-0">
-        <!-- TOPBAR -->
-        <header class="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 shadow sticky top-0 z-30"
-            :class="theme === 'navy' ? 'bg-[#0f1a33] text-white' : 'bg-white text-[#102a43]'">
-            <div class="flex items-center gap-2">
-                <button class="p-2 rounded lg:hidden focus:outline-none focus:ring-2 focus:ring-offset-2"
-                    :class="theme === 'navy' ? 'hover:bg-white/10 ring-white/30' : 'hover:bg-blue-50 ring-blue-300'"
-                    @click="sidebarOpen=true" aria-label="Open sidebar">
-                    <svg viewBox="0 0 24 24" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M3 6h18M3 12h18M3 18h18" />
-                    </svg>
+        
+        <!-- TOP NAVBAR -->
+        <header class="h-16 flex items-center justify-between px-6 bg-white shadow-[0_4px_24px_rgba(0,0,0,0.02)] sticky top-0 z-30">
+            <div class="flex items-center gap-4">
+                <button class="lg:hidden text-gray-500 hover:text-tosca" @click="sidebarOpen = true">
+                    <svg viewBox="0 0 24 24" class="w-6 h-6" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 6h16M4 12h16M4 18h16" /></svg>
                 </button>
-                <h1 class="text-lg sm:text-xl font-semibold">@yield('title', 'Dashboard')</h1>
+                <h1 class="text-xl font-semibold text-text-main">@yield('title', 'Dashboard')</h1>
             </div>
 
-            {{-- RIGHT: Home + Profile + Theme --}}
-            @php($u = \Illuminate\Support\Facades\Auth::user())
-            <div class="flex items-center gap-2 sm:gap-3" x-data="{ open: false }">
-                <a href="{{ route('home') }}" class="px-3 py-1.5 rounded hover:bg-blue-200/30">Home</a>
+            {{-- RIGHT: Search, Notifications, Profile --}}
+            <div class="flex items-center gap-4" x-data="{ openProfile: false }">
+                
+                <a href="{{ route('home') }}" class="text-sm font-medium text-text-soft hover:text-tosca flex items-center gap-1 bg-gray-50 px-3 py-1.5 rounded-full transition-colors hidden sm:flex">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path></svg>
+                    Go to LMS
+                </a>
+
                 <div class="relative">
-                    <button @click="open=!open" @keydown.escape.window="open=false"
-                        class="flex items-center gap-2 px-3 py-1.5 rounded-xl border focus:outline-none focus:ring-2 focus:ring-offset-2"
-                        :class="theme === 'navy' ? 'border-white/10 hover:bg-white/10 ring-white/30' :
-                            'border-blue-200 hover:bg-blue-50 ring-blue-300'">
-                        <span
-                            class="inline-flex items-center justify-center w-7 h-7 rounded-full font-bold bg-blue-600 text-white">
-                            {{ strtoupper(mb_substr($u?->name ?? 'U', 0, 1)) }}
-                        </span>
-                        <span class="hidden sm:block max-w-[160px] truncate">{{ $u?->name ?? 'User' }}</span>
-                        <svg viewBox="0 0 24 24" class="w-4 h-4" fill="none" stroke="currentColor" stroke-width="2">
-                            <path d="m6 9 6 6 6-6" />
-                        </svg>
+                    <button @click="openProfile = !openProfile" @click.outside="openProfile = false" class="flex items-center gap-3 pl-2 pr-4 py-1.5 rounded-full border border-gray-100 hover:border-tosca/30 hover:bg-softbg transition-colors">
+                        @php($u = \Illuminate\Support\Facades\Auth::user())
+                        <div class="w-8 h-8 bg-tosca-light text-tosca-deep rounded-full flex items-center justify-center font-bold text-sm">
+                            {{ strtoupper(mb_substr($u?->name ?? 'A', 0, 1)) }}
+                        </div>
+                        <span class="hidden sm:block text-sm font-medium text-text-main">{{ $u?->name ?? 'Admin User' }}</span>
+                        <svg class="w-4 h-4 text-text-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
                     </button>
-                    <div x-cloak x-show="open" @click.outside="open=false"
-                        class="absolute right-0 mt-2 w-48 rounded-xl border shadow-lg overflow-hidden z-40"
-                        :class="theme === 'navy' ? 'bg-[#0f1a33] text-white border-white/10' :
-                            'bg-white text-[#102a43] border-blue-100'">
-                        <a href="{{ route('profile.edit') }}" class="block px-4 py-2.5"
-                            :class="theme === 'navy' ? 'hover:bg-white/10' : 'hover:bg-blue-50'">Profile</a>
+
+                    <div x-show="openProfile" x-cloak class="absolute right-0 mt-2 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                        <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm text-text-main hover:bg-softbg hover:text-tosca">Profile Settings</a>
+                        <div class="border-t border-gray-100 my-1"></div>
                         <form method="POST" action="{{ route('logout') }}"> @csrf
-                            <button type="submit"
-                                class="w-full text-left px-4 py-2.5 hover:bg-red-500/10 text-red-600">
-                                Logout
-                            </button>
+                            <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50">Logout</button>
                         </form>
                     </div>
                 </div>
-                <button @click="toggleTheme()"
-                    class="p-2 rounded-xl border flex items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2"
-                    :class="theme === 'navy' ? 'border-white/10 hover:bg-white/10 ring-white/30' :
-                        'border-blue-200 hover:bg-blue-50 ring-blue-300'"
-                    aria-label="Toggle theme">
-                    <svg x-show="theme==='navy'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-5 h-5"
-                        fill="none" stroke="currentColor" stroke-width="2">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z" />
-                    </svg>
-                    <svg x-show="theme!=='navy'" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"
-                        class="w-5 h-5" fill="none" stroke="currentColor" stroke-width="2">
-                        <circle cx="12" cy="12" r="4" />
-                        <path
-                            d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-                    </svg>
-                </button>
             </div>
         </header>
 
-        <main class="flex-1 p-4 sm:p-6 overflow-y-auto min-w-0">
+        <main class="flex-1 p-6 overflow-y-auto min-w-0">
             @if (session('ok'))
-                <div class="p-3 rounded mb-4"
-                    :class="theme === 'navy' ? 'bg-emerald-600/15 text-emerald-300' : 'bg-emerald-50 text-emerald-700'">
-                    {{ session('ok') }}
+                <div class="mb-6 bg-tosca-light text-tosca-deep px-4 py-3 rounded-xl border border-tosca/20 flex items-center gap-3">
+                    <svg class="w-5 h-5 text-tosca" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="font-medium text-sm">{{ session('ok') }}</span>
                 </div>
             @endif
+            @if (session('error'))
+                <div class="mb-6 bg-red-50 text-red-800 px-4 py-3 rounded-xl border border-red-100 flex items-center gap-3">
+                    <svg class="w-5 h-5 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span class="font-medium text-sm">{{ session('error') }}</span>
+                </div>
+            @endif
+
             @yield('content')
         </main>
     </div>
@@ -402,20 +218,10 @@
     <script>
         function adminShell() {
             return {
-                theme: 'navy',
                 sidebarOpen: false,
-                init() {
-                    const saved = localStorage.getItem('admin-theme');
-                    if (saved) this.theme = saved;
-                },
-                toggleTheme() {
-                    this.theme = this.theme === 'navy' ? 'sky' : 'navy';
-                    localStorage.setItem('admin-theme', this.theme);
-                }
             }
         }
     </script>
     @stack('scripts')
 </body>
-
 </html>

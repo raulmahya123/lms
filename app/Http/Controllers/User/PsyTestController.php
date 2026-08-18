@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PsyTest;
 use App\Models\PsyAttempt;
 use App\Models\PsyAnswer;
+use App\Services\Psychology\PsyTestFlowService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Session;
@@ -13,7 +14,7 @@ use Carbon\Carbon;
 
 class PsyTestController extends Controller
 {
-    public function __construct()
+    public function __construct(private PsyTestFlowService $psyFlow)
     {
         // Tes biasanya untuk user login; kalau mau publik, hapus middleware ini.
         $this->middleware('auth');
@@ -45,6 +46,7 @@ class PsyTestController extends Controller
         $perPage = $this->perPage($r);
 
         $q = PsyTest::query()
+            ->select(['id', 'name', 'slug', 'track', 'type', 'is_active', 'time_limit_min', 'created_at'])
             ->where('is_active', true)
             ->when($r->filled('q'), function ($qb) use ($r) {
                 $term = trim((string) $r->q);
@@ -86,11 +88,13 @@ class PsyTestController extends Controller
         $attemptByTest = $activeAttempts->keyBy('test_id');
 
         // Hitung jumlah jawaban per attempt untuk indikasi progres
-        $answerCountsByAttempt = PsyAnswer::query()
-            ->when($activeAttempts->isNotEmpty(), fn($qb) => $qb->whereIn('attempt_id', $activeAttempts->pluck('id')))
-            ->selectRaw('attempt_id, COUNT(*) as c')
-            ->groupBy('attempt_id')
-            ->pluck('c', 'attempt_id');
+        $answerCountsByAttempt = $activeAttempts->isEmpty()
+            ? collect()
+            : PsyAnswer::query()
+                ->whereIn('attempt_id', $activeAttempts->pluck('id'))
+                ->selectRaw('attempt_id, COUNT(*) as c')
+                ->groupBy('attempt_id')
+                ->pluck('c', 'attempt_id');
 
         // Flag bisa mulai (punya pertanyaan) dan apakah sedang berjalan
         $canStartByTest = [];
@@ -126,19 +130,15 @@ class PsyTestController extends Controller
      */
     public function show(Request $r, string $slugOrId)
     {
-        $test = PsyTest::query()
-            ->where('is_active', true)
-            ->where(function ($qb) use ($slugOrId) {
-                $qb->where('id', $slugOrId)->orWhere('slug', $slugOrId);
-            })
-            ->withCount('questions')
-            ->firstOrFail();
+        $test = $this->psyFlow->resolveActiveTest($slugOrId)->loadCount('questions');
 
         // (opsional) tampilkan daftar soal di halaman detail
         $test->load(['questions' => function ($qb) {
             $qb->orderBy('ordering')->orderBy('created_at')
+               ->select(['id', 'test_id', 'prompt', 'trait_key', 'qtype', 'ordering', 'created_at'])
                ->with(['options' => function ($qq) {
-                    $qq->orderBy('ordering')->orderBy('created_at');
+                    $qq->select(['id', 'question_id', 'label', 'value', 'ordering', 'created_at'])
+                       ->orderBy('ordering')->orderBy('created_at');
                }]);
         }]);
 
@@ -156,10 +156,7 @@ class PsyTestController extends Controller
         $timeLimitMin = (int) ($test->time_limit_min ?? 0);
 
         if ($attempt) {
-            $answeredIds = PsyAnswer::query()
-                ->where('attempt_id', $attempt->id)
-                ->pluck('question_id')
-                ->all();
+            $answeredIds = $this->psyFlow->answeredQuestionIds($attempt);
 
             // Next yang belum dijawab
             $orderedQids  = $test->questions->pluck('id')->all();
@@ -169,8 +166,7 @@ class PsyTestController extends Controller
 
             // Hitung sisa waktu berdasar started_at
             if ($timeLimitMin > 0 && $attempt->started_at) {
-                $elapsed     = now()->diffInSeconds($attempt->started_at);
-                $secondsLeft = max(0, $timeLimitMin * 60 - $elapsed);
+                $secondsLeft = $this->psyFlow->timeLeftSec($attempt, $test);
                 $startedAtMs = $attempt->started_at->valueOf();
             }
         } else {

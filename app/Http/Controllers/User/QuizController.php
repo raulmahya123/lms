@@ -35,7 +35,13 @@ class QuizController extends Controller
      */
     public function start(Lesson $lesson): RedirectResponse|View
     {
-        $lesson->load(['quiz.questions.options', 'module.course']);
+        $lesson->load([
+            'quiz:id,lesson_id,title',
+            'quiz.questions:id,quiz_id,type,prompt,points',
+            'quiz.questions.options:id,question_id,text,is_correct',
+            'module:id,course_id,title',
+            'module.course:id,title,is_free,price',
+        ]);
         $quiz = $lesson->quiz;
         abort_if(!$quiz, 404, 'Quiz tidak tersedia');
 
@@ -306,7 +312,16 @@ class QuizController extends Controller
     {
         abort_if($attempt->user_id !== Auth::id(), 403, 'Anda tidak berhak melihat hasil ini.');
 
-        $attempt->load(['quiz.lesson.module.course', 'answers.question.options']);
+        $attempt->load([
+            'quiz:id,lesson_id,title',
+            'quiz.questions:id,quiz_id,type,points',
+            'quiz.lesson:id,module_id,title',
+            'quiz.lesson.module:id,course_id,title',
+            'quiz.lesson.module.course:id,title',
+            'answers:id,attempt_id,question_id,option_id,text_answer,is_correct',
+            'answers.question:id,quiz_id,type,prompt,points',
+            'answers.question.options:id,question_id,text,is_correct',
+        ]);
         $course = $attempt->quiz->lesson->module->course;
 
         // % untuk attempt ini (by points)
@@ -384,7 +399,16 @@ class QuizController extends Controller
      */
     private function bestAttemptOnCourse(string $userId, string $courseId): array
     {
-        $attempts = QuizAttempt::with(['answers.question', 'quiz.lesson.module.course'])
+        $attempts = QuizAttempt::with([
+                'answers:id,attempt_id,question_id,is_correct',
+                'answers.question:id,quiz_id,type,points',
+                'quiz:id,lesson_id',
+                'quiz.questions:id,quiz_id,type,points',
+                'quiz.lesson:id,module_id',
+                'quiz.lesson.module:id,course_id',
+                'quiz.lesson.module.course:id,title',
+            ])
+            ->select(['id', 'quiz_id', 'user_id', 'score', 'submitted_at'])
             ->where('user_id', $userId)
             ->whereNotNull('submitted_at')
             ->whereHas('quiz.lesson.module.course', fn($q) => $q->where('id', $courseId))

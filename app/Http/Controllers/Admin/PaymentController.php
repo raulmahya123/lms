@@ -11,18 +11,26 @@ class PaymentController extends Controller
 {
     public function index(\Illuminate\Http\Request $r)
     {
+        $filters = $r->validate([
+            'q'        => ['nullable', 'string', 'max:100'],
+            'status'   => ['nullable', Rule::in(['pending', 'paid', 'failed'])],
+            'provider' => ['nullable', 'string', 'max:50'],
+        ]);
+        $term = trim((string) ($filters['q'] ?? ''));
+
         $items = \App\Models\Payment::query()
+            ->select(['id', 'user_id', 'plan_id', 'course_id', 'amount', 'status', 'provider', 'reference', 'paid_at', 'created_at'])
             ->with(['user:id,name,email', 'plan:id,name', 'course:id,title'])
-            ->when($r->filled('q'), function ($q) use ($r) {
-                $q->whereHas('user', function ($u) use ($r) {
-                    $u->where('name', 'like', '%' . $r->q . '%')
-                        ->orWhere('email', 'like', '%' . $r->q . '%');
-                })
-                    ->orWhere('reference', 'like', '%' . $r->q . '%')     // jika ada kolom reference/invoice
-                    ->orWhere('invoice', 'like', '%' . $r->q . '%');      // sesuaikan
+            ->when($term !== '', function ($q) use ($term) {
+                $q->where(function ($w) use ($term) {
+                    $w->whereHas('user', function ($u) use ($term) {
+                        $u->where('name', 'like', '%' . $term . '%')
+                            ->orWhere('email', 'like', '%' . $term . '%');
+                    })->orWhere('reference', 'like', '%' . $term . '%');
+                });
             })
-            ->when($r->filled('status'), fn($q) => $q->where('status', $r->status))
-            ->when($r->filled('provider'), fn($q) => $q->where('provider', $r->provider))
+            ->when($filters['status'] ?? null, fn($q, $status) => $q->where('status', $status))
+            ->when($filters['provider'] ?? null, fn($q, $provider) => $q->where('provider', $provider))
             ->latest('id')
             ->paginate(12)
             ->withQueryString();
@@ -37,7 +45,7 @@ class PaymentController extends Controller
 
     public function show(Payment $payment)
     {
-        $payment->load(['user:id,name,email', 'plan:id,name', 'course:id,title']);
+        $payment->load(['user:id,name,email', 'plan:id,name,price,period', 'course:id,title,price']);
         return view('admin.payments.show', compact('payment'));
     }
 

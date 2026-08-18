@@ -1,4 +1,4 @@
-{{-- resources/views/layouts/app.blade.php (Gen Z — Blue Only, Clean) --}}
+{{-- resources/views/app/layouts/base.blade.php — Tosca Enterprise --}}
 <!doctype html>
 <html lang="id" class="scroll-smooth">
 <head>
@@ -14,317 +14,252 @@
       theme: {
         extend: {
           fontFamily: {
-            sans: ['Poppins','ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','Helvetica Neue','Arial']
+            sans: ['Inter','ui-sans-serif','system-ui','-apple-system','Segoe UI','Roboto','Helvetica Neue','Arial']
           },
           colors: {
-            ivory: {
-              50:'#F8FBFF',100:'#F7FAFC',200:'#EFF6FF',300:'#DBEAFE',400:'#BFDBFE'
+            tosca: {
+              light: '#DFF5F1',
+              DEFAULT: '#0F9D8A',
+              dark: '#087A6C',
+              deep: '#075E54',
             },
-            bluecamp: {
-              950:'#081225',900:'#0B1D3A',800:'#12325F',700:'#1E3A8A',
-              600:'#2F60C4',500:'#3B82F6',400:'#93C5FD',300:'#BFDBFE',
-              200:'#DBEAFE',100:'#EFF6FF',50:'#F8FBFF'
-            },
-            ink: {900:'#0B1320',800:'#101827',700:'#1D2430',600:'#2A3342'},
-            /* keep the "neon" namespace but remap to blue hues for consistency */
-            neon: {
-              pink:  '#1E40AF',   /* remapped → indigo-700 */
-              purple:'#2563EB',   /* remapped → blue-600 */
-              blue:  '#60A5FA',   /* sky-400 */
-              green: '#0EA5E9',   /* sky-500 for accents */
-              yellow:'#38BDF8'    /* sky-400-ish */
+            softbg: '#F4FBF9',
+            text: {
+              main: '#1F2937',
+              soft: '#6B7280'
             }
           },
           boxShadow: {
-            glow:'0 0 0 3px rgba(59,130,246,0.25)',
-            card:'0 10px 30px rgba(16,24,39,.08)'
+            glow:'0 0 0 3px rgba(15,157,138,0.15)',
+            card:'0 8px 30px rgba(0,0,0,.04)',
+            'card-hover':'0 20px 60px rgba(15,157,138,.1)',
           },
-          dropShadow: { brand:'0 10px 24px rgba(59,130,246,.25)'},
           borderRadius:{ '2xl':'1rem','3xl':'1.25rem','4xl':'2rem'},
-          backgroundImage: {
-            grid:'radial-gradient(circle at 1px 1px, rgba(0,0,0,.05) 1px, transparent 0)',
-            'noise-light': 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 100 100\'%3E%3Cfilter id=\'n\'%3E%3CfeTurbulence type=\'fractalNoise\' baseFrequency=\'0.9\' numOctaves=\'2\' stitchTiles=\'stitch\'/%3E%3C/filter%3E%3Crect width=\'100%25\' height=\'100%25\' filter=\'url(%23n)\' opacity=\'0.02\'/%3E%3C/svg%3E")'
-          },
-          keyframes:{
-            floaty:{'0%,100%':{transform:'translateY(0)'},'50%':{transform:'translateY(-6px)'}},
-            shimmer:{'0%':{backgroundPosition:'0% 50%'},'100%':{backgroundPosition:'200% 50%'}}
-          },
-          animation:{ floaty:'floaty 3s ease-in-out infinite', shimmer:'shimmer 2.5s linear infinite' }
         }
       }
     }
   </script>
 
   {{-- Alpine.js --}}
-  <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 
-  {{-- Icons --}}
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
-
-  {{-- Poppins --}}
+  {{-- Inter Font --}}
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 
   <style>
-    body{font-family:'Poppins',ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,'Helvetica Neue',Arial}
+    body{font-family:'Inter',ui-sans-serif,system-ui,-apple-system,sans-serif}
     [x-cloak]{display:none!important}
-    .size-9{width:2.25rem;height:2.25rem}
-    .nav-icon{display:inline-block;width:1rem;text-align:center;font-size:14px;line-height:1}
-    /* Fancy underline (blue-only) */
-    .link-underline{position:relative}
-    .link-underline:after{
-      content:'';position:absolute;left:0;bottom:-2px;height:2px;width:0;
-      background:linear-gradient(90deg,#0EA5E9,#2563EB,#1E40AF);transition:width .25s ease;
-    }
-    .link-underline:hover:after{width:100%}
+    /* Smooth nav link underline */
+    .nav-link{position:relative;transition:color .2s}
+    .nav-link::after{content:'';position:absolute;left:50%;bottom:-4px;height:2px;width:0;background:linear-gradient(90deg,#0F9D8A,#087A6C);transition:all .25s ease;transform:translateX(-50%);border-radius:2px}
+    .nav-link:hover::after,.nav-link.active::after{width:70%}
+    .nav-link:hover,.nav-link.active{color:#0F9D8A}
+    .dark body{background:#071511;color:#e8f7f4}
+    .dark header{background:rgba(7,21,17,.88);border-color:rgba(255,255,255,.08)}
+    .dark footer{background:linear-gradient(180deg,#071511,#0b211c);border-color:rgba(255,255,255,.08)}
+    .dark .landing-shell{background:#071511;color:#e8f7f4}
+    .dark .soft-card{background:rgba(12,32,27,.86);border-color:rgba(148,220,209,.16);box-shadow:0 18px 60px rgba(0,0,0,.28)}
+    .dark .nav-link{color:#b8d6d1}
   </style>
 
   @stack('styles')
 </head>
-<body
-  class="min-h-screen bg-ivory-50 text-ink-900 dark:bg-ink-900 dark:text-ivory-100 bg-noise-light"
-  x-data="{
-    mobileOpen:false,userMenu:false,isDark:false,
-    toggleDark(){ this.isDark=!this.isDark; document.documentElement.classList.toggle('dark', this.isDark); localStorage.setItem('berkemah_dark', this.isDark ? '1' : '0'); },
-    init(){ this.isDark = localStorage.getItem('berkemah_dark') === '1'; document.documentElement.classList.toggle('dark', this.isDark); }
-  }"
-  x-init="init()" @keydown.escape="mobileOpen=false; userMenu=false"
->
-@php use Illuminate\Support\Str; @endphp
+<body class="min-h-screen bg-white text-text-main antialiased"
+      x-data="{ mobileOpen: false, userMenu: false, darkMode: localStorage.getItem('berkemah-dark') === '1' }"
+      x-init="$watch('darkMode', value => { localStorage.setItem('berkemah-dark', value ? '1' : '0'); document.documentElement.classList.toggle('dark', value); }); document.documentElement.classList.toggle('dark', darkMode)"
+      @keydown.escape="mobileOpen=false; userMenu=false">
 
-{{-- ================= HEADER ================= --}}
-<header class="sticky top-0 z-40 border-b border-bluecamp-200/60 bg-white/75 backdrop-blur-xl dark:bg-ink-900/70 dark:border-ink-700">
-  <div class="relative">
-    {{-- thin neon bar (blue gradient only) --}}
-    <div class="absolute inset-x-0 -top-px h-px bg-gradient-to-r from-sky-400 via-blue-500 to-indigo-700 opacity-80"></div>
-  </div>
+@php
+  use Illuminate\Support\Str;
+  $u = auth()->user();
+  $isAdmin = $u ? (method_exists($u, 'isAdmin') ? $u->isAdmin() : isset($u->is_admin) && $u->is_admin) : false;
+@endphp
 
-  <div class="max-w-7xl mx-auto px-4 py-3">
-    <div class="flex items-center justify-between gap-3">
+{{-- ================= NAVBAR ================= --}}
+<header class="sticky top-0 z-50 bg-white/80 backdrop-blur-xl border-b border-gray-100/80">
+  {{-- Accent line --}}
+  <div class="h-[2px] bg-gradient-to-r from-tosca-deep via-tosca to-tosca-dark"></div>
+
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="flex items-center justify-between h-16">
+
       {{-- Brand --}}
-      <a href="{{ route('home') }}" class="inline-flex items-center gap-2 group">
-        <img src="{{ asset('assets/images/foto-berkemah.png') }}" alt="Logo BERKEMAH"
-             class="h-9 w-auto rounded-xl ring-1 ring-bluecamp-200/40 dark:ring-ink-700 object-contain bg-white/80 dark:bg-ink-900/80 animate-floaty" />
-        <span class="text-lg font-semibold tracking-tight bg-gradient-to-r from-blue-600 via-sky-500 to-indigo-700 bg-clip-text text-transparent group-hover:opacity-90">
-          BERKEMAH
-        </span>
-        <span class="ml-1 px-2 py-0.5 text-[10px] leading-none rounded-full bg-bluecamp-600/10 text-bluecamp-700 border border-bluecamp-300/40 dark:text-bluecamp-200 dark:border-ink-700">
-          beta
-        </span>
+      <a href="{{ route('home') }}" class="flex items-center gap-2.5 group shrink-0">
+        <div class="w-9 h-9 bg-gradient-to-br from-tosca to-tosca-dark rounded-xl flex items-center justify-center text-white shadow-sm shadow-tosca/20 group-hover:shadow-md group-hover:shadow-tosca/30 transition-all">
+          <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+        </div>
+        <div>
+          <span class="text-lg font-extrabold text-text-main tracking-tight">BERKE<span class="text-tosca">MAH</span></span>
+          <span class="ml-1.5 px-1.5 py-0.5 text-[9px] font-bold rounded bg-tosca-light text-tosca-dark uppercase tracking-widest">Beta</span>
+        </div>
       </a>
 
       {{-- Desktop Nav --}}
-      <nav class="hidden md:flex items-center gap-2 text-sm">
+      <nav class="hidden lg:flex items-center gap-1">
         @php
-          $isActive = fn($names) => request()->routeIs($names)
-            ? 'text-bluecamp-700 bg-bluecamp-100 dark:text-bluecamp-200 dark:bg-bluecamp-800/30 shadow-sm'
-            : 'text-ink-700 hover:text-bluecamp-700 hover:bg-bluecamp-50 dark:text-ivory-100/80 dark:hover:text-bluecamp-200 dark:hover:bg-ink-700';
-          $u = Auth::user();
-          $isAdmin = $u ? (method_exists($u, 'isAdmin') ? $u->isAdmin() : isset($u->is_admin) && $u->is_admin) : false;
+          $navLinks = [
+            ['route' => 'home', 'label' => 'Home', 'icon' => 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6'],
+            ['route' => 'app.courses.index', 'label' => 'Courses', 'icon' => 'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
+            ['route' => 'app.my.courses', 'label' => 'My Learning', 'icon' => 'M4.26 10.147a60.436 60.436 0 00-.491 6.347A48.627 48.627 0 0112 20.904a48.627 48.627 0 018.232-4.41 60.46 60.46 0 00-.491-6.347m-15.482 0a50.57 50.57 0 00-2.658-.813A59.905 59.905 0 0112 3.493a59.902 59.902 0 0110.399 5.84c-.896.248-1.783.52-2.658.814m-15.482 0A50.697 50.697 0 0112 13.489a50.702 50.702 0 017.74-3.342M6.75 15a.75.75 0 100-1.5.75.75 0 000 1.5zm0 0v-3.675A55.378 55.378 0 0112 8.443m-7.007 11.55A5.981 5.981 0 006.75 15.75v-1.5'],
+            ['route' => 'app.memberships.index', 'label' => 'Membership', 'icon' => 'M15 9h3.75M15 12h3.75M15 15h3.75M4.5 19.5h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5zm6-10.125a1.875 1.875 0 11-3.75 0 1.875 1.875 0 013.75 0zm1.294 6.336a6.721 6.721 0 01-3.17.789 6.721 6.721 0 01-3.168-.789 3.376 3.376 0 016.338 0z'],
+            ['route' => 'app.payments.index', 'label' => 'Payments', 'icon' => 'M2.25 8.25h19.5M2.25 9h19.5m-16.5 5.25h6m-6 2.25h3m-3.75 3h15a2.25 2.25 0 002.25-2.25V6.75A2.25 2.25 0 0019.5 4.5h-15a2.25 2.25 0 00-2.25 2.25v10.5A2.25 2.25 0 004.5 19.5z'],
+          ];
         @endphp
+        @foreach($navLinks as $link)
+          <a href="{{ route($link['route']) }}"
+             class="nav-link px-3 py-2 text-sm font-medium {{ request()->routeIs($link['route']) ? 'active text-tosca' : 'text-text-soft' }}">
+            {{ $link['label'] }}
+          </a>
+        @endforeach
+      </nav>
 
-        <a href="{{ route('home') }}"
-           class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('home') }} link-underline">
-          <i class="fa-solid fa-house nav-icon"></i><span>Home</span>
-        </a>
-        <a href="{{ route('app.psychology') }}"
-           class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('psychology') }} link-underline">
-          <i class="fa-solid fa-brain nav-icon"></i><span>Psikologi</span>
-        </a>
-        <a href="{{ route('app.courses.index') }}"
-           class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.courses.index') }} link-underline">
-          <i class="fa-solid fa-graduation-cap nav-icon"></i><span>Courses</span>
-        </a>
-        <a href="{{ route('app.my.courses') }}"
-           class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.my.courses') }} link-underline">
-          <i class="fa-solid fa-book-open nav-icon"></i><span>My Courses</span>
-        </a>
-        <a href="{{ route('app.memberships.index') }}"
-           class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.memberships.index') }} link-underline">
-          <i class="fa-solid fa-id-card nav-icon"></i><span>Memberships</span>
-        </a>
-        <a href="{{ route('app.payments.index') }}"
-           class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('app.payments.index') }} link-underline">
-          <i class="fa-solid fa-wallet nav-icon"></i><span>Payments</span>
-        </a>
-
+      {{-- Right Actions --}}
+      <div class="flex items-center gap-2">
+        <button type="button"
+                @click="darkMode=!darkMode"
+                class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-gray-200 bg-white text-text-soft transition-all hover:border-tosca/30 hover:bg-softbg hover:text-tosca dark:border-white/10 dark:bg-white/10 dark:text-white"
+                aria-label="Toggle dark mode">
+          <svg x-show="!darkMode" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364-.707-.707M6.343 6.343l-.707-.707m12.728 0-.707.707M6.343 17.657l-.707.707M12 8a4 4 0 100 8 4 4 0 000-8z"/></svg>
+          <svg x-cloak x-show="darkMode" class="h-4 w-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12.79A9 9 0 1111.21 3 7 7 0 0021 12.79z"/></svg>
+        </button>
         @auth
           @if ($isAdmin)
-            <a href="{{ route('admin.dashboard') }}"
-               class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 ring-1 ring-bluecamp-300 text-bluecamp-700 hover:bg-bluecamp-50 hover:text-bluecamp-800 {{ request()->routeIs('admin.*') ? 'bg-bluecamp-100 dark:bg-bluecamp-800/30 dark:text-bluecamp-200' : '' }} dark:ring-ink-600 dark:text-bluecamp-200 dark:hover:bg-ink-700">
-              <i class="fa-solid fa-shield-halved nav-icon"></i><span>Admin</span>
+            <a href="{{ route('admin.dashboard') }}" class="hidden lg:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold text-tosca-dark bg-tosca-light hover:bg-tosca hover:text-white transition-all">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+              Admin
             </a>
           @endif
 
-          {{-- User dropdown --}}
-          <div class="relative ml-1" @click.outside="userMenu=false">
-            <button @click="userMenu=!userMenu"
-              class="flex items-center gap-2 px-2 py-1 rounded-full hover:bg-bluecamp-50 focus:outline-none focus:shadow-glow dark:hover:bg-ink-700">
-              <span class="inline-flex size-9 items-center justify-center rounded-full bg-gradient-to-br from-blue-500/15 via-sky-500/15 to-indigo-600/15 text-bluecamp-700 dark:text-bluecamp-200">
-                {{ strtoupper(substr(Auth::user()->name ?? 'U', 0, 1)) }}
-              </span>
-              <span class="hidden lg:inline text-ink-700 dark:text-ivory-100/90">{{ Str::limit(Auth::user()->name ?? 'User', 18) }}</span>
-              <i class="fa-solid fa-chevron-down text-ink-700 text-xs dark:text-ivory-100/70"></i>
+          {{-- User Dropdown --}}
+          <div class="relative hidden sm:block" @click.outside="userMenu=false">
+            <button @click="userMenu=!userMenu" class="flex items-center gap-2 pl-1.5 pr-3 py-1 rounded-full border border-gray-200 hover:border-tosca/30 hover:bg-softbg transition-all focus:outline-none focus:ring-2 focus:ring-tosca/20">
+              <div class="w-8 h-8 rounded-full bg-gradient-to-br from-tosca to-tosca-dark flex items-center justify-center text-white text-sm font-bold shadow-sm">
+                {{ strtoupper(substr($u->name ?? 'U', 0, 1)) }}
+              </div>
+              <span class="text-sm font-semibold text-text-main hidden md:block max-w-[120px] truncate">{{ $u->name ?? 'User' }}</span>
+              <svg class="w-4 h-4 text-text-soft transition-transform" :class="userMenu && 'rotate-180'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/></svg>
             </button>
 
-            <div x-cloak x-show="userMenu" x-transition.origin.top.right
-                 class="absolute right-0 mt-2 w-64 bg-white border border-bluecamp-200 rounded-2xl shadow-2xl overflow-hidden dark:bg-ink-900 dark:border-ink-700">
-              <div class="px-4 py-3">
-                <p class="text-xs text-ink-600/70 dark:text-ivory-100/60">Masuk sebagai</p>
-                <p class="text-sm font-medium text-ink-900 dark:text-ivory-100 truncate">{{ Auth::user()->email }}</p>
+            <div x-cloak x-show="userMenu"
+                 x-transition:enter="transition ease-out duration-200"
+                 x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+                 x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                 x-transition:leave="transition ease-in duration-100"
+                 x-transition:leave-start="opacity-100 scale-100"
+                 x-transition:leave-end="opacity-0 scale-95"
+                 class="absolute right-0 mt-2 w-56 bg-white rounded-2xl shadow-xl shadow-black/8 border border-gray-100 overflow-hidden z-50">
+              <div class="px-4 py-3 bg-softbg border-b border-gray-100">
+                <p class="text-xs text-text-soft">Masuk sebagai</p>
+                <p class="text-sm font-bold text-text-main truncate">{{ $u->email ?? '' }}</p>
               </div>
-              <div class="border-t border-ivory-200 dark:border-ink-700">
-                <a href="{{ route('app.dashboard') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
-                  <i class="fa-solid fa-house mr-2"></i>Dashboard User
+              <div class="py-1">
+                <a href="{{ route('app.dashboard') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-main hover:bg-softbg hover:text-tosca transition-colors">
+                  <svg class="w-4 h-4 text-text-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"/></svg>
+                  Dashboard
                 </a>
-                <a href="{{ route('app.certificates.index') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
-                  <i class="fa-solid fa-certificate mr-2"></i>Certificates
+                <a href="{{ route('app.certificates.index') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-main hover:bg-softbg hover:text-tosca transition-colors">
+                  <svg class="w-4 h-4 text-text-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"/></svg>
+                  Certificates
                 </a>
-                @if ($isAdmin)
-                  <a href="{{ route('admin.dashboard') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
-                    <i class="fa-solid fa-shield-halved mr-2"></i>Dashboard Admin
-                  </a>
+                <a href="{{ route('profile.edit') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-main hover:bg-softbg hover:text-tosca transition-colors">
+                  <svg class="w-4 h-4 text-text-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+                  Edit Profile
+                </a>
+                @if($isAdmin)
+                <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-text-main hover:bg-softbg hover:text-tosca transition-colors">
+                  <svg class="w-4 h-4 text-text-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                  Admin Panel
+                </a>
                 @endif
-                <a href="{{ route('profile.edit') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
-                  <i class="fa-solid fa-user-pen mr-2"></i>Edit Profile
-                </a>
-                <a href="{{ route('app.my.courses') }}" class="block px-4 py-2 text-sm hover:bg-ivory-100 dark:hover:bg-ink-800">
-                  <i class="fa-solid fa-book-open mr-2"></i>Kursus Saya
-                </a>
               </div>
-              <div class="border-t border-ivory-200 dark:border-ink-700">
+              <div class="border-t border-gray-100">
                 <form method="POST" action="{{ route('logout') }}">
                   @csrf
-                  <button type="submit" class="w-full text-left px-4 py-2 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-ink-800">
-                    <i class="fa-solid fa-right-from-bracket mr-2"></i>Logout
+                  <button type="submit" class="flex items-center gap-2.5 w-full px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                    Logout
                   </button>
                 </form>
               </div>
             </div>
           </div>
+        @else
+          <a href="{{ route('login') }}" class="hidden sm:inline-flex px-4 py-2 text-sm font-semibold text-text-soft hover:text-tosca transition-colors">Login</a>
+          <a href="{{ route('register') }}" class="hidden sm:inline-flex px-5 py-2.5 rounded-xl bg-gradient-to-r from-tosca to-tosca-dark text-white text-sm font-bold hover:shadow-lg hover:shadow-tosca/25 transition-all">Daftar</a>
         @endauth
 
-        @guest
-          <a href="{{ route('login') }}"
-             class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 {{ $isActive('login') }} link-underline">
-            <i class="fa-solid fa-right-to-bracket nav-icon"></i><span>Login</span>
-          </a>
-          <a href="{{ route('register') }}"
-             class="px-3 py-1.5 rounded-full inline-flex items-center gap-2 text-white bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-700 hover:opacity-95 drop-shadow-brand">
-            <i class="fa-solid fa-user-plus nav-icon"></i><span>Register</span>
-          </a>
-        @endguest
-      </nav>
-
-      {{-- Mobile buttons --}}
-      <div class="md:hidden flex items-center gap-2">
-        <button @click="toggleDark()"
-          class="inline-flex items-center justify-center size-9 rounded-full bg-bluecamp-500/10 text-bluecamp-700 hover:bg-bluecamp-500/20 dark:text-bluecamp-200 dark:hover:bg-ink-700"
-          :aria-label="isDark ? 'Switch to light' : 'Switch to dark'">
-          <i x-show="!isDark" class="fa-solid fa-moon"></i>
-          <i x-show="isDark" class="fa-solid fa-sun"></i>
-        </button>
-
-        @auth
-          <a href="{{ route('app.dashboard') }}"
-             class="inline-flex items-center justify-center size-9 rounded-full bg-bluecamp-500/10 text-bluecamp-700 hover:bg-bluecamp-500/20 dark:text-bluecamp-200 dark:hover:bg-ink-700">
-            <i class="fa-solid fa-user"></i>
-          </a>
-        @endauth
-
-        <button @click="mobileOpen=!mobileOpen"
-          class="inline-flex items-center justify-center size-9 rounded-full bg-bluecamp-500/10 text-bluecamp-700 hover:bg-bluecamp-500/20 dark:text-bluecamp-200 dark:hover:bg-ink-700"
-          aria-label="Toggle menu">
-          <i x-show="!mobileOpen" class="fa-solid fa-bars"></i>
-          <i x-show="mobileOpen" class="fa-solid fa-xmark"></i>
+        {{-- Mobile Hamburger --}}
+        <button @click="mobileOpen=!mobileOpen" class="lg:hidden p-2 rounded-xl hover:bg-softbg transition-colors" aria-label="Toggle menu">
+          <svg x-show="!mobileOpen" class="w-6 h-6 text-text-main" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"/></svg>
+          <svg x-show="mobileOpen" x-cloak class="w-6 h-6 text-text-main" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
         </button>
       </div>
     </div>
 
     {{-- Mobile Drawer --}}
-    <div x-cloak x-show="mobileOpen" x-transition class="md:hidden mt-3 border-t border-ivory-200 pt-3 dark:border-ink-700">
-      <nav class="grid gap-2 text-sm">
-        <a href="{{ route('home') }}"
-          class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('home') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
-          <i class="fa-solid fa-house nav-icon"></i>Home
-        </a>
-        <a href="{{ route('app.courses.index') }}"
-          class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.courses.index') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
-          <i class="fa-solid fa-graduation-cap nav-icon"></i>Courses
-        </a>
-        <a href="{{ route('app.my.courses') }}"
-          class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.my.courses') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
-          <i class="fa-solid fa-book-open nav-icon"></i>My Courses
-        </a>
-        <a href="{{ route('app.memberships.index') }}"
-          class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.memberships.index') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
-          <i class="fa-solid fa-id-card nav-icon"></i>Memberships
-        </a>
-        <a href="{{ route('app.payments.index') }}"
-          class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.payments.index') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
-          <i class="fa-solid fa-wallet nav-icon"></i>Payments
-        </a>
+    <div x-cloak x-show="mobileOpen"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 -translate-y-2"
+         x-transition:enter-end="opacity-100 translate-y-0"
+         class="lg:hidden border-t border-gray-100 py-4">
+      <nav class="space-y-1">
+        @foreach($navLinks as $link)
+          <a href="{{ route($link['route']) }}"
+             class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium transition-colors {{ request()->routeIs($link['route']) ? 'bg-tosca-light text-tosca-dark' : 'text-text-main hover:bg-softbg' }}">
+            <svg class="w-5 h-5 {{ request()->routeIs($link['route']) ? 'text-tosca' : 'text-text-soft' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $link['icon'] }}"/></svg>
+            {{ $link['label'] }}
+          </a>
+        @endforeach
 
         @auth
-          <a href="{{ route('app.certificates.index') }}"
-            class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.certificates.index') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
-            <i class="fa-solid fa-certificate nav-icon"></i>Certificates
-          </a>
-        @endauth
-
-        @auth
-          <a href="{{ route('app.dashboard') }}"
-            class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('app.dashboard') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
-            <i class="fa-solid fa-user nav-icon"></i>Dashboard User
-          </a>
-          @if ($isAdmin)
-            <a href="{{ route('admin.dashboard') }}"
-              class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('admin.dashboard') ? 'bg-ivory-100 text-bluecamp-700' : 'text-bluecamp-700 dark:text-bluecamp-200 dark:hover:bg-ink-800' }}">
-              <i class="fa-solid fa-shield-halved nav-icon"></i>Dashboard Admin
+          <div class="border-t border-gray-100 mt-3 pt-3">
+            <div class="px-4 py-2">
+              <p class="text-xs text-text-soft">Akun</p>
+              <p class="text-sm font-bold text-text-main truncate">{{ $u->email ?? '' }}</p>
+            </div>
+            <a href="{{ route('app.dashboard') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-text-main hover:bg-softbg">
+              <svg class="w-5 h-5 text-text-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6z"/></svg>
+              Dashboard
             </a>
-          @endif
-
-          <div class="border-t border-ivory-200 my-2 dark:border-ink-700"></div>
-          <div class="px-3 py-1 text-xs text-ink-600/70 dark:text-ivory-100/60">Akun</div>
-          <div class="px-3 py-2 text-sm text-ink-900 dark:text-ivory-100 truncate">{{ Auth::user()->email }}</div>
-
-          <form method="POST" action="{{ route('logout') }}" class="mt-1">
-            @csrf
-            <button class="w-full text-left px-3 py-2 rounded-lg text-red-600 hover:bg-red-50 dark:hover:bg-ink-800">
-              <i class="fa-solid fa-right-from-bracket nav-icon"></i>Logout
-            </button>
-          </form>
+            <a href="{{ route('profile.edit') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm text-text-main hover:bg-softbg">
+              <svg class="w-5 h-5 text-text-soft" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg>
+              Edit Profile
+            </a>
+            @if($isAdmin)
+              <a href="{{ route('admin.dashboard') }}" class="flex items-center gap-3 px-4 py-2.5 rounded-xl text-sm font-medium text-tosca-dark hover:bg-tosca-light">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                Admin Panel
+              </a>
+            @endif
+            <form method="POST" action="{{ route('logout') }}" class="mt-1">
+              @csrf
+              <button class="flex items-center gap-3 w-full px-4 py-2.5 rounded-xl text-sm text-red-600 hover:bg-red-50">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+                Logout
+              </button>
+            </form>
+          </div>
+        @else
+          <div class="border-t border-gray-100 mt-3 pt-3 flex gap-2 px-4">
+            <a href="{{ route('login') }}" class="flex-1 px-4 py-2.5 rounded-xl border border-gray-200 text-center text-sm font-semibold hover:bg-softbg transition-colors">Login</a>
+            <a href="{{ route('register') }}" class="flex-1 px-4 py-2.5 rounded-xl bg-gradient-to-r from-tosca to-tosca-dark text-white text-center text-sm font-bold">Daftar</a>
+          </div>
         @endauth
-
-        @guest
-          <a href="{{ route('login') }}"
-            class="px-3 py-2 rounded-lg hover:bg-ivory-100 {{ request()->routeIs('login') ? 'bg-ivory-100 text-bluecamp-700' : 'text-ink-700 dark:text-ivory-100/90 dark:hover:bg-ink-800' }}">
-            <i class="fa-solid fa-right-to-bracket nav-icon"></i>Login
-          </a>
-          <a href="{{ route('register') }}"
-            class="px-3 py-2 rounded-lg bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-700 text-white hover:opacity-95">
-            <i class="fa-solid fa-user-plus nav-icon"></i>Register
-          </a>
-        @endguest
       </nav>
     </div>
   </div>
 </header>
 
-{{-- Decorative stripe (blue only) --}}
-<div class="h-1 bg-gradient-to-r from-sky-300 via-blue-500 to-indigo-700 dark:from-ink-700 dark:via-ink-600 dark:to-ink-700"></div>
-
-{{-- Subtle grid bg layer --}}
-<div class="pointer-events-none select-none fixed inset-0 opacity-[.035] dark:opacity-[.06]" aria-hidden="true"
-     style="background-size:20px 20px; background-image:radial-gradient(circle at 1px 1px, currentColor 1px, transparent 0);">
-</div>
-
 {{-- ================= CONTENT ================= --}}
-<main class="relative max-w-7xl mx-auto px-4 py-8">
+<main class="relative">
   @if (session('status'))
-    <div class="mb-4 p-3 rounded-2xl bg-emerald-500/10 text-emerald-700 border border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300 dark:border-emerald-600/30">
-      {{ session('status') }}
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+      <div class="p-4 rounded-2xl bg-tosca-light text-tosca-deep border border-tosca/15 flex items-center gap-3">
+        <svg class="w-5 h-5 text-tosca shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="text-sm font-medium">{{ session('status') }}</span>
+      </div>
     </div>
   @endif
 
@@ -336,100 +271,86 @@
 </main>
 
 {{-- ================= FOOTER ================= --}}
-<footer class="relative overflow-hidden border-t border-ivory-200/70 dark:border-ink-700">
-  {{-- glow top separator (blue tones) --}}
-  <div class="absolute -top-10 left-1/2 -translate-x-1/2 w-[140%] h-24 opacity-40 blur-2xl pointer-events-none"
-       style="background:
-         radial-gradient(closest-side, rgba(14,165,233,.35), transparent 70%),
-         radial-gradient(closest-side, rgba(59,130,246,.35), transparent 70%),
-         radial-gradient(closest-side, rgba(29,78,216,.28), transparent 70%);
-         filter:saturate(120%);">
+<footer class="bg-gradient-to-b from-white to-softbg border-t border-gray-100 mt-auto">
+  <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+    <div class="grid gap-12 md:grid-cols-12">
+
+      {{-- Brand Column --}}
+      <div class="md:col-span-4">
+        <a href="{{ route('home') }}" class="flex items-center gap-2.5">
+          <div class="w-10 h-10 bg-gradient-to-br from-tosca to-tosca-dark rounded-xl flex items-center justify-center text-white shadow-sm">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"/></svg>
+          </div>
+          <span class="text-xl font-extrabold text-text-main">BERKE<span class="text-tosca">MAH</span></span>
+        </a>
+        <p class="mt-4 text-sm text-text-soft leading-relaxed max-w-sm">
+          Platform belajar teknologi & coding modern. Materi ringkas, interaktif, dan langsung praktik — bikin skillmu naik level. 🚀
+        </p>
+        <div class="mt-6 flex gap-2">
+          <a href="#" class="w-9 h-9 rounded-xl bg-softbg border border-gray-100 flex items-center justify-center text-text-soft hover:bg-tosca hover:text-white hover:border-tosca transition-all">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M24 4.557c-.883.392-1.832.656-2.828.775 1.017-.609 1.798-1.574 2.165-2.724-.951.564-2.005.974-3.127 1.195-.897-.957-2.178-1.555-3.594-1.555-3.179 0-5.515 2.966-4.797 6.045-4.091-.205-7.719-2.165-10.148-5.144-1.29 2.213-.669 5.108 1.523 6.574-.806-.026-1.566-.247-2.229-.616-.054 2.281 1.581 4.415 3.949 4.89-.693.188-1.452.232-2.224.084.626 1.956 2.444 3.379 4.6 3.419-2.07 1.623-4.678 2.348-7.29 2.04 2.179 1.397 4.768 2.212 7.548 2.212 9.142 0 14.307-7.721 13.995-14.646.962-.695 1.797-1.562 2.457-2.549z"/></svg>
+          </a>
+          <a href="#" class="w-9 h-9 rounded-xl bg-softbg border border-gray-100 flex items-center justify-center text-text-soft hover:bg-tosca hover:text-white hover:border-tosca transition-all">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>
+          </a>
+          <a href="#" class="w-9 h-9 rounded-xl bg-softbg border border-gray-100 flex items-center justify-center text-text-soft hover:bg-tosca hover:text-white hover:border-tosca transition-all">
+            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>
+          </a>
+        </div>
+      </div>
+
+      {{-- Links Columns --}}
+      <div class="md:col-span-5 grid grid-cols-2 gap-8">
+        <div>
+          <h4 class="text-sm font-bold text-text-main uppercase tracking-wider mb-4">Platform</h4>
+          <ul class="space-y-3 text-sm">
+            <li><a href="{{ route('app.courses.index') }}" class="text-text-soft hover:text-tosca transition-colors">Courses</a></li>
+            <li><a href="{{ route('app.memberships.index') }}" class="text-text-soft hover:text-tosca transition-colors">Memberships</a></li>
+            <li><a href="{{ route('app.certificates.index') }}" class="text-text-soft hover:text-tosca transition-colors">Certificates</a></li>
+            <li><a href="{{ route('app.qa-threads.index') }}" class="text-text-soft hover:text-tosca transition-colors">Community</a></li>
+          </ul>
+        </div>
+        <div>
+          <h4 class="text-sm font-bold text-text-main uppercase tracking-wider mb-4">Lainnya</h4>
+          <ul class="space-y-3 text-sm">
+            <li><a href="#" class="text-text-soft hover:text-tosca transition-colors">Privacy Policy</a></li>
+            <li><a href="#" class="text-text-soft hover:text-tosca transition-colors">Terms of Service</a></li>
+            <li><a href="#" class="text-text-soft hover:text-tosca transition-colors">Contact Us</a></li>
+            <li><a href="#" class="text-text-soft hover:text-tosca transition-colors">FAQ</a></li>
+          </ul>
+        </div>
+      </div>
+
+      {{-- Newsletter Column --}}
+      <div class="md:col-span-3">
+        <h4 class="text-sm font-bold text-text-main uppercase tracking-wider mb-4">Newsletter</h4>
+        <p class="text-sm text-text-soft mb-4">Dapatkan update kelas baru & tips coding.</p>
+        <form class="space-y-2">
+          <input type="email" placeholder="Email kamu"
+                 class="w-full border border-gray-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:border-tosca focus:ring-2 focus:ring-tosca/10 transition-all bg-white placeholder-gray-400">
+          <button class="w-full px-4 py-2.5 rounded-xl bg-gradient-to-r from-tosca to-tosca-dark text-white text-sm font-bold hover:shadow-lg hover:shadow-tosca/20 transition-all">
+            Langganan
+          </button>
+        </form>
+      </div>
+    </div>
   </div>
 
-  <div class="bg-gradient-to-b from-white via-bluecamp-50/60 to-bluecamp-100/60 dark:from-ink-900 dark:via-ink-900 dark:to-ink-800">
-    <div class="max-w-7xl mx-auto px-4 py-12 grid gap-10 md:grid-cols-12">
-      <div class="md:col-span-5">
-        <div class="inline-flex items-center gap-2">
-          <img src="{{ asset('assets/images/foto-berkemah.png') }}" alt="Logo BERKEMAH"
-               class="h-8 w-auto object-contain rounded-md ring-1 ring-bluecamp-200/40 dark:ring-ink-700" />
-          <span class="font-semibold text-lg">BERKEMAH</span>
-        </div>
-                            <p class="mt-3 text-sm text-ink-600/80 dark:text-ivory-100/70">
-  Platform belajar teknologi & coding modern. Materi ringkas, interaktif, dan langsung praktik — bikin skillmu naik level 🚀
-</p>
+  {{-- Copyright --}}
+  <div class="border-t border-gray-100">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5 flex flex-wrap items-center justify-between gap-3 text-sm text-text-soft">
+      <p>© {{ date('Y') }} BERKEMAH. All rights reserved.</p>
+      <div class="flex items-center gap-4">
+        <a href="#" class="hover:text-tosca transition-colors">Changelog</a>
+        <a href="#" class="hover:text-tosca transition-colors">Status</a>
+      </div>
+    </div>
+  </div>
 
-                    {{-- Socials --}}
-                    <div class="mt-4 flex flex-wrap gap-2">
-                        <a href="#" class="px-3 py-1.5 rounded-full border border-ivory-200 bg-white hover:border-bluecamp-300 text-sm dark:bg-ink-900 dark:border-ink-700 dark:hover:bg-ink-800">
-                            <i class="fa-brands fa-x-twitter mr-1"></i>Twitter
-                        </a>
-                        <a href="#" class="px-3 py-1.5 rounded-full border border-ivory-200 bg-white hover:border-bluecamp-300 text-sm dark:bg-ink-900 dark:border-ink-700 dark:hover:bg-ink-800">
-                            <i class="fa-brands fa-facebook mr-1"></i>Facebook
-                        </a>
-                        <a href="#" class="px-3 py-1.5 rounded-full border border-ivory-200 bg-white hover:border-bluecamp-300 text-sm dark:bg-ink-900 dark:border-ink-700 dark:hover:bg-ink-800">
-                            <i class="fa-brands fa-instagram mr-1"></i>Instagram
-                        </a>
-                        <a href="#" class="px-3 py-1.5 rounded-full border border-ivory-200 bg-white hover:border-bluecamp-300 text-sm dark:bg-ink-900 dark:border-ink-700 dark:hover:bg-ink-800">
-                            <i class="fa-brands fa-youtube mr-1"></i>YouTube
-                        </a>
-                    </div>
-                </div>
+  {{-- Bottom accent --}}
+  <div class="h-1 bg-gradient-to-r from-tosca-deep via-tosca to-tosca-dark"></div>
+</footer>
 
-                <div class="md:col-span-4 grid grid-cols-2 gap-8">
-                    <div>
-                        <h4 class="font-semibold mb-2">Produk</h4>
-                        <ul class="text-sm text-ink-700 space-y-1 dark:text-ivory-100/90">
-                            <li><a href="#" class="hover:text-bluecamp-700 dark:hover:text-bluecamp-300">Courses</a></li>
-                            <li><a href="#" class="hover:text-bluecamp-700 dark:hover:text-bluecamp-300">Memberships</a></li>
-                            <li><a href="#" class="hover:text-bluecamp-700 dark:hover:text-bluecamp-300">Certificates</a></li>
-                            <li><a href="#" class="hover:text-bluecamp-700 dark:hover:text-bluecamp-300">Community</a></li>
-                        </ul>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold mb-2">Legal</h4>
-                        <ul class="text-sm text-ink-700 space-y-1 dark:text-ivory-100/90">
-                            <li><a href="#" class="hover:text-bluecamp-700 dark:hover:text-bluecamp-300">Privacy</a></li>
-                            <li><a href="#" class="hover:text-bluecamp-700 dark:hover:text-bluecamp-300">Terms</a></li>
-                            <li><a href="#" class="hover:text-bluecamp-700 dark:hover:text-bluecamp-300">Cookies</a></li>
-                            <li><a href="#" class="hover:text-bluecamp-700 dark:hover:text-bluecamp-300">Contact</a></li>
-                        </ul>
-                    </div>
-                </div>
-
-                <div class="md:col-span-3">
-                    <h4 class="font-semibold mb-2">Newsletter</h4>
-                    <form class="flex gap-2">
-                        <input type="email" placeholder="Email kamu"
-                            class="flex-1 border border-ivory-200 rounded-2xl px-4 py-2 focus:outline-none focus:shadow-glow bg-white/90 dark:bg-ink-900 dark:border-ink-700 dark:text-ivory-100">
-                        <button class="px-4 py-2 rounded-2xl bg-gradient-to-r from-bluecamp-600 to-bluecamp-700 text-white hover:opacity-95">
-                            Langganan
-                        </button>
-                    </form>
-                    <p class="mt-2 text-[12px] text-ink-600/70 dark:text-ivory-100/60">
-                        Dapatkan update kelas baru & tips coding yang fun.
-                    </p>
-                </div>
-            </div>
-
-            <div class="border-t border-ivory-200/70 dark:border-ink-700">
-                <div class="max-w-7xl mx-auto px-4 py-5 text-sm flex flex-wrap items-center justify-between gap-3 text-ink-600/80 dark:text-ivory-100/70">
-                    <p>© {{ date('Y') }} BERKEMAH</p>
-                    <div class="flex items-center gap-3">
-                        <span class="inline-flex items-center gap-1 text-[12px] px-2 py-1 rounded-full bg-bluecamp-600/10 text-bluecamp-700 dark:text-bluecamp-200">
-                            <i class="fa-solid fa-circle-half-stroke"></i>
-                            <button type="button" @click="toggleDark()" class="underline underline-offset-2">Toggle theme</button>
-                        </span>
-                        <a href="#" class="hover:text-bluecamp-700 dark:hover:text-bluecamp-300">Changelog</a>
-                        <a href="#" class="hover:text-bluecamp-700 dark:hover:text-bluecamp-300">Status</a>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        {{-- garis biru bawah --}}
-        <div class="h-0.5 bg-gradient-to-r from-bluecamp-400 via-bluecamp-600 to-bluecamp-800"></div>
-    </footer>
-
-    @stack('scripts')
+@stack('scripts')
 </body>
 </html>

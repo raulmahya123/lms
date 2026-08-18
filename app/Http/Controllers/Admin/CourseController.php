@@ -8,6 +8,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class CourseController extends Controller
 {
@@ -15,15 +16,20 @@ class CourseController extends Controller
     {
         $user = $r->user();
         if (!$user) abort(403);
+        $filters = $r->validate([
+            'q'         => ['nullable', 'string', 'max:100'],
+            'published' => ['nullable', Rule::in(['0', '1'])],
+        ]);
+        $term = trim((string) ($filters['q'] ?? ''));
 
         $courses = Course::query()
+            ->select(['id', 'title', 'description', 'cover', 'is_free', 'price', 'is_published', 'created_by', 'created_at'])
             ->withCount('modules')
-            ->when($r->filled('q'), fn($q) => $q->where('title', 'like', '%'.$r->q.'%'))
-            ->when($r->filled('published'), function ($q) use ($r) {
-                if ($r->published === '1') $q->where('is_published', 1);
-                if ($r->published === '0') $q->where('is_published', 0);
+            ->when($term !== '', fn($q) => $q->where('title', 'like', '%'.$term.'%'))
+            ->when(isset($filters['published']), function ($q) use ($filters) {
+                $q->where('is_published', (int) $filters['published']);
             })
-            ->when(!$this->isAdminOrMentor(), fn($q) => $q->where('created_by', $user->id))
+            ->manageableBy($user)
             ->latest()
             ->paginate(12)
             ->withQueryString();
@@ -159,17 +165,17 @@ class CourseController extends Controller
     {
         if (!$user) abort(403);
 
-        if ($this->isAdminOrMentor()) {
+        if ($this->isAdmin()) {
             return;
         }
 
-        if ($course->created_by !== $user->id) {
+        if (!$course->manageableBy($user)) {
             abort(403, 'Anda tidak berhak mengelola course ini.');
         }
     }
 
-    protected function isAdminOrMentor(): bool
+    protected function isAdmin(): bool
     {
-        return Gate::allows('admin') || Gate::allows('mentor');
+        return Gate::allows('admin');
     }
 }

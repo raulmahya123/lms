@@ -33,9 +33,9 @@ class AuthServiceProvider extends ServiceProvider
             return method_exists($user, 'isMentor') && $user->isMentor();
         });
 
-        // Gate gabungan: admin ATAU mentor (untuk dashboard/backoffice)
+        // Gate gabungan: admin atau mentor untuk masuk area backoffice.
         Gate::define('backoffice', function ($user) {
-            return ($user->isAdmin() ?? false) || ($user->isMentor() ?? false);
+            return method_exists($user, 'isBackoffice') && $user->isBackoffice();
         });
     }
 }

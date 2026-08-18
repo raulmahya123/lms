@@ -12,24 +12,29 @@ class CourseBrowseController extends Controller
     public function index(Request $r)
     {
         $courses = Course::query()
+            ->select(['id', 'title', 'description', 'cover', 'is_free', 'price', 'is_published', 'created_at'])
             ->where('is_published', 1)
-            ->when($r->filled('q'), fn($q) => $q->where('title', 'like', '%' . $r->q . '%'))
+            ->when($r->filled('q'), fn($q) => $q->where('title', 'like', '%' . trim((string) $r->q) . '%'))
             ->withCount(['modules', 'enrollments'])
             ->latest()
             ->paginate(12)
             ->withQueryString();
 
         $uid   = Auth::id();
-        $my    = Enrollment::where('user_id', $uid)->get(['course_id', 'status', 'access_via', 'access_expires_at']);
+        $my    = $uid
+            ? Enrollment::where('user_id', $uid)->get(['course_id', 'status', 'access_via', 'access_expires_at'])
+            : collect();
 
         $myIds = $my->pluck('course_id')->all();
 
-        $hasMembership = Membership::where('user_id', $uid)
-            ->where('status', 'active')
-            ->where(function ($q) {
-                $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-            })
-            ->exists();
+        $hasMembership = $uid
+            ? Membership::where('user_id', $uid)
+                ->where('status', 'active')
+                ->where(function ($q) {
+                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
+                })
+                ->exists()
+            : false;
 
         $lockedIds = $my->filter(function ($e) use ($hasMembership) {
             // pakai helper manual jika model accessor belum di-load:
@@ -51,7 +56,10 @@ class CourseBrowseController extends Controller
 
         $course->load([
             'modules' => fn($q) => $q
-                ->with(['lessons' => fn($qq) => $qq->orderBy('ordering')])
+                ->select(['id', 'course_id', 'title', 'ordering'])
+                ->with(['lessons' => fn($qq) => $qq
+                    ->select(['id', 'module_id', 'title', 'ordering', 'is_free'])
+                    ->orderBy('ordering')])
                 ->orderBy('ordering'),
             'creator:id,name',
         ]);

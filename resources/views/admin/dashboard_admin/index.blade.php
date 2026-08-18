@@ -1,390 +1,347 @@
 @extends('layouts.admin')
 
-@section('title','Admin Dashboard — BERKEMAH')
+@section('title','Admin Dashboard')
 
 @section('content')
-<div class="space-y-6">
+<div class="space-y-8">
 
-  {{-- HEADER --}}
-  <div class="flex items-center justify-between">
-    <div>
-      <h1 class="text-2xl font-extrabold tracking-wide flex items-center gap-2">
-        <svg class="w-7 h-7 opacity-80" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M3 3h18v4H3V3Zm0 7h18v4H3v-4Zm0 7h18v4H3v-4Z"/>
-        </svg>
-        Dashboard
-      </h1>
-      <p class="text-sm opacity-70">Ringkasan metrik & aktivitas terbaru.</p>
-    </div>
-    <div class="flex items-center gap-2">
-      <a href="{{ route('admin.payments.index') }}" class="px-3 py-2 rounded-xl border hover:bg-gray-50">Payments</a>
-      <a href="{{ route('admin.courses.index') }}" class="px-3 py-2 rounded-xl border hover:bg-gray-50">Courses</a>
-      <a href="{{ route('admin.memberships.index') }}" class="px-3 py-2 rounded-xl border hover:bg-gray-50">Memberships</a>
-    </div>
-  </div>
-
-  {{-- STATS GRID --}}
-  <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-3">
-    @php
-      $statCards = [
-        ['label'=>'Users','value'=>$stats['users'] ?? 0,'icon'=>'M5 4h14v16H5z'],
-        ['label'=>'Courses','value'=>$stats['courses'] ?? 0,'icon'=>'M4 6h16v4H4zM4 12h10v6H4z'],
-        ['label'=>'Modules','value'=>$stats['modules'] ?? 0,'icon'=>'M4 4h7v7H4zM13 4h7v7h-7zM4 13h16v7H4z'],
-        ['label'=>'Lessons','value'=>$stats['lessons'] ?? 0,'icon'=>'M4 5h16v14H4z'],
-        ['label'=>'Quizzes','value'=>$stats['quizzes'] ?? 0,'icon'=>'M3 4h18v4H3zM3 10h18v10H3z'],
-        ['label'=>'Plans','value'=>$stats['plans'] ?? 0,'icon'=>'M12 2 3 7v10l9 5 9-5V7z'],
-        ['label'=>'Active Members','value'=>$stats['memberships_active'] ?? 0,'icon'=>'M16 11a4 4 0 1 0-8 0 4 4 0 0 0 8 0z'],
-        ['label'=>'Active Enrolls','value'=>$stats['enrollments_active'] ?? 0,'icon'=>'M4 6h16v12H4z'],
-      ];
-    @endphp
-    @foreach($statCards as $c)
-      <div class="rounded-2xl border bg-white p-4">
-        <div class="flex items-center justify-between">
-          <div>
-            <div class="text-xs opacity-60">{{ $c['label'] }}</div>
-            <div class="text-2xl font-extrabold mt-1">{{ number_format($c['value']) }}</div>
-          </div>
-          <svg class="w-8 h-8 opacity-40" viewBox="0 0 24 24" fill="currentColor">
-            <path d="{{ $c['icon'] }}"/>
-          </svg>
+    {{-- HEADER --}}
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-bold text-text-main flex items-center gap-2">
+                <div class="w-8 h-8 rounded-lg bg-tosca-light flex items-center justify-center text-tosca-dark">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z"></path></svg>
+                </div>
+                Overview
+            </h1>
+            <p class="text-sm text-text-soft mt-1">Platform metrics and recent activities at a glance.</p>
         </div>
-      </div>
-    @endforeach
-  </div>
-
-  {{-- REVENUE & PENDING --}}
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
-    <div class="rounded-2xl border bg-white p-4">
-      <div class="text-xs opacity-60">Revenue (this month)</div>
-      <div class="mt-1 text-3xl font-extrabold">Rp {{ number_format((int)($stats['revenue_month'] ?? 0),0,',','.') }}</div>
-      <a href="{{ route('admin.payments.index') }}" class="mt-3 inline-flex text-sm text-blue-600 hover:underline">View payments</a>
-    </div>
-    <div class="rounded-2xl border bg-white p-4">
-      <div class="text-xs opacity-60">Payments Pending</div>
-      <div class="mt-1 text-3xl font-extrabold">{{ number_format($stats['payments_pending'] ?? 0) }}</div>
-      <a href="{{ route('admin.payments.index',['status'=>'pending']) }}" class="mt-3 inline-flex text-sm text-blue-600 hover:underline">Review pending</a>
-    </div>
-    <div class="rounded-2xl border bg-white p-4">
-      <div class="text-xs opacity-60">Quick Actions</div>
-      <div class="mt-2 flex flex-wrap gap-2">
-        <a href="{{ route('admin.courses.create') }}" class="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-sm">+ New Course</a>
-        <a href="{{ route('admin.plans.create') }}" class="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-sm">+ New Plan</a>
-        <a href="{{ route('admin.quizzes.create') }}" class="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-sm">+ New Quiz</a>
-        <a href="{{ route('admin.coupons.create') }}" class="px-3 py-1.5 rounded-lg border hover:bg-gray-50 text-sm">+ New Coupon</a>
-      </div>
-    </div>
-  </div>
-
-  {{-- TWO COLUMNS: Recent Payments & Enrollments --}}
-  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-    {{-- RECENT PAYMENTS --}}
-    <div class="rounded-2xl border bg-white overflow-hidden">
-      <div class="px-4 py-3 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
-        <div class="text-sm font-semibold">Recent Payments</div>
-        <a href="{{ route('admin.payments.index') }}" class="text-xs text-blue-600 hover:underline">All payments</a>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-gray-100 text-gray-700">
-            <tr>
-              <th class="p-3 text-left">User</th>
-              <th class="p-3 text-left">Item</th>
-              <th class="p-3 text-left">Amount</th>
-              <th class="p-3 text-left">Status</th>
-              <th class="p-3 text-left">Paid At</th>
-            </tr>
-          </thead>
-          <tbody class="[&>tr:hover]:bg-gray-50">
-            @forelse($recentPayments as $p)
-              @php
-                $paidAt = $p->paid_at ? \Illuminate\Support\Carbon::parse($p->paid_at)->timezone(config('app.timezone','UTC'))->format('Y-m-d H:i') : '—';
-                $item = $p->plan?->name ? ('Plan: '.$p->plan->name) : ($p->course?->title ? ('Course: '.$p->course->title) : '—');
-              @endphp
-              <tr class="border-t">
-                <td class="p-3">
-                  <div class="font-medium">{{ $p->user?->name ?? '—' }}</div>
-                  <div class="text-xs text-gray-500">{{ $p->user?->email ?? '—' }}</div>
-                </td>
-                <td class="p-3">{{ $item }}</td>
-                <td class="p-3">Rp {{ number_format((float)$p->amount,0,',','.') }}</td>
-                <td class="p-3">
-                  <span class="px-2 py-0.5 rounded-full text-xs
-                    @if($p->status==='paid') bg-green-100 text-green-800
-                    @elseif($p->status==='pending') bg-amber-100 text-amber-800
-                    @else bg-red-100 text-red-800 @endif">
-                    {{ ucfirst($p->status) }}
-                  </span>
-                </td>
-                <td class="p-3">{{ $paidAt }}</td>
-              </tr>
-            @empty
-              <tr><td colspan="5" class="p-6 text-center text-gray-500">No records.</td></tr>
-            @endforelse
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    {{-- RECENT ENROLLMENTS --}}
-    <div class="rounded-2xl border bg-white overflow-hidden">
-      <div class="px-4 py-3 bg-gradient-to-r from-gray-50 to-white flex items-center justify-between">
-        <div class="text-sm font-semibold">Recent Enrollments</div>
-        <a href="{{ route('admin.enrollments.index') }}" class="text-xs text-blue-600 hover:underline">All enrollments</a>
-      </div>
-      <div class="overflow-x-auto">
-        <table class="min-w-full text-sm">
-          <thead class="bg-gray-100 text-gray-700">
-            <tr>
-              <th class="p-3 text-left">User</th>
-              <th class="p-3 text-left">Course</th>
-              <th class="p-3 text-left">Status</th>
-              <th class="p-3 text-left">Activated</th>
-            </tr>
-          </thead>
-          <tbody class="[&>tr:hover]:bg-gray-50">
-            @forelse($recentEnrolls as $e)
-              @php
-                $activated = $e->activated_at
-                  ? \Illuminate\Support\Carbon::parse($e->activated_at)->timezone(config('app.timezone','UTC'))->format('Y-m-d H:i')
-                  : '—';
-              @endphp
-              <tr class="border-t">
-                <td class="p-3">
-                  <div class="font-medium">{{ $e->user?->name ?? '—' }}</div>
-                  <div class="text-xs text-gray-500">{{ $e->user?->email ?? '—' }}</div>
-                </td>
-                <td class="p-3">{{ $e->course?->title ?? '—' }}</td>
-                <td class="p-3">
-                  <span class="px-2 py-0.5 rounded-full text-xs
-                    @if($e->status==='active') bg-green-100 text-green-800
-                    @elseif($e->status==='pending') bg-amber-100 text-amber-800
-                    @else bg-gray-100 text-gray-800 @endif">
-                    {{ ucfirst($e->status ?? 'inactive') }}
-                  </span>
-                </td>
-                <td class="p-3">{{ $activated }}</td>
-              </tr>
-            @empty
-              <tr><td colspan="4" class="p-6 text-center text-gray-500">No records.</td></tr>
-            @endforelse
-          </tbody>
-        </table>
-      </div>
-    </div>
-  </div>
-
-  {{-- ======== CHARTS (CUSTOMIZABLE) ======== --}}
-  <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
-    {{-- Revenue Chart --}}
-    <div class="rounded-2xl border bg-white overflow-hidden">
-      <div class="px-4 py-3 bg-gray-50 flex items-center justify-between">
-        <div class="text-sm font-semibold">Revenue (12 months)</div>
-        <div class="flex items-center gap-2">
-          <select id="revRange" class="text-xs border rounded-lg px-2 py-1">
-            <option value="12" selected>12m</option>
-            <option value="6">6m</option>
-          </select>
-          <select id="revType" class="text-xs border rounded-lg px-2 py-1">
-            <option value="line" selected>Line</option>
-            <option value="bar">Bar</option>
-          </select>
+        <div class="flex flex-wrap items-center gap-3">
+            <a href="{{ route('admin.payments.index') }}" class="px-4 py-2 rounded-xl border border-gray-100 bg-white text-sm font-medium hover:border-tosca/30 hover:text-tosca transition-colors shadow-sm">Payments</a>
+            <a href="{{ route('admin.courses.index') }}" class="px-4 py-2 rounded-xl border border-gray-100 bg-white text-sm font-medium hover:border-tosca/30 hover:text-tosca transition-colors shadow-sm">Courses</a>
+            <a href="{{ route('admin.memberships.index') }}" class="px-4 py-2 rounded-xl bg-tosca text-white text-sm font-medium hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/20">Memberships</a>
         </div>
-      </div>
-      <div class="p-4">
-        <canvas id="chartRevenue" height="120"></canvas>
-      </div>
     </div>
 
-    {{-- Payments Status (Donut) --}}
-    <div class="rounded-2xl border bg-white overflow-hidden">
-      <div class="px-4 py-3 bg-gray-50 text-sm font-semibold">Payments · Status</div>
-      <div class="p-4">
-        <canvas id="chartPayStatus" height="120"></canvas>
-      </div>
+    {{-- STATS GRID --}}
+    <div class="grid grid-cols-2 md:grid-cols-4 xl:grid-cols-8 gap-4">
+        @php
+        $statCards = [
+            ['label'=>'Users', 'value'=>$stats['users'] ?? 0, 'icon'=>'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z'],
+            ['label'=>'Courses', 'value'=>$stats['courses'] ?? 0, 'icon'=>'M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253'],
+            ['label'=>'Modules', 'value'=>$stats['modules'] ?? 0, 'icon'=>'M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z'],
+            ['label'=>'Lessons', 'value'=>$stats['lessons'] ?? 0, 'icon'=>'M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z M21 12a9 9 0 11-18 0 9 9 0 0118 0z'],
+            ['label'=>'Quizzes', 'value'=>$stats['quizzes'] ?? 0, 'icon'=>'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'],
+            ['label'=>'Plans', 'value'=>$stats['plans'] ?? 0, 'icon'=>'M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 002-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'],
+            ['label'=>'Members', 'value'=>$stats['memberships_active'] ?? 0, 'icon'=>'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z'],
+            ['label'=>'Enrolls', 'value'=>$stats['enrollments_active'] ?? 0, 'icon'=>'M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z'],
+        ];
+        @endphp
+        @foreach($statCards as $c)
+        <div class="bg-white rounded-2xl p-4 shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-50 flex flex-col justify-between hover:border-tosca/20 hover:shadow-tosca/5 transition-all">
+            <div class="flex items-start justify-between">
+                <div class="text-xs font-medium text-text-soft uppercase tracking-wider">{{ $c['label'] }}</div>
+                <div class="w-7 h-7 rounded-md bg-tosca-light flex items-center justify-center text-tosca">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="{{ $c['icon'] }}"></path></svg>
+                </div>
+            </div>
+            <div class="mt-2 text-2xl font-bold text-text-main">{{ number_format($c['value']) }}</div>
+        </div>
+        @endforeach
     </div>
 
-    {{-- Enrollments (14 days) --}}
-    <div class="rounded-2xl border bg-white overflow-hidden">
-      <div class="px-4 py-3 bg-gray-50 text-sm font-semibold">Enrollments (14 days)</div>
-      <div class="p-4">
-        <canvas id="chartEnrollments" height="120"></canvas>
-      </div>
+    {{-- REVENUE & QUICK ACTIONS --}}
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <!-- Revenue Card -->
+        <div class="bg-gradient-to-br from-tosca to-tosca-dark rounded-3xl p-6 text-white shadow-lg shadow-tosca/20 lg:col-span-1 relative overflow-hidden">
+            <div class="absolute top-0 right-0 -mt-4 -mr-4 w-32 h-32 bg-white opacity-10 rounded-full blur-2xl"></div>
+            <div class="text-tosca-light font-medium text-sm">Revenue (This Month)</div>
+            <div class="mt-2 text-4xl font-extrabold tracking-tight">Rp {{ number_format((int)($stats['revenue_month'] ?? 0),0,',','.') }}</div>
+            <div class="mt-6">
+                <a href="{{ route('admin.payments.index') }}" class="inline-flex items-center gap-2 text-sm font-medium bg-white/20 hover:bg-white/30 px-4 py-2 rounded-xl transition-colors backdrop-blur-sm">
+                    View Payments <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path></svg>
+                </a>
+            </div>
+        </div>
+
+        <!-- Pending Payments -->
+        <div class="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-50 flex flex-col justify-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-500 flex items-center justify-center">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                </div>
+                <div class="text-sm font-medium text-text-soft">Pending Payments</div>
+            </div>
+            <div class="mt-4 text-3xl font-bold text-text-main">{{ number_format($stats['payments_pending'] ?? 0) }}</div>
+            <div class="mt-4">
+                <a href="{{ route('admin.payments.index',['status'=>'pending']) }}" class="text-sm font-medium text-amber-600 hover:text-amber-700">Review pending &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-50">
+            <div class="text-sm font-semibold text-text-main mb-4">Quick Actions</div>
+            <div class="grid grid-cols-2 gap-3">
+                <a href="{{ route('admin.courses.create') }}" class="flex flex-col items-center justify-center gap-2 py-3 rounded-xl border border-gray-100 hover:border-tosca hover:bg-softbg transition-colors group">
+                    <div class="w-8 h-8 rounded-full bg-tosca-light text-tosca flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </div>
+                    <span class="text-xs font-medium text-text-main">New Course</span>
+                </a>
+                <a href="{{ route('admin.plans.create') }}" class="flex flex-col items-center justify-center gap-2 py-3 rounded-xl border border-gray-100 hover:border-tosca hover:bg-softbg transition-colors group">
+                    <div class="w-8 h-8 rounded-full bg-tosca-light text-tosca flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </div>
+                    <span class="text-xs font-medium text-text-main">New Plan</span>
+                </a>
+                <a href="{{ route('admin.quizzes.create') }}" class="flex flex-col items-center justify-center gap-2 py-3 rounded-xl border border-gray-100 hover:border-tosca hover:bg-softbg transition-colors group">
+                    <div class="w-8 h-8 rounded-full bg-tosca-light text-tosca flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </div>
+                    <span class="text-xs font-medium text-text-main">New Quiz</span>
+                </a>
+                <a href="{{ route('admin.coupons.create') }}" class="flex flex-col items-center justify-center gap-2 py-3 rounded-xl border border-gray-100 hover:border-tosca hover:bg-softbg transition-colors group">
+                    <div class="w-8 h-8 rounded-full bg-tosca-light text-tosca flex items-center justify-center group-hover:scale-110 transition-transform">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
+                    </div>
+                    <span class="text-xs font-medium text-text-main">New Coupon</span>
+                </a>
+            </div>
+        </div>
     </div>
 
-    {{-- Providers (Top) / Members by Plan --}}
-    <div class="rounded-2xl border bg-white overflow-hidden">
-      <div class="px-4 py-3 bg-gray-50 text-sm font-semibold">Payments · Providers (Top)</div>
-      <div class="p-4">
-        <canvas id="chartProviders" height="120"></canvas>
-      </div>
+    {{-- LISTS: Payments & Enrollments --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <!-- Recent Payments -->
+        <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden flex flex-col">
+            <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-text-main">Recent Payments</h3>
+                <a href="{{ route('admin.payments.index') }}" class="text-sm font-medium text-tosca hover:text-tosca-dark">View All</a>
+            </div>
+            <div class="flex-1 overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-text-soft bg-gray-50 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-6 py-3 font-medium">User & Item</th>
+                            <th class="px-6 py-3 font-medium">Amount</th>
+                            <th class="px-6 py-3 font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse($recentPayments as $p)
+                            @php
+                                $item = $p->plan?->name ? $p->plan->name : ($p->course?->title ?? 'Unknown Item');
+                            @endphp
+                            <tr class="hover:bg-softbg/50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-text-main">{{ $p->user?->name ?? 'Deleted User' }}</div>
+                                    <div class="text-xs text-text-soft mt-0.5">{{ $item }}</div>
+                                </td>
+                                <td class="px-6 py-4 font-semibold text-text-main whitespace-nowrap">
+                                    Rp {{ number_format((float)$p->amount,0,',','.') }}
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if($p->status === 'paid')
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-green-50 text-green-700 border border-green-100">Paid</span>
+                                    @elseif($p->status === 'pending')
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">Pending</span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-red-50 text-red-700 border border-red-100">{{ ucfirst($p->status) }}</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="3" class="px-6 py-8 text-center text-text-soft text-sm">No recent payments found.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Recent Enrollments -->
+        <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden flex flex-col">
+            <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+                <h3 class="text-lg font-bold text-text-main">Recent Enrollments</h3>
+                <a href="{{ route('admin.enrollments.index') }}" class="text-sm font-medium text-tosca hover:text-tosca-dark">View All</a>
+            </div>
+            <div class="flex-1 overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="text-xs text-text-soft bg-gray-50 uppercase tracking-wider">
+                        <tr>
+                            <th class="px-6 py-3 font-medium">User</th>
+                            <th class="px-6 py-3 font-medium">Course</th>
+                            <th class="px-6 py-3 font-medium">Status</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        @forelse($recentEnrolls as $e)
+                            <tr class="hover:bg-softbg/50 transition-colors">
+                                <td class="px-6 py-4">
+                                    <div class="font-medium text-text-main">{{ $e->user?->name ?? 'Deleted User' }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    <div class="text-text-main truncate max-w-[150px]" title="{{ $e->course?->title }}">{{ $e->course?->title ?? 'Unknown' }}</div>
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if($e->status === 'active')
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-tosca-light text-tosca-dark border border-tosca/20">Active</span>
+                                    @elseif($e->status === 'pending')
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-amber-50 text-amber-700 border border-amber-100">Pending</span>
+                                    @else
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-xs font-medium bg-gray-100 text-gray-700 border border-gray-200">Inactive</span>
+                                    @endif
+                                </td>
+                            </tr>
+                        @empty
+                            <tr><td colspan="3" class="px-6 py-8 text-center text-text-soft text-sm">No recent enrollments found.</td></tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
     </div>
 
-    <div class="xl:col-span-2 rounded-2xl border bg-white overflow-hidden">
-      <div class="px-4 py-3 bg-gray-50 text-sm font-semibold">Active Members per Plan</div>
-      <div class="p-4">
-        <canvas id="chartMembersPlan" height="120"></canvas>
-      </div>
+    {{-- CHARTS GRID --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-bold text-text-main">Revenue Chart</h3>
+                <div class="flex gap-2">
+                    <select id="revRange" class="text-xs border-gray-200 rounded-lg px-2 py-1 text-text-main focus:ring-tosca focus:border-tosca">
+                        <option value="12" selected>12 Months</option>
+                        <option value="6">6 Months</option>
+                    </select>
+                </div>
+            </div>
+            <div class="relative h-64 w-full">
+                <canvas id="chartRevenue"></canvas>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-6">
+            <h3 class="text-lg font-bold text-text-main mb-4">Enrollments (Last 14 Days)</h3>
+            <div class="relative h-64 w-full">
+                <canvas id="chartEnrollments"></canvas>
+            </div>
+        </div>
+
     </div>
-  </div>
 
 </div>
 
 {{-- Chart.js CDN + init --}}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-  // Data dari controller
-  const REV   = @json($revenueMonthly ?? ['labels'=>[],'data'=>[]]);
-  const PSTAT = @json($paymentsStatus ?? ['labels'=>[],'data'=>[]]);
-  const PPROV = @json($paymentsProviders ?? ['labels'=>[],'data'=>[]]);
-  const ENRL  = @json($enrollmentsDaily ?? ['labels'=>[],'data'=>[]]);
-  const MPLAN = @json($membershipsByPlan ?? ['labels'=>[],'data'=>[]]);
+    const REV   = @json($revenueMonthly ?? ['labels'=>[],'data'=>[]]);
+    const ENRL  = @json($enrollmentsDaily ?? ['labels'=>[],'data'=>[]]);
 
-  // Palet warna (tailwind-ish)
-  const C = {
-    blue:  'rgba(37, 99, 235, 1)',
-    blueA: 'rgba(37, 99, 235, .15)',
-    green: 'rgba(22, 163, 74, 1)',
-    greenA:'rgba(22, 163, 74, .15)',
-    amber: 'rgba(245, 158, 11, 1)',
-    amberA:'rgba(245, 158, 11, .15)',
-    red:   'rgba(239, 68, 68, 1)',
-    redA:  'rgba(239, 68, 68, .15)',
-    slate: 'rgba(100, 116, 139, 1)',
-    slateA:'rgba(100, 116, 139, .15)',
-    indigo:'rgba(79, 70, 229, 1)',
-    indigoA:'rgba(79, 70, 229, .15)',
-  };
+    // Tosca Enterprise Colors
+    const TOSCA = '#0F9D8A';
+    const TOSCA_LIGHT = 'rgba(15, 157, 138, 0.15)';
+    const GRAY = '#F3F4F6';
+    const GRAY_DARK = '#9CA3AF';
 
-  Chart.defaults.font.family = 'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Helvetica Neue, Arial';
-  Chart.defaults.plugins.legend.position = 'bottom';
-  Chart.defaults.plugins.tooltip.mode = 'index';
-  Chart.defaults.plugins.tooltip.intersect = false;
-  Chart.defaults.responsive = true;
-  Chart.defaults.maintainAspectRatio = false;
+    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.plugins.legend.display = false;
+    Chart.defaults.responsive = true;
+    Chart.defaults.maintainAspectRatio = false;
 
-  // Revenue (customizable)
-  let revenueChart;
-  const elRevenue = document.getElementById('chartRevenue').getContext('2d');
+    // Revenue Line Chart
+    let revenueChart;
+    function buildRevenueChart(months=12) {
+        const labels = REV.labels.slice(-months);
+        const data   = REV.data.slice(-months);
+        const ctx = document.getElementById('chartRevenue').getContext('2d');
 
-  function buildRevenueChart(type='line', months=12) {
-    const labels = REV.labels.slice(-months);
-    const data   = REV.data.slice(-months);
+        if (revenueChart) revenueChart.destroy();
+        revenueChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels,
+                datasets: [{
+                    data,
+                    borderColor: TOSCA,
+                    backgroundColor: TOSCA_LIGHT,
+                    fill: true,
+                    tension: 0.4,
+                    borderWidth: 3,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: TOSCA,
+                    pointBorderWidth: 2,
+                    pointRadius: 4,
+                }]
+            },
+            options: {
+                scales: {
+                    y: { 
+                        beginAtZero: true, 
+                        grid: { borderDash: [4, 4], color: GRAY },
+                        ticks: { callback: v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v/1000) + 'K', color: GRAY_DARK }
+                    },
+                    x: { 
+                        grid: { display: false },
+                        ticks: { color: GRAY_DARK, maxTicksLimit: months }
+                    }
+                },
+                plugins: {
+                    tooltip: {
+                        backgroundColor: '#1F2937',
+                        padding: 12,
+                        cornerRadius: 8,
+                        callbacks: {
+                            label: function(context) {
+                                return 'Rp ' + new Intl.NumberFormat('id-ID').format(context.parsed.y);
+                            }
+                        }
+                    }
+                }
+            }
+        });
+    }
 
-    const cfg = {
-      type,
-      data: {
-        labels,
-        datasets: [{
-          label: 'Revenue',
-          data,
-          borderColor: C.blue,
-          backgroundColor: type==='line' ? C.blueA : C.blue,
-          fill: type==='line',
-          tension: .3,
-          borderWidth: 2
-        }]
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: true, ticks: { callback: v => 'Rp ' + new Intl.NumberFormat('id-ID').format(v) } },
-          x: { ticks: { autoSkip: true, maxTicksLimit: months } }
+    // Enrollments Bar Chart
+    const enrollCtx = document.getElementById('chartEnrollments').getContext('2d');
+    new Chart(enrollCtx, {
+        type: 'bar',
+        data: {
+            labels: ENRL.labels,
+            datasets: [{
+                data: ENRL.data,
+                backgroundColor: TOSCA,
+                borderRadius: 4,
+                borderWidth: 0,
+                barPercentage: 0.6
+            }]
+        },
+        options: {
+            scales: {
+                y: { 
+                    beginAtZero: true,
+                    grid: { borderDash: [4, 4], color: GRAY },
+                    ticks: { color: GRAY_DARK }
+                },
+                x: { 
+                    grid: { display: false },
+                    ticks: { color: GRAY_DARK, maxTicksLimit: 14 }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    backgroundColor: '#1F2937',
+                    padding: 12,
+                    cornerRadius: 8
+                }
+            }
         }
-      }
-    };
+    });
 
-    if (revenueChart) { revenueChart.destroy(); }
-    revenueChart = new Chart(elRevenue, cfg);
-  }
+    document.getElementById('revRange')?.addEventListener('change', (e) => {
+        buildRevenueChart(parseInt(e.target.value, 10));
+    });
 
-  // Payments Status (Donut)
-  const payStatusChart = new Chart(
-    document.getElementById('chartPayStatus').getContext('2d'),
-    {
-      type: 'doughnut',
-      data: {
-        labels: PSTAT.labels,
-        datasets: [{
-          data: PSTAT.data,
-          backgroundColor: [C.green, C.amber, C.red],
-          borderWidth: 0
-        }]
-      },
-      options: { cutout: '65%' }
-    }
-  );
-
-  // Enrollments (14 days)
-  const enrollChart = new Chart(
-    document.getElementById('chartEnrollments').getContext('2d'),
-    {
-      type: 'bar',
-      data: {
-        labels: ENRL.labels,
-        datasets: [{
-          label: 'Enrollments',
-          data: ENRL.data,
-          backgroundColor: C.indigo,
-          borderWidth: 0
-        }]
-      },
-      options: {
-        scales: {
-          y: { beginAtZero: true },
-          x: { ticks: { maxRotation: 0, autoSkip: true, maxTicksLimit: 14 } }
-        }
-      }
-    }
-  );
-
-  // Providers (Top) - horizontal bar
-  const providersChart = new Chart(
-    document.getElementById('chartProviders').getContext('2d'),
-    {
-      type: 'bar',
-      data: {
-        labels: PPROV.labels,
-        datasets: [{
-          label: 'Count',
-          data: PPROV.data,
-          backgroundColor: C.slate,
-          borderWidth: 0
-        }]
-      },
-      options: {
-        indexAxis: 'y',
-        scales: { x: { beginAtZero: true } }
-      }
-    }
-  );
-
-  // Members per Plan
-  const membersPlanChart = new Chart(
-    document.getElementById('chartMembersPlan').getContext('2d'),
-    {
-      type: 'bar',
-      data: {
-        labels: MPLAN.labels,
-        datasets: [{
-          label: 'Active Members',
-          data: MPLAN.data,
-          backgroundColor: C.green,
-          borderWidth: 0
-        }]
-      },
-      options: {
-        scales: { y: { beginAtZero: true } }
-      }
-    }
-  );
-
-  // Controls for Revenue
-  const revType  = document.getElementById('revType');
-  const revRange = document.getElementById('revRange');
-
-  revType?.addEventListener('change', () => buildRevenueChart(revType.value, parseInt(revRange.value,10)));
-  revRange?.addEventListener('change', () => buildRevenueChart(revType.value, parseInt(revRange.value,10)));
-
-  // Initial build
-  buildRevenueChart('line', 12);
+    buildRevenueChart(12);
 </script>
 @endsection

@@ -1,153 +1,221 @@
 {{-- resources/views/admin/psy_questions/show.blade.php --}}
 @extends('layouts.admin')
-@section('title','Question Detail — BERKEMAH')
+@section('title', 'Detail Soal — Admin')
 
 @section('content')
 @php
   /** @var \App\Models\PsyQuestion $question */
 @endphp
 
-<div class="max-w-4xl mx-auto space-y-6">
-
+<div class="max-w-4xl mx-auto space-y-8 pb-12">
+  
   {{-- Header --}}
-  <div class="flex items-start justify-between gap-4">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
-      <h1 class="text-3xl font-bold tracking-tight text-blue-900">Question Detail</h1>
-      <p class="text-sm text-blue-700/70">
-        Lihat detail pertanyaan & opsi jawaban.
-      </p>
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-tosca-light text-tosca-dark text-xs font-bold uppercase tracking-wider mb-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path></svg>
+        Detail Informasi
+      </div>
+      <h1 class="text-3xl font-extrabold text-text-main tracking-tight">Detail Pertanyaan</h1>
+      <p class="text-sm text-text-soft mt-1">Lihat teks pertanyaan dan daftar opsi jawaban yang tersedia.</p>
     </div>
-
-    <div class="flex items-center gap-2">
+    
+    <div class="shrink-0 flex items-center gap-3">
       <a href="{{ route('admin.psy-questions.index', request()->only(['psy_test_id','q','qtype','trait','page'])) }}"
-         class="px-3 py-2 rounded-xl border border-blue-200 text-blue-700 hover:bg-blue-50 transition">
-        ← Back
+         class="inline-flex items-center gap-2 px-5 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali
       </a>
-      <a href="{{ route('admin.questions.edit', $question) }}"
-         class="px-3 py-2 rounded-xl border border-blue-200 text-blue-700 hover:bg-blue-50 transition">
-        Edit
+      <a href="{{ route('admin.psy-questions.edit', $question) }}"
+         class="inline-flex items-center gap-2 px-5 py-2.5 bg-tosca text-white font-bold rounded-xl hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/30">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+        Edit Soal
       </a>
-      <form action="{{ route('admin.questions.destroy', $question) }}" method="POST"
-            onsubmit="return confirm('Delete this question?')">
-        @csrf @method('DELETE')
-        <button class="px-3 py-2 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 transition">
-          Delete
-        </button>
-      </form>
     </div>
   </div>
 
-  {{-- Summary Card --}}
-  <div class="rounded-2xl border border-blue-100 bg-white/90 shadow-lg backdrop-blur">
-    <div class="px-6 py-4 border-b bg-gradient-to-r from-blue-50 to-white rounded-t-2xl flex flex-wrap items-center gap-3">
-      <div class="text-sm">
-        <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-white border border-blue-100">
-          {{-- test badge --}}
-          <svg class="w-4 h-4 text-blue-700" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.25l8.25 4.5v10.5L12 21.75 3.75 17.25V6.75L12 2.25Z"/></svg>
-          <span class="text-blue-900">{{ $question->test->name ?? '— No Test —' }}</span>
+  <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
+    
+    {{-- Meta Badges --}}
+    <div class="px-8 py-5 border-b border-gray-50 bg-gray-50/50 flex flex-wrap items-center gap-3">
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-blue-50 text-blue-700 border border-blue-100">
+            Tes: {{ Str::limit($question->test->name ?? '— Tidak Ada Tes —', 30) }}
         </span>
-      </div>
 
-      <div class="text-sm">
-        <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-white border border-violet-100">
-          {{-- type badge --}}
-          <svg class="w-4 h-4 text-violet-700" viewBox="0 0 24 24" fill="currentColor"><path d="M6.75 12a.75.75 0 0 1 .75-.75h9a.75.75 0 0 1 0 1.5h-9A.75.75 0 0 1 6.75 12Z"/></svg>
-          <span class="text-violet-900 uppercase">{{ $question->qtype ?? '—' }}</span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-violet-50 text-violet-700 border border-violet-100">
+            Tipe: {{ $question->qtype ?? '—' }}
         </span>
-      </div>
 
-      <div class="text-sm">
-        <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-white border border-emerald-100">
-          {{-- trait badge --}}
-          <svg class="w-4 h-4 text-emerald-700" viewBox="0 0 24 24" fill="currentColor"><path d="M3.75 10.5 10.5 3.75l9.75 9.75-6.75 6.75H3.75V10.5Z"/></svg>
-          <span class="text-emerald-900">Trait: {{ $question->trait_key ?? '—' }}</span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-emerald-50 text-emerald-700 border border-emerald-100">
+            Trait: {{ $question->trait_key ?? '—' }}
         </span>
-      </div>
 
-      <div class="text-sm">
-        <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-xl bg-white border border-amber-100">
-          {{-- ordering --}}
-          <svg class="w-4 h-4 text-amber-700" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5.25a.75.75 0 0 1 .75.75V18a.75.75 0 0 1-1.5 0V6a.75.75 0 0 1 .75-.75Z"/></svg>
-          <span class="text-amber-900">Ordering: {{ $question->ordering ?? 0 }}</span>
+        <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider bg-amber-50 text-amber-700 border border-amber-100">
+            Urutan: {{ $question->ordering ?? 0 }}
         </span>
-      </div>
     </div>
 
-    <div class="p-6 space-y-6">
-      {{-- Prompt --}}
-      <div>
-        <h2 class="text-sm font-semibold text-blue-900 mb-1">Prompt</h2>
-        <div class="rounded-xl border border-blue-100 bg-white p-4 leading-relaxed">
-          {{ $question->prompt }}
-        </div>
-      </div>
-
-      {{-- Options --}}
-      <div>
-        <div class="flex items-center justify-between mb-2">
-          <h2 class="text-sm font-semibold text-blue-900">Options</h2>
-          {{-- (opsional) tombol tambah opsi kalau ada routenya --}}
-          {{-- <a href="{{ route('admin.psy-options.create', ['question_id'=>$question->id]) }}"
-             class="text-sm px-3 py-1.5 rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition">Add Option</a> --}}
+    <div class="p-8 space-y-8">
+        {{-- Prompt Section --}}
+        <div>
+            <h2 class="text-sm font-bold text-text-soft uppercase tracking-wider mb-3">Teks Pertanyaan</h2>
+            <div class="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-lg font-medium text-text-main leading-relaxed">
+                {{ $question->prompt }}
+            </div>
         </div>
 
-        @php
-          $options = $question->relationLoaded('options') ? $question->options : $question->options()->get();
-          // kalau punya kolom 'ordering', urutkan
-          $options = $options->sortBy('ordering')->values();
-        @endphp
+        {{-- Options Section --}}
+        <div>
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-sm font-bold text-text-soft uppercase tracking-wider">Opsi Jawaban & Skor</h2>
+            </div>
 
-        @if($options->isEmpty())
-          <div class="rounded-xl border border-blue-100 bg-white p-4 text-sm text-blue-700/70">
-            Belum ada opsi jawaban.
-          </div>
-        @else
-          <div class="rounded-2xl border overflow-hidden">
-            <table class="min-w-full text-sm">
-              <thead class="bg-blue-50 text-blue-900">
-                <tr>
-                  <th class="p-3 text-left w-16">#</th>
-                  <th class="p-3 text-left">Label / Text</th>
-                  <th class="p-3 text-left w-28">Value</th>
-                  <th class="p-3 text-left w-28">Score</th>
-                </tr>
-              </thead>
-              <tbody class="[&>tr:hover]:bg-blue-50/40">
-                @foreach($options as $opt)
-                  <tr class="border-t">
-                    <td class="p-3 font-semibold text-blue-900">{{ $opt->ordering ?? $loop->iteration }}</td>
-                    <td class="p-3">
-                      {{ $opt->label ?? $opt->text ?? $opt->value ?? '—' }}
-                    </td>
-                    <td class="p-3 tabular-nums">{{ $opt->value ?? '—' }}</td>
-                    <td class="p-3 tabular-nums">
-                      {{ $opt->score ?? $opt->weight ?? '—' }}
-                    </td>
-                  </tr>
-                @endforeach
-              </tbody>
-            </table>
-          </div>
-        @endif
-      </div>
+            @php
+                $options = $question->relationLoaded('options') ? $question->options : $question->options()->get();
+                $options = $options->sortBy('ordering')->values();
+            @endphp
 
-      {{-- Meta --}}
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div class="rounded-xl border border-blue-100 bg-white p-4">
-          <div class="text-xs text-blue-700/70 mb-1">Question ID (UUID)</div>
-          <div class="text-sm font-medium text-blue-900 break-all">{{ $question->id }}</div>
+            @if($options->isEmpty())
+                <div class="p-6 bg-gray-50 border border-gray-100 rounded-2xl text-center text-gray-500 font-medium">
+                    Belum ada opsi jawaban untuk soal ini.
+                </div>
+            @else
+                <div class="rounded-2xl border border-gray-200 overflow-hidden">
+                    <table class="w-full text-left border-collapse min-w-[500px]">
+                        <thead>
+                            <tr class="bg-gray-100/50 border-b border-gray-200 text-xs font-bold text-text-soft uppercase tracking-wider">
+                                <th class="px-6 py-4 w-16 text-center">#</th>
+                                <th class="px-6 py-4">Teks Pilihan</th>
+                                <th class="px-6 py-4 w-32 text-center">Nilai (Value)</th>
+                                <th class="px-6 py-4 w-32 text-center">Skor Tambahan</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100">
+                            @foreach($options as $opt)
+                                <tr class="hover:bg-gray-50/50 transition-colors">
+                                    <td class="px-6 py-4 text-center font-bold text-gray-400">
+                                        {{ $opt->ordering ?? $loop->iteration }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        <span class="font-medium text-text-main">
+                                            {{ $opt->label ?? $opt->text ?? $opt->value ?? '—' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center justify-center min-w-[3.5rem] h-8 rounded-lg bg-blue-50 border border-blue-100 font-bold text-blue-700 text-sm px-2">
+                                            {{ $opt->value ?? '0' }}
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 text-center">
+                                        <span class="inline-flex items-center justify-center min-w-[3.5rem] h-8 rounded-lg bg-gray-50 border border-gray-200 font-bold text-text-main text-sm px-2">
+                                            {{ $opt->score ?? $opt->weight ?? '—' }}
+                                        </span>
+                                    </td>
+                                </tr>
+                            @endforeach
+                        </tbody>
+                    </table>
+                </div>
+            @endif
         </div>
-        <div class="rounded-xl border border-blue-100 bg-white p-4">
-          <div class="text-xs text-blue-700/70 mb-1">Created / Updated</div>
-          <div class="text-sm font-medium text-blue-900">
-            {{ $question->created_at?->format('d M Y H:i') ?? '—' }}
-            <span class="opacity-60">·</span>
-            {{ $question->updated_at?->format('d M Y H:i') ?? '—' }}
-          </div>
+
+        {{-- Meta Information --}}
+        <div class="pt-8 border-t border-gray-100 grid sm:grid-cols-2 gap-6">
+            <div>
+                <div class="text-xs font-bold text-text-soft uppercase tracking-wider mb-2">ID Soal (UUID)</div>
+                <div class="text-sm font-mono font-medium text-gray-600 bg-gray-50 px-3 py-2 rounded-xl border border-gray-100 break-all">
+                    {{ $question->id }}
+                </div>
+            </div>
+            <div>
+                <div class="text-xs font-bold text-text-soft uppercase tracking-wider mb-2">Waktu Perubahan</div>
+                <div class="text-sm font-medium text-text-main space-y-1">
+                    <div class="flex items-center justify-between">
+                        <span class="text-text-soft">Dibuat:</span>
+                        <span>{{ $question->created_at?->format('d M Y, H:i') ?? '—' }}</span>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-text-soft">Diperbarui:</span>
+                        <span>{{ $question->updated_at?->format('d M Y, H:i') ?? '—' }}</span>
+                    </div>
+                </div>
+            </div>
         </div>
-      </div>
+    </div>
+
+    {{-- Bottom Action Bar --}}
+    <div class="p-6 sm:p-8 bg-gray-50/50 border-t border-gray-50 flex flex-col sm:flex-row items-center justify-between gap-6">
+        <div class="flex items-center gap-4 text-sm font-medium text-text-soft">
+            <svg class="w-12 h-12 text-red-200 shrink-0" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2C6.486 2 2 6.486 2 12s4.486 10 10 10 10-4.486 10-10S17.514 2 12 2zm0 18c-4.411 0-8-3.589-8-8s3.589-8 8-8 8 3.589 8 8-3.589 8-8 8z"></path><path d="M11 11h2v6h-2zm0-4h2v2h-2z"></path></svg>
+            <p>Hati-hati: Menghapus soal juga akan menghapus secara permanen semua opsi jawaban yang terkait dengan soal ini.</p>
+        </div>
+
+        <div class="shrink-0 w-full sm:w-auto">
+            @php
+                $delRoute = isset($question->test_id)
+                    ? route('admin.psy-tests.questions.destroy', [$question->test_id, $question->id])
+                    : route('admin.psy-questions.destroy', $question->id);
+            @endphp
+            <form method="POST" action="{{ $delRoute }}" class="js-delete-form w-full sm:w-auto" data-title="soal ini">
+                @csrf @method('DELETE')
+                <button type="button" class="js-delete-btn w-full sm:w-auto px-6 py-3 rounded-xl border border-red-200 bg-white text-red-600 font-bold hover:bg-red-50 hover:border-red-300 transition-colors flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                    Hapus Soal
+                </button>
+            </form>
+        </div>
     </div>
   </div>
-
 </div>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    (function() {
+        function bindDeleteButtons() {
+            document.querySelectorAll('.js-delete-btn').forEach(btn => {
+                if (btn.dataset.bound) return;
+                btn.dataset.bound = '1';
+
+                btn.addEventListener('click', (e) => {
+                    const form = e.currentTarget.closest('form.js-delete-form');
+                    const title = form?.dataset.title || 'soal ini';
+
+                    Swal.fire({
+                        title: 'Hapus Soal Psikologi?',
+                        html: `<b>${title}</b> beserta opsi jawabannya akan dihapus permanen.`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Hapus',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true,
+                        focusCancel: true,
+                        customClass: {
+                            popup: 'rounded-3xl',
+                            confirmButton: 'rounded-xl font-bold px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white border-0',
+                            cancelButton: 'rounded-xl font-bold px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 border-0'
+                        }
+                    }).then((res) => {
+                        if (res.isConfirmed) {
+                            if (!form.dataset.submitting) {
+                                form.dataset.submitting = '1';
+                                const b = form.querySelector('.js-delete-btn');
+                                if (b) {
+                                    b.disabled = true;
+                                    b.innerHTML = '<span class="animate-spin mr-2">⏳</span>';
+                                }
+                                form.submit();
+                            }
+                        }
+                    });
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', bindDeleteButtons);
+        document.addEventListener('turbo:load', bindDeleteButtons);
+        document.addEventListener('livewire:navigated', bindDeleteButtons);
+    })();
+</script>
+@endpush
 @endsection

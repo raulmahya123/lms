@@ -1,31 +1,40 @@
-<x-guest-layout>
-    <div class="mb-4 text-sm text-gray-600">
-        {{ __('Thanks for signing up! Before getting started, could you verify your email address by clicking on the link we just emailed to you? If you didn\'t receive the email, we will gladly send you another.') }}
-    </div>
+@extends('layouts.auth-modern')
 
-    @if (session('status') == 'verification-link-sent')
-        <div class="mb-4 font-medium text-sm text-green-600">
-            {{ __('A new verification link has been sent to the email address you provided during registration.') }}
-        </div>
-    @endif
+@section('title', 'Verifikasi Email')
+@section('visual_kicker', 'Aktivasi akun')
+@section('visual_title', 'Satu langkah lagi untuk mulai belajar')
+@section('visual_text', 'Verifikasi email kamu agar akun BERKEMAH aktif dan fitur belajar bisa digunakan penuh.')
+@section('heading', 'Verifikasi Email Kamu')
+@section('subheading', 'Kami sudah mengirimkan tautan verifikasi ke email kamu. Buka email tersebut untuk mengaktifkan akun BERKEMAH.')
 
-    <div class="mt-4 flex items-center justify-between">
-        <form method="POST" action="{{ route('verification.send') }}">
-            @csrf
+@section('visual_cards')
+  <div class="rounded-3xl border border-white/12 bg-white/12 p-5 backdrop-blur xl:col-span-3">
+    <p class="text-sm font-black">Cek inbox atau spam</p>
+    <p class="mt-3 text-sm leading-6 text-white/64">Jika belum ada email masuk, kirim ulang link verifikasi dari halaman ini.</p>
+  </div>
+@endsection
 
-            <div>
-                <x-primary-button>
-                    {{ __('Resend Verification Email') }}
-                </x-primary-button>
-            </div>
-        </form>
+@section('content')
+@if (session('status') == 'verification-link-sent')
+  <div class="mb-5 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm font-semibold text-emerald-800 dark:border-emerald-400/20 dark:bg-emerald-400/10 dark:text-emerald-100">
+    Email verifikasi berhasil dikirim ulang.
+  </div>
+@endif
 
-        <form method="POST" action="{{ route('logout') }}">
-            @csrf
+<div class="space-y-4">
+  <form method="POST" action="{{ route('verification.send') }}" x-data="{ loading:false }" @submit="loading=true">
+    @csrf
+    <button type="submit" :disabled="loading" class="flex min-h-[52px] w-full items-center justify-center gap-3 rounded-2xl bg-tosca px-5 text-sm font-black text-white shadow-lg shadow-tosca/20 transition hover:bg-tosca-dark disabled:opacity-75">
+      <svg x-show="loading" class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+      <span x-text="loading ? 'Memproses...' : 'Kirim Ulang Email Verifikasi'"></span>
+    </button>
+  </form>
 
-            <button type="submit" class="underline text-sm text-gray-600 hover:text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
-                {{ __('Log Out') }}
-            </button>
-        </form>
-    </div>
-</x-guest-layout>
+  <form method="POST" action="{{ route('logout') }}">
+    @csrf
+    <button type="submit" class="w-full rounded-2xl border border-slate-200 bg-white px-5 py-3 text-sm font-black text-slate-700 transition hover:bg-slate-50 dark:border-white/10 dark:bg-white/8 dark:text-white">
+      Ganti Email
+    </button>
+  </form>
+</div>
+@endsection

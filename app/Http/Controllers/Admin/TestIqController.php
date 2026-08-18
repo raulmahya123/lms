@@ -11,9 +11,14 @@ class TestIqController extends Controller
     /** Daftar test IQ (pencarian + paginate) */
     public function index(Request $r)
     {
+        $filters = $r->validate([
+            'q' => ['nullable', 'string', 'max:100'],
+        ]);
+        $term = trim((string) ($filters['q'] ?? ''));
+
         $q = TestIq::query()
-            ->when($r->filled('q'), function ($qq) use ($r) {
-                $term = trim($r->q);
+            ->select(['id', 'title', 'description', 'is_active', 'duration_minutes', 'cooldown_value', 'cooldown_unit', 'created_at'])
+            ->when($term !== '', function ($qq) use ($term) {
                 $qq->where(function ($w) use ($term) {
                     $w->where('title', 'like', "%{$term}%")
                       ->orWhere('description', 'like', "%{$term}%");

@@ -11,14 +11,22 @@ class MembershipController extends Controller
 {
     public function index(\Illuminate\Http\Request $r)
     {
+        $filters = $r->validate([
+            'q'       => ['nullable', 'string', 'max:100'],
+            'status'  => ['nullable', Rule::in(['pending', 'active', 'inactive'])],
+            'plan_id' => ['nullable', 'exists:plans,id'],
+        ]);
+        $term = trim((string) ($filters['q'] ?? ''));
+
         $items = \App\Models\Membership::query()
+            ->select(['id', 'user_id', 'plan_id', 'status', 'activated_at', 'expires_at', 'created_at'])
             ->with(['user:id,name,email', 'plan:id,name'])
-            ->when($r->filled('status'), fn($q) => $q->where('status', $r->status))
-            ->when($r->filled('plan_id'), fn($q) => $q->where('plan_id', $r->plan_id))
-            ->when($r->filled('q'), function ($q) use ($r) {
-                $q->whereHas('user', function ($u) use ($r) {
-                    $u->where('name', 'like', '%' . $r->q . '%')
-                        ->orWhere('email', 'like', '%' . $r->q . '%');
+            ->when($filters['status'] ?? null, fn($q, $status) => $q->where('status', $status))
+            ->when($filters['plan_id'] ?? null, fn($q, $planId) => $q->where('plan_id', $planId))
+            ->when($term !== '', function ($q) use ($term) {
+                $q->whereHas('user', function ($u) use ($term) {
+                    $u->where('name', 'like', '%' . $term . '%')
+                        ->orWhere('email', 'like', '%' . $term . '%');
                 });
             })
             ->latest('id')

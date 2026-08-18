@@ -23,12 +23,14 @@ class CouponController extends Controller
         };
 
         Log::info('coupon.validate.incoming', [
-            'payload' => $data,
             'user_id' => Auth::id(),
+            'has_plan' => !empty($data['plan_id']),
+            'has_course' => !empty($data['course_id']),
         ]);
 
         // Cari kupon (case-insensitive)
-        $coupon = Coupon::whereRaw('LOWER(code) = ?', [strtolower($data['code'])])->first();
+        $coupon = Coupon::whereRaw('LOWER(code) = ?', [strtolower($data['code'])])
+            ->first(['id', 'code', 'discount_percent', 'valid_from', 'valid_until', 'usage_limit']);
         if (!$coupon) return $respondInvalid('Kupon tidak ditemukan', 404);
 
         // Validitas waktu & kuota

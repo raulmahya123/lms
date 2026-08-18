@@ -17,18 +17,24 @@ class LessonController extends Controller
     {
         $user = $r->user();
         if (!$user) abort(403);
+        $filters = $r->validate([
+            'module_id' => ['nullable', 'uuid', 'exists:modules,id'],
+            'q'         => ['nullable', 'string', 'max:100'],
+        ]);
+        $term = trim((string) ($filters['q'] ?? ''));
 
         $lessons = Lesson::query()
+            ->select(['id', 'module_id', 'title', 'ordering', 'is_free', 'drive_link', 'created_at'])
             ->with([
                 'module' => fn($q) => $q->select(['id','course_id','title']),
                 'module.course' => fn($q) => $q->select(['id','title','created_by']),
                 'driveWhitelists:id,lesson_id,status',
             ])
-            ->when(!$this->isAdminOrMentor(), fn($q) => $q->whereHas(
-                'module.course', fn($qc) => $qc->where('created_by', $user->id)
+            ->when(!$this->isAdmin(), fn($q) => $q->whereHas(
+                'module.course', fn($qc) => $qc->manageableBy($user)
             ))
-            ->when($r->filled('module_id'), fn($q) => $q->where('module_id', $r->input('module_id')))
-            ->when($r->filled('q'), fn($q) => $q->where('title','like','%'.$r->q.'%'))
+            ->when($filters['module_id'] ?? null, fn($q, $moduleId) => $q->where('module_id', $moduleId))
+            ->when($term !== '', fn($q) => $q->where('title','like','%'.$term.'%'))
             ->orderBy('module_id')->orderBy('ordering')
             ->paginate(20)->withQueryString();
 
@@ -44,8 +50,9 @@ class LessonController extends Controller
         if (!$user) abort(403);
 
         $modules = Module::with('course:id,title,created_by')
-            ->when(!$this->isAdminOrMentor(), fn($q) => $q->whereHas(
-                'course', fn($qc) => $qc->where('created_by', $user->id)
+            ->select(['id', 'course_id', 'title', 'ordering'])
+            ->when(!$this->isAdmin(), fn($q) => $q->whereHas(
+                'course', fn($qc) => $qc->manageableBy($user)
             ))
             ->orderBy('course_id')->orderBy('ordering')->get();
 
@@ -94,7 +101,7 @@ class LessonController extends Controller
         $data['content_url'] = array_values($data['content_url'] ?? []);
 
         $module = Module::with('course')->findOrFail($data['module_id']);
-        if (!$this->isAdminOrMentor() && $module->course->created_by !== $user->id) {
+        if (!$module->course->manageableBy($user)) {
             abort(403, 'Anda tidak boleh membuat lesson di course ini.');
         }
 
@@ -120,8 +127,9 @@ class LessonController extends Controller
         $this->authorizeLesson($lesson, $r->user());
 
         $modules = Module::with('course:id,title,created_by')
-            ->when(!$this->isAdminOrMentor(), fn($q) => $q->whereHas(
-                'course', fn($qc) => $qc->where('created_by', $r->user()->id)
+            ->select(['id', 'course_id', 'title', 'ordering'])
+            ->when(!$this->isAdmin(), fn($q) => $q->whereHas(
+                'course', fn($qc) => $qc->manageableBy($r->user())
             ))
             ->orderBy('course_id')->orderBy('ordering')->get();
 
@@ -297,17 +305,17 @@ class LessonController extends Controller
 
     protected function authorizeLesson(Lesson $lesson, User $user)
     {
-        if ($this->isAdminOrMentor()) return true;
+        if ($this->isAdmin()) return true;
 
         $lesson->loadMissing('module.course');
-        if ($lesson->module->course->created_by !== $user->id) {
+        if (!$lesson->module->course->manageableBy($user)) {
             abort(403, 'Anda tidak berhak mengakses lesson ini.');
         }
     }
 
-    protected function isAdminOrMentor(): bool
+    protected function isAdmin(): bool
     {
-        return Gate::allows('admin') || Gate::allows('mentor');
+        return Gate::allows('admin');
     }
 
     protected function isMentorOnly(): bool

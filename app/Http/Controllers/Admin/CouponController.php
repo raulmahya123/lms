@@ -5,29 +5,37 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Coupon;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class CouponController extends Controller
 {
     public function index(Request $r)
     {
+        $filters = $r->validate([
+            'q'      => ['nullable', 'string', 'max:100'],
+            'status' => ['nullable', Rule::in(['active', 'expired', 'scheduled'])],
+        ]);
+        $term = trim((string) ($filters['q'] ?? ''));
+
         $q = \App\Models\Coupon::query()
+            ->select(['id', 'code', 'discount_percent', 'valid_from', 'valid_until', 'usage_limit', 'created_at'])
             ->withCount('redemptions')
             ->when(
-                $r->filled('q'),
+                $term !== '',
                 fn($qq) =>
-                $qq->where('code', 'like', '%' . $r->q . '%')
+                $qq->where('code', 'like', '%' . $term . '%')
             )
-            ->when($r->filled('status'), function ($qq) use ($r) {
+            ->when($filters['status'] ?? null, function ($qq, $status) {
                 $now = now();
-                if ($r->status === 'active') {
+                if ($status === 'active') {
                     $qq->where(function ($q) use ($now) {
                         $q->whereNull('valid_from')->orWhere('valid_from', '<=', $now);
                     })->where(function ($q) use ($now) {
                         $q->whereNull('valid_until')->orWhere('valid_until', '>=', $now);
                     });
-                } elseif ($r->status === 'expired') {
+                } elseif ($status === 'expired') {
                     $qq->whereNotNull('valid_until')->where('valid_until', '<', $now);
-                } elseif ($r->status === 'scheduled') {
+                } elseif ($status === 'scheduled') {
                     $qq->whereNotNull('valid_from')->where('valid_from', '>', $now);
                 }
             })

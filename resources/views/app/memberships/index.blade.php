@@ -1,313 +1,195 @@
-@extends('app.layouts.base')
+@extends('layouts.app')
 @section('title', 'Membership Saya')
-
-@push('styles')
-<style>
-  :root {
-    --indigo: #2563eb;
-    /* blue-600 elegan */
-    --indigo-700: #1d4ed8;
-    /* blue-700 */
-    --ring: #bfdbfe;
-    /* blue-200 */
-    --soft: #e5e7eb;
-    /* gray-200 */
-    --chip: #f8fafc;
-    /* slate-50 */
-  }
-
-  .hover-lift {
-    transition: transform .2s ease, box-shadow .2s ease
-  }
-
-  .hover-lift:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 18px 50px rgba(2, 6, 23, .10)
-  }
-
-  .soft-border {
-    border: 1px solid var(--soft)
-  }
-
-  .card {
-    background: #fff;
-    border: 1px solid var(--soft);
-    border-radius: 16px;
-    padding: 1.25rem;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, .05)
-  }
-
-  .btn {
-    border-radius: 12px;
-    padding: .56rem .9rem;
-    font-weight: 700
-  }
-
-  .btn-primary {
-    background: linear-gradient(90deg, #2563eb, #4f46e5);
-    color: #fff
-  }
-
-  .btn-primary:hover {
-    background: linear-gradient(90deg, #1e40af, #4338ca)
-  }
-
-  .btn-muted {
-    background: #fff;
-    border: 1px solid var(--soft);
-    color: #111827
-  }
-
-  .btn-muted:hover {
-    background: #f9fafb
-  }
-
-  .chip {
-    display: inline-flex;
-    align-items: center;
-    gap: .35rem;
-    padding: .25rem .55rem;
-    border-radius: 999px;
-    border: 1px solid var(--soft);
-    background: var(--chip);
-    font-size: .72rem
-  }
-
-  .progress {
-    height: 10px;
-    border-radius: 999px;
-    background: #eef2f7;
-    overflow: hidden
-  }
-
-  .progress>span {
-    display: block;
-    height: 100%;
-    background: linear-gradient(90deg, #60a5fa, #4f46e5)
-  }
-
-  .pill {
-    padding: .25rem .6rem;
-    border-radius: 999px;
-    font-size: .68rem;
-    font-weight: 700;
-    letter-spacing: .2px
-  }
-
-  .pill-live {
-    background: #dcfce7;
-    color: #166534;
-    border: 1px solid #bbf7d0
-  }
-
-  .pill-warn {
-    background: #fef3c7;
-    color: #92400e;
-    border: 1px solid #fde68a
-  }
-
-  .pill-idle {
-    background: #f3f4f6;
-    color: #374151;
-    border: 1px solid #e5e7eb
-  }
-
-  .table {
-    min-width: 100%
-  }
-
-  .table th {
-    font-size: .75rem;
-    font-weight: 800;
-    color: #6b7280;
-    text-transform: none;
-    white-space: nowrap
-  }
-
-  .table td {
-    font-size: .92rem;
-    color: #111827
-  }
-
-  .acts a,
-  .acts button {
-    font-size: .82rem
-  }
-
-  /* focus ring halus */
-  a:focus,
-  button:focus,
-  .btn:focus {
-    outline: none;
-    box-shadow: 0 0 0 4px var(--ring)
-  }
-</style>
-@endpush
 
 @section('content')
 @php
 use Illuminate\Support\Carbon;
 
 $calcPct = function($start, $end){
-try{
-if(!$start || !$end) return 0;
-$start = Carbon::parse($start);
-$end = Carbon::parse($end);
-$now = now();
-if($end->lessThanOrEqualTo($start)) return 0;
-$total = max(1, $start->diffInSeconds($end));
-$gone = max(0, $start->diffInSeconds(min($now,$end)));
-return (int) floor(($gone / $total) * 100);
-}catch(\Throwable $e){ return 0; }
+  try{
+    if(!$start || !$end) return 0;
+    $start = Carbon::parse($start);
+    $end = Carbon::parse($end);
+    $now = now();
+    if($end->lessThanOrEqualTo($start)) return 0;
+    $total = max(1, $start->diffInSeconds($end));
+    $gone = max(0, $start->diffInSeconds(min($now,$end)));
+    return (int) floor(($gone / $total) * 100);
+  }catch(\Throwable $e){ return 0; }
 };
 
 $daysLeft = function($end){
-if(!$end) return null;
-$d = Carbon::parse($end);
-return $d->isPast() ? 0 : now()->diffInDays($d) + 1;
+  if(!$end) return null;
+  $d = Carbon::parse($end);
+  return $d->isPast() ? 0 : now()->diffInDays($d) + 1;
 };
 @endphp
 
-<div class="max-w-6xl mx-auto px-4 py-8">
+<div class="max-w-7xl mx-auto space-y-8 pb-12">
 
-  {{-- Flash --}}
+  {{-- Flash Messages --}}
   @if(session('ok'))
-  <div class="mb-4 rounded soft-border bg-green-50 text-green-800 px-3 py-2 text-sm">{{ session('ok') }}</div>
+    <div class="p-4 rounded-xl bg-green-50 border border-green-200 text-green-700 font-medium flex items-center gap-3">
+      <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+      {{ session('ok') }}
+    </div>
   @endif
   @if(session('info'))
-  <div class="mb-4 rounded soft-border bg-blue-50 text-blue-800 px-3 py-2 text-sm">{{ session('info') }}</div>
+    <div class="p-4 rounded-xl bg-blue-50 border border-blue-200 text-blue-700 font-medium flex items-center gap-3">
+      <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      {{ session('info') }}
+    </div>
   @endif
   @if($errors->any())
-  <div class="mb-4 rounded soft-border bg-red-50 text-red-800 px-3 py-2 text-sm">{{ $errors->first() }}</div>
+    <div class="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 font-medium flex items-center gap-3">
+      <svg class="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+      {{ $errors->first() }}
+    </div>
   @endif
 
   {{-- Header --}}
-  <div class="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-2 mb-6">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
-      <h1 class="text-3xl font-extrabold text-slate-900">Membership Saya</h1>
-      <p class="mt-1 text-sm text-slate-600">Kelola status membership, lihat masa aktif & riwayat paket.</p>
+      <h1 class="text-3xl font-extrabold text-text-main">Membership Saya</h1>
+      <p class="mt-1 text-text-soft">Kelola status membership, masa aktif, dan riwayat paket Anda.</p>
     </div>
-    <div class="flex items-center gap-2">
-      <a href="{{ route('app.memberships.plans') }}" class="btn btn-muted inline-flex items-center gap-2">
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-          <path d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z" />
-        </svg>
-        Lihat Paket
+    <div class="shrink-0">
+      <a href="{{ route('app.memberships.plans') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-100 rounded-xl text-sm font-bold text-text-main hover:text-tosca hover:border-tosca/30 transition-colors shadow-sm">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 11V5a1 1 0 1 1 2 0v6h6a1 1 0 1 1 0 2h-6v6a1 1 0 1 1-2 0v-6H5a1 1 0 1 1 0-2h6Z"></path></svg>
+        Jelajahi Paket
       </a>
     </div>
   </div>
 
-  {{-- Kartu status terkini --}}
-  <section class="mb-8">
-    <div class="card hover-lift" aria-live="polite">
-      <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-5">
-        <div class="min-w-0">
-          <div class="text-sm text-slate-500">Membership aktif/terbaru</div>
+  {{-- Kartu Status Terkini --}}
+  <section>
+    <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-8 relative overflow-hidden group hover:border-tosca/30 transition-all">
+      {{-- Decorative Bg --}}
+      @if($current && $current->status === 'active')
+        <div class="absolute top-0 right-0 w-64 h-64 bg-tosca-light opacity-30 rounded-full blur-3xl -mt-20 -mr-20 pointer-events-none group-hover:opacity-60 transition-opacity"></div>
+      @elseif($current && $current->status === 'pending')
+        <div class="absolute top-0 right-0 w-64 h-64 bg-amber-50 rounded-full blur-3xl -mt-20 -mr-20 pointer-events-none"></div>
+      @endif
+
+      <div class="relative z-10 flex flex-col md:flex-row md:items-start justify-between gap-8">
+        <div class="flex-1">
+          <div class="text-xs font-bold text-text-soft uppercase tracking-wider mb-2">Status Membership Saat Ini</div>
 
           @if($current)
-          @php
-          $badgeClass = match($current->status) {
-          'active' => 'pill-live',
-          'pending' => 'pill-warn',
-          default => 'pill-idle',
-          };
-          $pct = $calcPct($current->activated_at, $current->expires_at);
-          $left = $daysLeft($current->expires_at);
-          @endphp
+            @php
+              $badgeClass = match($current->status) {
+                'active' => 'bg-green-100 text-green-700 border-green-200',
+                'pending' => 'bg-amber-100 text-amber-700 border-amber-200',
+                default => 'bg-gray-100 text-gray-700 border-gray-200',
+              };
+              $pct = $calcPct($current->activated_at, $current->expires_at);
+              $left = $daysLeft($current->expires_at);
+            @endphp
 
-          <div class="mt-1 text-xl md:text-2xl font-semibold truncate text-slate-900">
-            {{ $current->plan->name ?? 'Plan' }}
-          </div>
-
-          <div class="mt-2 flex flex-wrap items-center gap-2">
-            <span class="pill {{ $badgeClass }}">{{ ucfirst($current->status) }}</span>
-
-            @if($current->activated_at)
-            <span class="chip" title="Tanggal mulai">
-              Aktif: {{ Carbon::parse($current->activated_at)->format('d M Y H:i') }}
-            </span>
-            @endif
-            @if($current->expires_at)
-            <span class="chip" title="Tanggal berakhir">
-              Berakhir: {{ Carbon::parse($current->expires_at)->format('d M Y H:i') }}
-            </span>
-            @endif
-            @if($current->status === 'pending')
-            <span class="chip">Menunggu konfirmasi pembayaran</span>
-            @endif
-          </div>
-
-          @if($current->status === 'active' && $current->expires_at)
-          <div class="mt-4">
-            <div class="flex items-center justify-between text-xs text-slate-600">
-              <span>Masa aktif</span>
-              <span class="font-semibold text-slate-900">{{ $pct }}%</span>
+            <div class="text-3xl font-extrabold text-text-main mb-4 flex items-center gap-3">
+              {{ $current->plan->name ?? 'Plan' }}
+              <span class="px-3 py-1 rounded-lg border text-xs font-bold uppercase tracking-wider {{ $badgeClass }}">
+                {{ ucfirst($current->status) }}
+              </span>
             </div>
-            <div class="progress mt-1.5" aria-label="Masa aktif">
-              <span style="width: {{ max(0,min(100,$pct)) }}%"></span>
+
+            <div class="flex flex-wrap items-center gap-3 mb-6">
+              @if($current->activated_at)
+                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-100 text-sm font-semibold text-text-soft">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                  Aktif: {{ Carbon::parse($current->activated_at)->format('d M Y, H:i') }}
+                </div>
+              @endif
+              @if($current->expires_at)
+                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 border border-gray-100 text-sm font-semibold text-text-soft">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  Berakhir: {{ Carbon::parse($current->expires_at)->format('d M Y, H:i') }}
+                </div>
+              @endif
+              @if($current->status === 'pending')
+                <div class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-50 border border-amber-100 text-sm font-bold text-amber-700">
+                  <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  Menunggu Konfirmasi Pembayaran
+                </div>
+              @endif
             </div>
-            <div class="mt-1.5 text-xs text-slate-600">
-              @if($left !== null)
-              @if($left <= 0)
-                <span class="text-red-600 font-medium">Berakhir</span>
-                @elseif($left === 1)
-                1 hari tersisa
-                @else
-                {{ $left }} hari tersisa
-                @endif
-                @else
-                —
-                @endif
-            </div>
-          </div>
-          @endif
+
+            @if($current->status === 'active' && $current->expires_at)
+              <div class="max-w-md bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                <div class="flex items-center justify-between text-sm font-bold mb-2">
+                  <span class="text-text-main">Masa Aktif Berjalan</span>
+                  <span class="text-tosca">{{ $pct }}%</span>
+                </div>
+                <div class="w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
+                  <div class="h-full bg-tosca rounded-full" style="width: {{ max(0,min(100,$pct)) }}%"></div>
+                </div>
+                <div class="mt-2 text-xs font-bold text-right">
+                  @if($left !== null)
+                    @if($left <= 0)
+                      <span class="text-red-500">Telah Berakhir</span>
+                    @elseif($left === 1)
+                      <span class="text-amber-500">1 hari tersisa</span>
+                    @else
+                      <span class="text-text-soft">{{ $left }} hari tersisa</span>
+                    @endif
+                  @else
+                    <span class="text-text-soft">—</span>
+                  @endif
+                </div>
+              </div>
+            @endif
+
           @else
-          <div class="mt-1 text-lg font-semibold text-slate-800">Belum ada membership</div>
-          <p class="text-sm text-slate-600">Mulai dengan memilih paket di halaman Paket.</p>
+            <div class="text-2xl font-extrabold text-text-main mb-2">Belum Memiliki Paket Aktif</div>
+            <p class="text-text-soft">Anda saat ini menggunakan versi gratis. Tingkatkan pengalaman belajar Anda dengan memilih paket membership premium.</p>
           @endif
         </div>
 
         {{-- Actions (current) --}}
-        <div class="shrink-0 flex flex-col gap-2 w-full md:w-auto">
+        <div class="shrink-0 w-full md:w-64 flex flex-col gap-3">
           @if($current)
-          @if($current->status === 'pending')
-          <a href="{{ route('app.memberships.checkout', $current) }}" class="btn btn-primary text-center">
-            Lanjutkan Pembayaran
-          </a>
-          <button type="button" id="btnRefresh" class="btn btn-muted" onclick="location.reload()">Cek Status Sekarang</button>
+            @if($current->status === 'pending')
+              <a href="{{ route('app.memberships.checkout', $current) }}" class="flex items-center justify-center gap-2 px-6 py-3 bg-tosca text-white font-bold rounded-xl hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/30 w-full">
+                Lanjut Bayar
+              </a>
+              <button type="button" class="flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-gray-100 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors w-full" onclick="location.reload()">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+                Cek Status
+              </button>
 
-          {{-- FORM BATALKAN --}}
-          <form method="POST" action="{{ route('app.memberships.cancel', $current) }}" class="js-cancel-form">
-            @csrf
-            <input type="hidden" name="ack" value="0">
-            <button type="submit" class="btn btn-muted w-full">Batalkan</button>
-          </form>
+              <form method="POST" action="{{ route('app.memberships.cancel', $current) }}" class="js-cancel-form">
+                @csrf
+                <input type="hidden" name="ack" value="0">
+                <button type="submit" class="flex items-center justify-center gap-2 px-6 py-3 bg-red-50 text-red-600 font-bold rounded-xl hover:bg-red-100 transition-colors w-full">
+                  Batalkan Transaksi
+                </button>
+              </form>
 
-          @elseif($current->status === 'active')
-          @php $left = $daysLeft($current->expires_at); @endphp
-          @if(($left ?? 0) <= 7 && $left !==null)
-            <a href="{{ route('app.memberships.plans') }}" class="btn btn-primary text-center">
-            Perpanjang / Upgrade
-            </a>
-            @endif
+            @elseif($current->status === 'active')
+              @php $left = $daysLeft($current->expires_at); @endphp
+              @if(($left ?? 0) <= 7 && $left !== null)
+                <a href="{{ route('app.memberships.plans') }}" class="flex items-center justify-center gap-2 px-6 py-3 bg-tosca text-white font-bold rounded-xl hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/30 w-full">
+                  Perpanjang Paket
+                </a>
+              @endif
 
-            {{-- FORM NONAKTIFKAN --}}
-            <form method="POST" action="{{ route('app.memberships.cancel', $current) }}" class="js-cancel-form">
-              @csrf
-              <input type="hidden" name="ack" value="0">
-              <button type="submit" class="btn btn-muted">Nonaktifkan</button>
-            </form>
-
+              <form method="POST" action="{{ route('app.memberships.cancel', $current) }}" class="js-cancel-form">
+                @csrf
+                <input type="hidden" name="ack" value="0">
+                <button type="submit" class="flex items-center justify-center gap-2 px-6 py-3 bg-white border-2 border-gray-100 text-gray-600 font-bold rounded-xl hover:bg-red-50 hover:text-red-600 hover:border-red-200 transition-colors w-full">
+                  Batalkan Langganan
+                </button>
+              </form>
             @else
-            <a href="{{ route('app.memberships.plans') }}" class="btn btn-muted text-center">
-              Pilih Paket
-            </a>
+              <a href="{{ route('app.memberships.plans') }}" class="flex items-center justify-center gap-2 px-6 py-3 bg-tosca text-white font-bold rounded-xl hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/30 w-full">
+                Pilih Paket Baru
+              </a>
             @endif
-            @else
-            <a href="{{ route('app.memberships.plans') }}" class="btn btn-primary text-center">
-              Pilih Paket
+          @else
+            <a href="{{ route('app.memberships.plans') }}" class="flex items-center justify-center gap-2 px-6 py-3 bg-tosca text-white font-bold rounded-xl hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/30 w-full">
+              Pilih Paket Premium
             </a>
-            @endif
+          @endif
         </div>
       </div>
     </div>
@@ -315,132 +197,139 @@ return $d->isPast() ? 0 : now()->diffInDays($d) + 1;
 
   {{-- Riwayat --}}
   <section>
-    <div class="mb-3 flex items-center justify-between">
-      <h2 class="text-base font-semibold text-slate-900">Riwayat Membership</h2>
-    </div>
+    <h2 class="text-xl font-bold text-text-main mb-4 flex items-center gap-3">
+      <div class="w-8 h-8 rounded-lg bg-softbg text-tosca-dark flex items-center justify-center">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+      </div>
+      Riwayat Membership
+    </h2>
 
     @if($history->count())
-
-    {{-- Mobile: cards --}}
-    <div class="grid gap-3 sm:hidden">
-      @foreach($history as $m)
-      @php
-      $badgeClass = match($m->status) {
-      'active' => 'pill-live',
-      'pending' => 'pill-warn',
-      default => 'pill-idle',
-      };
-      @endphp
-      <div class="card">
-        <div class="flex items-start justify-between gap-3">
-          <div class="min-w-0">
-            <div class="font-semibold text-slate-900">{{ $m->plan->name ?? 'Plan' }}</div>
-            <div class="mt-1 flex flex-wrap items-center gap-2">
-              <span class="pill {{ $badgeClass }}">{{ ucfirst($m->status) }}</span>
-              <span class="chip">Aktif: {{ $m->activated_at ? Carbon::parse($m->activated_at)->format('d M Y H:i') : '—' }}</span>
-              <span class="chip">Berakhir: {{ $m->expires_at ? Carbon::parse($m->expires_at)->format('d M Y H:i') : '—' }}</span>
+      {{-- Mobile: cards --}}
+      <div class="grid gap-4 sm:hidden">
+        @foreach($history as $m)
+          @php
+            $badgeClass = match($m->status) {
+              'active' => 'bg-green-100 text-green-700',
+              'pending' => 'bg-amber-100 text-amber-700',
+              default => 'bg-gray-100 text-gray-700',
+            };
+          @endphp
+          <div class="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
+            <div class="flex justify-between items-start mb-3">
+              <div class="font-bold text-lg text-text-main">{{ $m->plan->name ?? 'Plan' }}</div>
+              <span class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider {{ $badgeClass }}">{{ ucfirst($m->status) }}</span>
+            </div>
+            
+            <div class="space-y-2 mb-4 text-sm font-medium text-text-soft">
+              <div class="flex justify-between border-b border-gray-50 pb-2">
+                <span>Diaktifkan:</span>
+                <span class="text-text-main">{{ $m->activated_at ? Carbon::parse($m->activated_at)->format('d M Y') : '—' }}</span>
+              </div>
+              <div class="flex justify-between">
+                <span>Berakhir:</span>
+                <span class="text-text-main">{{ $m->expires_at ? Carbon::parse($m->expires_at)->format('d M Y') : '—' }}</span>
+              </div>
             </div>
 
-            {{-- actions (mobile) --}}
-            <div class="mt-3 flex flex-wrap gap-2 acts">
+            <div class="flex flex-wrap gap-2 pt-3 border-t border-gray-100">
               @if($m->status === 'pending')
-              <a href="{{ route('app.memberships.checkout', $m) }}" class="text-blue-700 hover:underline font-semibold">Checkout</a>
-              <button type="button" class="text-slate-700 hover:underline" onclick="location.reload()">Cek Status</button>
-
-              <form method="POST" action="{{ route('app.memberships.cancel', $m) }}" class="js-cancel-form">
-                @csrf
-                <input type="hidden" name="ack" value="0">
-                <button class="text-red-700 hover:underline" type="submit">Batalkan</button>
-              </form>
-
+                <a href="{{ route('app.memberships.checkout', $m) }}" class="flex-1 text-center py-2 bg-tosca text-white font-bold rounded-lg text-sm">Checkout</a>
+                <form method="POST" action="{{ route('app.memberships.cancel', $m) }}" class="js-cancel-form flex-1">
+                  @csrf
+                  <input type="hidden" name="ack" value="0">
+                  <button type="submit" class="w-full py-2 bg-red-50 text-red-600 font-bold rounded-lg text-sm">Batal</button>
+                </form>
               @elseif($m->status === 'active')
-              <form method="POST" action="{{ route('app.memberships.cancel', $m) }}" class="js-cancel-form">
-                @csrf
-                <input type="hidden" name="ack" value="0">
-                <button class="text-slate-700 hover:underline" type="submit">Nonaktifkan</button>
-              </form>
+                <form method="POST" action="{{ route('app.memberships.cancel', $m) }}" class="js-cancel-form w-full">
+                  @csrf
+                  <input type="hidden" name="ack" value="0">
+                  <button type="submit" class="w-full py-2 bg-gray-100 text-gray-600 font-bold rounded-lg text-sm">Nonaktifkan</button>
+                </form>
               @endif
             </div>
           </div>
-        </div>
+        @endforeach
       </div>
-      @endforeach
-    </div>
 
-    {{-- Desktop: table --}}
-    <div class="hidden sm:block overflow-x-auto rounded-2xl soft-border bg-white">
-      <table class="table divide-y divide-gray-100">
-        <thead class="bg-gray-50">
-          <tr class="text-left">
-            <th class="px-4 py-3">Plan</th>
-            <th class="px-4 py-3">Status</th>
-            <th class="px-4 py-3">Aktif</th>
-            <th class="px-4 py-3">Berakhir</th>
-            <th class="px-4 py-3 text-right">Aksi</th>
-          </tr>
-        </thead>
-        <tbody class="divide-y divide-gray-100">
-          @foreach($history as $m)
-          @php
-          $badgeClass = match($m->status) {
-          'active' => 'pill-live',
-          'pending' => 'pill-warn',
-          default => 'pill-idle',
-          };
-          @endphp
-          <tr class="hover:bg-gray-50/60">
-            <td class="px-4 py-3 font-medium text-slate-900 whitespace-nowrap">
-              {{ $m->plan->name ?? 'Plan' }}
-            </td>
-            <td class="px-4 py-3">
-              <span class="pill {{ $badgeClass }}">{{ ucfirst($m->status) }}</span>
-            </td>
-            <td class="px-4 py-3 text-slate-700 whitespace-nowrap">
-              {{ $m->activated_at ? Carbon::parse($m->activated_at)->format('d M Y H:i') : '—' }}
-            </td>
-            <td class="px-4 py-3 text-slate-700 whitespace-nowrap">
-              {{ $m->expires_at ? Carbon::parse($m->expires_at)->format('d M Y H:i') : '—' }}
-            </td>
-            <td class="px-4 py-3">
-              <div class="flex items-center gap-2 justify-end acts">
-                @if($m->status === 'pending')
-                <a href="{{ route('app.memberships.checkout', $m) }}" class="btn btn-primary">Checkout</a>
-                <button type="button" class="btn btn-muted" onclick="location.reload()">Cek Status</button>
+      {{-- Desktop: table --}}
+      <div class="hidden sm:block bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
+        <table class="w-full text-left border-collapse">
+          <thead>
+            <tr class="bg-gray-50 border-b border-gray-100 text-xs uppercase tracking-wider text-text-soft">
+              <th class="px-6 py-4 font-bold">Paket</th>
+              <th class="px-6 py-4 font-bold">Status</th>
+              <th class="px-6 py-4 font-bold">Tanggal Aktif</th>
+              <th class="px-6 py-4 font-bold">Tanggal Berakhir</th>
+              <th class="px-6 py-4 font-bold text-right">Aksi</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            @foreach($history as $m)
+              @php
+                $badgeClass = match($m->status) {
+                  'active' => 'bg-green-100 text-green-700 border-green-200',
+                  'pending' => 'bg-amber-100 text-amber-700 border-amber-200',
+                  default => 'bg-gray-100 text-gray-700 border-gray-200',
+                };
+              @endphp
+              <tr class="hover:bg-gray-50/50 transition-colors">
+                <td class="px-6 py-4 font-bold text-text-main whitespace-nowrap">
+                  {{ $m->plan->name ?? 'Plan' }}
+                </td>
+                <td class="px-6 py-4">
+                  <span class="px-2.5 py-1 rounded text-[10px] font-bold uppercase tracking-wider border {{ $badgeClass }}">
+                    {{ ucfirst($m->status) }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-sm font-medium text-text-soft whitespace-nowrap">
+                  {{ $m->activated_at ? Carbon::parse($m->activated_at)->format('d M Y, H:i') : '—' }}
+                </td>
+                <td class="px-6 py-4 text-sm font-medium text-text-soft whitespace-nowrap">
+                  {{ $m->expires_at ? Carbon::parse($m->expires_at)->format('d M Y, H:i') : '—' }}
+                </td>
+                <td class="px-6 py-4">
+                  <div class="flex items-center justify-end gap-2">
+                    @if($m->status === 'pending')
+                      <a href="{{ route('app.memberships.checkout', $m) }}" class="px-4 py-2 bg-tosca text-white font-bold rounded-lg text-xs hover:bg-tosca-dark transition-colors">Checkout</a>
+                      
+                      <form method="POST" action="{{ route('app.memberships.cancel', $m) }}" class="js-cancel-form">
+                        @csrf
+                        <input type="hidden" name="ack" value="0">
+                        <button type="submit" class="px-4 py-2 bg-red-50 text-red-600 font-bold rounded-lg text-xs hover:bg-red-100 transition-colors">Batal</button>
+                      </form>
+                    @elseif($m->status === 'active')
+                      <form method="POST" action="{{ route('app.memberships.cancel', $m) }}" class="js-cancel-form">
+                        @csrf
+                        <input type="hidden" name="ack" value="0">
+                        <button type="submit" class="px-4 py-2 bg-gray-100 text-gray-600 font-bold rounded-lg text-xs hover:bg-gray-200 transition-colors">Nonaktifkan</button>
+                      </form>
+                    @else
+                      <span class="text-text-soft font-medium text-sm">—</span>
+                    @endif
+                  </div>
+                </td>
+              </tr>
+            @endforeach
+          </tbody>
+        </table>
+      </div>
 
-                <form method="POST" action="{{ route('app.memberships.cancel', $m) }}" class="js-cancel-form">
-                  @csrf
-                  <input type="hidden" name="ack" value="0">
-                  <button class="btn btn-muted" type="submit">Batalkan</button>
-                </form>
-
-                @elseif($m->status === 'active')
-                <form method="POST" action="{{ route('app.memberships.cancel', $m) }}" class="js-cancel-form">
-                  @csrf
-                  <input type="hidden" name="ack" value="0">
-                  <button class="btn btn-muted" type="submit">Nonaktifkan</button>
-                </form>
-                @else
-                <span class="text-slate-400">—</span>
-                @endif
-              </div>
-            </td>
-          </tr>
-          @endforeach
-        </tbody>
-      </table>
-    </div>
-
-    <div class="mt-4">
-      {{ $history->links() }}
-    </div>
+      <div class="mt-6 flex justify-center">
+        {{ $history->links() }}
+      </div>
     @else
-    <div class="card text-center py-10">
-      <div class="text-slate-900 font-semibold text-lg">Belum ada riwayat membership</div>
-      <div class="text-slate-600 mt-1">Mulai berlangganan untuk akses penuh materi.</div>
-      <a class="inline-flex mt-4 btn btn-primary" href="{{ route('app.memberships.plans') }}">Lihat Paket</a>
-    </div>
+      <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-12 text-center flex flex-col items-center justify-center">
+        <div class="w-16 h-16 rounded-2xl bg-softbg text-tosca flex items-center justify-center mb-4">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+        </div>
+        <div class="text-xl font-bold text-text-main mb-2">Belum Ada Riwayat</div>
+        <p class="text-text-soft mb-6">Mulai berlangganan untuk mendapatkan akses penuh ke materi pembelajaran premium.</p>
+        <a href="{{ route('app.memberships.plans') }}" class="px-6 py-3 bg-tosca text-white font-bold rounded-xl hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/20">Jelajahi Paket</a>
+      </div>
     @endif
   </section>
+
 </div>
 @endsection
 
@@ -454,33 +343,46 @@ return $d->isPast() ? 0 : now()->diffInDays($d) + 1;
 
         Swal.fire({
           icon: 'warning',
-          title: 'Batalkan membership?',
+          title: 'Batalkan Membership?',
           html: `
-  <div class="text-left leading-relaxed text-slate-700">
-    <ul class="list-disc pl-5 space-y-1">
-      <li class="text-red-600">Membership akan <b>langsung dinonaktifkan</b>.</li>
-      <li class="text-indigo-700">Akses materi premium <b>dicabut</b>.</li>
-      <li class="text-amber-600">Sisa masa aktif <b>hangus</b>.</li>
-      <li class="text-slate-800">Pembayaran bersifat <b>non-refundable</b>.</li>
-    </ul>
-    <label class="mt-4 flex items-start gap-2 text-sm text-slate-800">
-      <input type="checkbox" id="ack-cancel" class="mt-1 accent-indigo-600">
-      <span>
-        Saya memahami dan setuju dengan semua konsekuensi di atas.
-      </span>
-    </label>
-  </div>
-`,
+            <div class="text-left mt-4 bg-gray-50 p-4 rounded-xl text-sm border border-gray-200">
+              <ul class="space-y-2 font-medium text-gray-700">
+                <li class="flex items-start gap-2 text-red-600">
+                  <svg class="w-5 h-5 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                  Membership akan langsung dinonaktifkan.
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg class="w-5 h-5 shrink-0 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  Akses materi premium akan dicabut.
+                </li>
+                <li class="flex items-start gap-2">
+                  <svg class="w-5 h-5 shrink-0 mt-0.5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                  Sisa masa aktif hangus dan pembayaran bersifat non-refundable.
+                </li>
+              </ul>
+            </div>
+            <label class="mt-4 flex items-center gap-3 text-sm font-bold text-gray-800 bg-white border border-gray-200 p-3 rounded-lg cursor-pointer hover:bg-gray-50">
+              <input type="checkbox" id="ack-cancel" class="w-5 h-5 rounded text-tosca focus:ring-tosca">
+              <span class="text-left">Saya memahami dan setuju dengan konsekuensi ini.</span>
+            </label>
+          `,
           showCancelButton: true,
-          confirmButtonText: 'Saya setuju & batalkan',
-          cancelButtonText: 'Batal',
+          confirmButtonColor: '#ef4444',
+          cancelButtonColor: '#9ca3af',
+          confirmButtonText: 'Ya, Batalkan',
+          cancelButtonText: 'Kembali',
           reverseButtons: true,
           focusConfirm: false,
-          allowOutsideClick: () => !Swal.isLoading(),
+          customClass: {
+            title: 'font-bold text-gray-900',
+            confirmButton: 'font-bold rounded-xl px-6 py-3',
+            cancelButton: 'font-bold rounded-xl px-6 py-3',
+            popup: 'rounded-3xl'
+          },
           preConfirm: () => {
             const ok = document.getElementById('ack-cancel')?.checked;
             if (!ok) {
-              Swal.showValidationMessage('Centang persetujuan terlebih dahulu.');
+              Swal.showValidationMessage('Anda harus menyetujui konsekuensi di atas terlebih dahulu.');
               return false;
             }
             return true;

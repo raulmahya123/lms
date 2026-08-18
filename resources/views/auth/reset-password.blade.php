@@ -1,39 +1,101 @@
-<x-guest-layout>
-    <form method="POST" action="{{ route('password.store') }}">
-        @csrf
+@extends('layouts.auth-modern')
 
-        <!-- Password Reset Token -->
-        <input type="hidden" name="token" value="{{ $request->route('token') }}">
+@section('title', 'Reset Password')
+@section('visual_kicker', 'Password baru')
+@section('visual_title', 'Buat password baru yang lebih kuat')
+@section('visual_text', 'Gunakan kombinasi karakter yang mudah kamu ingat tetapi sulit ditebak agar akun belajar tetap aman.')
+@section('heading', 'Reset Password')
+@section('subheading', 'Masukkan email dan password baru untuk akun BERKEMAH kamu.')
 
-        <!-- Email Address -->
-        <div>
-            <x-input-label for="email" :value="__('Email')" />
-            <x-text-input id="email" class="block mt-1 w-full" type="email" name="email" :value="old('email', $request->email)" required autofocus autocomplete="username" />
-            <x-input-error :messages="$errors->get('email')" class="mt-2" />
-        </div>
+@section('visual_cards')
+  <div class="rounded-3xl border border-white/12 bg-white/12 p-5 backdrop-blur xl:col-span-3">
+    <p class="text-sm font-black">Tips keamanan</p>
+    <p class="mt-3 text-sm leading-6 text-white/64">Gunakan minimal 8 karakter dengan kombinasi huruf dan angka.</p>
+  </div>
+@endsection
 
-        <!-- Password -->
-        <div class="mt-4">
-            <x-input-label for="password" :value="__('Password')" />
-            <x-text-input id="password" class="block mt-1 w-full" type="password" name="password" required autocomplete="new-password" />
-            <x-input-error :messages="$errors->get('password')" class="mt-2" />
-        </div>
+@section('content')
+<form method="POST" action="{{ route('password.store') }}" x-data="passwordStrength()" @submit="loading=true" class="space-y-5">
+  @csrf
+  <input type="hidden" name="token" value="{{ $request->route('token') }}">
 
-        <!-- Confirm Password -->
-        <div class="mt-4">
-            <x-input-label for="password_confirmation" :value="__('Confirm Password')" />
+  <div>
+    <label for="email" class="mb-2 block text-sm font-bold text-slate-700 dark:text-white/82">Email</label>
+    <div class="relative">
+      <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M16 12H8m8-4H8m12 10V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2h12a2 2 0 002-2z"/></svg>
+      </span>
+      <input id="email" name="email" type="email" value="{{ old('email', $request->email) }}" required autofocus autocomplete="username" class="auth-input @error('email') auth-input-error @enderror" @error('email') aria-invalid="true" aria-describedby="email-error" @enderror>
+    </div>
+    @error('email')<p id="email-error" class="mt-2 text-sm font-semibold text-red-500">{{ $message }}</p>@enderror
+  </div>
 
-            <x-text-input id="password_confirmation" class="block mt-1 w-full"
-                                type="password"
-                                name="password_confirmation" required autocomplete="new-password" />
+  <div>
+    <label for="password" class="mb-2 block text-sm font-bold text-slate-700 dark:text-white/82">Password Baru</label>
+    <div class="relative">
+      <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M12 11c1.105 0 2 .895 2 2v3h-4v-3c0-1.105.895-2 2-2zm0-7a4 4 0 00-4 4v2h8V8a4 4 0 00-4-4z"/></svg>
+      </span>
+      <input id="password" name="password" x-model="password" :type="showPassword ? 'text' : 'password'" required autocomplete="new-password" class="auth-input pr-12 @error('password') auth-input-error @enderror">
+      <button type="button" @click="showPassword=!showPassword" class="absolute right-3 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-xl text-slate-400 hover:bg-tosca-light hover:text-tosca-dark dark:hover:bg-white/10" aria-label="Toggle password visibility">
+        <svg x-show="!showPassword" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3" stroke-width="2"/></svg>
+        <svg x-cloak x-show="showPassword" class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M3 3l18 18M10.58 10.58A2 2 0 0012 14a2 2 0 001.42-.58M9.9 4.24A10.7 10.7 0 0112 4c6.5 0 10 8 10 8a18.5 18.5 0 01-3.03 4.25M6.1 6.1C3.45 8.08 2 12 2 12s3.5 8 10 8a10.8 10.8 0 004.04-.78"/></svg>
+      </button>
+    </div>
+    <div class="mt-3 h-2 overflow-hidden rounded-full bg-slate-100 dark:bg-white/10"><div class="h-full rounded-full transition-all" :class="barClass" :style="`width:${strengthWidth}%`"></div></div>
+    <p class="mt-2 text-xs font-bold" :class="labelClass" x-text="strengthLabel"></p>
+    @error('password')<p class="mt-2 text-sm font-semibold text-red-500">{{ $message }}</p>@enderror
+  </div>
 
-            <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2" />
-        </div>
+  <div>
+    <label for="password_confirmation" class="mb-2 block text-sm font-bold text-slate-700 dark:text-white/82">Konfirmasi Password Baru</label>
+    <div class="relative">
+      <span class="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-slate-400">
+        <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5-2v6a8 8 0 11-16 0V8l8-4 8 4z"/></svg>
+      </span>
+      <input id="password_confirmation" name="password_confirmation" :type="showPassword ? 'text' : 'password'" required autocomplete="new-password" class="auth-input @error('password_confirmation') auth-input-error @enderror">
+    </div>
+    @error('password_confirmation')<p class="mt-2 text-sm font-semibold text-red-500">{{ $message }}</p>@enderror
+  </div>
 
-        <div class="flex items-center justify-end mt-4">
-            <x-primary-button>
-                {{ __('Reset Password') }}
-            </x-primary-button>
-        </div>
-    </form>
-</x-guest-layout>
+  <button type="submit" :disabled="loading" class="flex min-h-[52px] w-full items-center justify-center gap-3 rounded-2xl bg-tosca px-5 text-sm font-black text-white shadow-lg shadow-tosca/20 transition hover:bg-tosca-dark disabled:opacity-75">
+    <svg x-show="loading" class="h-5 w-5 animate-spin" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"/></svg>
+    <span x-text="loading ? 'Memproses...' : 'Simpan Password Baru'"></span>
+  </button>
+</form>
+@endsection
+
+@push('scripts')
+<script>
+  function passwordStrength() {
+    return {
+      password: '',
+      showPassword: false,
+      loading: false,
+      get score() {
+        let score = 0;
+        if (this.password.length >= 8) score++;
+        if (/[A-Za-z]/.test(this.password) && /\d/.test(this.password)) score++;
+        if (/[^A-Za-z0-9]/.test(this.password) || this.password.length >= 12) score++;
+        return score;
+      },
+      get strengthLabel() {
+        if (!this.password) return 'Belum diisi';
+        return this.score <= 1 ? 'Lemah' : (this.score === 2 ? 'Cukup' : 'Kuat');
+      },
+      get strengthWidth() {
+        if (!this.password) return 8;
+        return this.score <= 1 ? 34 : (this.score === 2 ? 67 : 100);
+      },
+      get barClass() {
+        if (!this.password) return 'bg-slate-300';
+        return this.score <= 1 ? 'bg-red-400' : (this.score === 2 ? 'bg-amber-400' : 'bg-tosca');
+      },
+      get labelClass() {
+        if (!this.password) return 'text-slate-400';
+        return this.score <= 1 ? 'text-red-500' : (this.score === 2 ? 'text-amber-500' : 'text-tosca-dark dark:text-[#9df4e7]');
+      }
+    };
+  }
+</script>
+@endpush

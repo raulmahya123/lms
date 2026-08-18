@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Foundation\Auth\User as Authenticatable;
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -13,7 +14,11 @@ use Illuminate\Support\Str;
 
 class User extends Authenticatable
 {
-    use Notifiable, HasUuids;
+    use HasFactory, Notifiable, HasUuids;
+
+    public const ROLE_ADMIN = 'admin';
+    public const ROLE_USER = 'user';
+    public const ROLE_MENTOR = 'mentor';
 
     /** ✅ PK pakai UUID */
     protected $keyType = 'string';
@@ -40,19 +45,41 @@ class User extends Authenticatable
     }
 
     // === Helper role ===
+    public function roleName(): ?string
+    {
+        return $this->role?->name;
+    }
+
+    public function hasRole(string|array $roles): bool
+    {
+        $roles = (array) $roles;
+
+        return in_array($this->roleName(), $roles, true);
+    }
+
     public function isAdmin(): bool
     {
-        return $this->role?->name === 'admin';
+        return $this->hasRole(self::ROLE_ADMIN);
+    }
+
+    public function isTeacher(): bool
+    {
+        return $this->isMentor();
+    }
+
+    public function isBackoffice(): bool
+    {
+        return $this->isAdmin() || $this->isMentor();
     }
 
     public function isMentor(): bool
     {
-        return $this->role?->name === 'mentor';
+        return $this->hasRole([self::ROLE_MENTOR, 'guru', 'dosen']);
     }
 
     // Optional: scopes
-    public function scopeAdmins($q)  { return $q->whereHas('role', fn($r) => $r->where('name','admin')); }
-    public function scopeMentors($q) { return $q->whereHas('role', fn($r) => $r->where('name','mentor')); }
+    public function scopeAdmins($q)  { return $q->whereHas('role', fn($r) => $r->where('name', self::ROLE_ADMIN)); }
+    public function scopeMentors($q) { return $q->whereHas('role', fn($r) => $r->whereIn('name', [self::ROLE_MENTOR, 'guru', 'dosen'])); }
 
     // === Relasi: user sebagai mentor dari banyak course (pivot) ===
     public function mentorOfCourses(): BelongsToMany

@@ -1,369 +1,221 @@
-{{-- resources/views/app/dashboard.blade.php --}}
-@extends('app.layouts.base')
-@section('title','Dashboard')
+@extends('layouts.app')
 
-@push('styles')
-<style>
-  :root{
-    --card-bg: rgba(255,255,255,.75);
-    --card-brd: rgba(2,6,23,.08);
-    --ink: #0f172a;
-    --muted: #64748b;
-  }
-  @media (prefers-color-scheme: dark){
-    :root{
-      --card-bg: rgba(15,23,42,.6);
-      --card-brd: rgba(148,163,184,.12);
-      --ink: #e2e8f0;
-      --muted: #94a3b8;
-    }
-  }
-
-  .glass {background: var(--card-bg); border:1px solid var(--card-brd); backdrop-filter: blur(12px); border-radius: 18px}
-  .hover-lift{transition:transform .22s cubic-bezier(.2,.8,.2,1), box-shadow .22s;}
-  .hover-lift:hover{transform:translateY(-3px); box-shadow:0 18px 60px rgba(2,6,23,.14)}
-  .chip{display:inline-flex;align-items:center;gap:.4rem;font-size:.72rem;padding:.3rem .55rem;border-radius:999px;background:#eef2ff;border:1px solid rgba(2,6,23,.05)}
-  .btn{display:inline-flex;align-items:center;gap:.5rem;padding:.55rem .9rem;border-radius:12px;font-weight:600;background:linear-gradient(135deg,#6366f1,#22d3ee);color:#fff;border:0}
-  .btn.secondary{background:transparent;color:var(--ink);border:1px solid var(--card-brd)}
-  .stat-num{font-size:2rem;font-weight:800;letter-spacing:-.02em}
-  .subtle{color:var(--muted)}
-  .progress-wrap{height:10px;background:rgba(99,102,241,.12);border-radius:999px;overflow:hidden}
-  .progress-bar{height:100%;background:linear-gradient(90deg,#6366f1,#22d3ee)}
-  .shine{position:relative;overflow:hidden}
-  .shine:after{content:"";position:absolute;inset:-150% -50% auto;transform:rotate(12deg);height:60%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.25),transparent);animation:shine 6s linear infinite}
-  @keyframes shine{0%{left:-120%}100%{left:140%}}
-  .blob{position:absolute;filter:blur(60px);opacity:.5;z-index:-1}
-  .blob.b1{background:#a78bfa;width:320px;height:320px;left:-80px;top:-60px;border-radius:50%}
-  .blob.b2{background:#22d3ee;width:280px;height:280px;right:-60px;top:120px;border-radius:50%}
-</style>
-@endpush
+@section('title', 'My Dashboard')
 
 @section('content')
-<div class="relative">
-  <div class="blob b1"></div>
-  <div class="blob b2"></div>
+<div class="space-y-8">
+    
+    {{-- GREETING & HEADER --}}
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <h1 class="text-3xl font-extrabold text-text-main flex items-center gap-2">
+                Hey, {{ $user->name }} 👋
+            </h1>
+            <p class="text-text-soft mt-2">Welcome back! Here's a summary of your learning journey.</p>
+        </div>
+        <div class="flex items-center gap-3">
+            <a href="{{ route('app.courses.index') }}" class="px-5 py-2.5 rounded-xl bg-tosca text-white text-sm font-medium hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/20">
+                Explore Courses
+            </a>
+        </div>
+    </div>
+
+    {{-- STATS GRID --}}
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+        <div class="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-50 flex items-center gap-5 hover:border-tosca/20 transition-all group">
+            <div class="w-14 h-14 rounded-2xl bg-tosca-light text-tosca flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
+            </div>
+            <div>
+                <div class="text-sm font-medium text-text-soft">My Courses</div>
+                <div class="text-3xl font-bold text-text-main mt-1">{{ (int)($stats['courses_count'] ?? 0) }}</div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-50 flex items-center gap-5 hover:border-tosca/20 transition-all group">
+            <div class="w-14 h-14 rounded-2xl bg-tosca-light text-tosca flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+            </div>
+            <div>
+                <div class="text-sm font-medium text-text-soft">Active Membership</div>
+                <div class="text-xl font-bold text-text-main mt-1">
+                    {{ optional(optional($stats['active_membership'] ?? null)->plan)->name ?? 'None' }}
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-3xl p-6 shadow-[0_4px_24px_rgba(0,0,0,0.02)] border border-gray-50 flex items-center gap-5 hover:border-tosca/20 transition-all group">
+            <div class="w-14 h-14 rounded-2xl bg-tosca-light text-tosca flex items-center justify-center group-hover:scale-110 transition-transform">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+            </div>
+            <div>
+                <div class="text-sm font-medium text-text-soft">Last Score</div>
+                <div class="text-3xl font-bold text-text-main mt-1">
+                    {{ optional($stats['last_attempt'] ?? null)->score !== null ? optional($stats['last_attempt'])->score : '—' }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- CONTINUE LEARNING SECTION --}}
+    <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
+        <div class="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+            <h2 class="text-lg font-bold text-text-main">Continue Learning</h2>
+            <a href="{{ route('app.my.courses') }}" class="text-sm font-medium text-tosca hover:text-tosca-dark">View All Courses &rarr;</a>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <!-- Course Progress Chart -->
+                <div class="relative h-64 w-full">
+                    <canvas id="chartProgress"></canvas>
+                </div>
+                <!-- Enrollments History Chart -->
+                <div class="relative h-64 w-full">
+                    <canvas id="chartEnroll"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {{-- ASSESSMENTS & GRADES --}}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-text-main">Quiz Score History</h2>
+            </div>
+            <div class="relative h-64 w-full">
+                <canvas id="chartQuiz"></canvas>
+            </div>
+        </div>
+        
+        <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-text-main">Lesson Completion (Monthly)</h2>
+            </div>
+            <div class="relative h-64 w-full">
+                <canvas id="chartCompleteMonthly"></canvas>
+            </div>
+        </div>
+    </div>
+
 </div>
 
-<h1 class="text-2xl md:text-3xl font-extrabold mb-1">Hey, {{ $user->name }} ✨</h1>
-<p class="subtle mb-6">Ringkasan pembelajaran & vibes harian kamu.</p>
-
-{{-- === Stat Cards === --}}
-<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-  <div class="glass p-5 hover-lift shine">
-    <div class="subtle text-sm">Courses Saya</div>
-    <div class="stat-num">{{ (int)($stats['courses_count'] ?? 0) }}</div>
-  </div>
-  <div class="glass p-5 hover-lift">
-    <div class="subtle text-sm">Membership Aktif</div>
-    <div class="text-xl font-semibold">
-      {{ optional(optional($stats['active_membership'] ?? null)->plan)->name ?? '—' }}
-    </div>
-  </div>
-  <div class="glass p-5 hover-lift">
-    <div class="subtle text-sm">Attempt Terakhir</div>
-    <div class="text-xl font-semibold">
-      {{ optional($stats['last_attempt'] ?? null)->score !== null ? optional($stats['last_attempt'])->score : '—' }}
-    </div>
-  </div>
-</div>
-
-{{-- === Grafik Utama === --}}
 @php
-  // Default struktur charts agar view tidak error jika controller belum mengirim semua kunci (tanpa trailing comma)
   $CH = $charts ?? [
     'progress'           => ['labels'=>[], 'percent'=>[], 'done'=>[], 'total'=>[]],
     'enroll'             => ['labels'=>[], 'counts'=>[]],
-    'distribution'       => ['labels'=>[], 'counts'=>[]],
     'quiz'               => [],
-    'completion_monthly' => ['labels'=>[], 'counts'=>[]],
-    'attempts_monthly'   => ['labels'=>[], 'counts'=>[]],
-
-    // tambahan agar semua section ada chart
-    'my_courses'     => ['labels'=>[], 'percent'=>[]],
-    'recommended'    => ['labels'=>[], 'counts'=>[]],
-    'coupons'        => ['labels'=>[], 'counts'=>[]],
-    'psy_tests'      => ['labels'=>[], 'questions'=>[]],
-    'iq_tests'       => ['labels'=>[], 'duration'=>[]],
-    'threads_latest' => ['labels'=>[], 'replies'=>[]],
-    'threads_mine'   => ['labels'=>[], 'replies'=>[]]
+    'completion_monthly' => ['labels'=>[], 'counts'=>[]]
   ];
 @endphp
 
-<div class="flex items-center justify-between mt-8 mb-2">
-  <h2 class="text-lg md:text-xl font-bold">Insight Grafik 📈</h2>
-  <div class="flex items-center gap-2">
-    <button class="btn secondary" data-dl="all">Download Semua</button>
-  </div>
-</div>
-
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-  {{-- Progress per Course --}}
-  <div class="glass p-4 hover-lift">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="font-semibold">Progress per Course</h3>
-      <button class="btn secondary" data-dl="chartProgress">PNG</button>
-    </div>
-    <div style="height:320px"><canvas id="chartProgress"></canvas></div>
-  </div>
-
-  {{-- Distribusi Progress --}}
-  <div class="glass p-4 hover-lift">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="font-semibold">Distribusi Progress</h3>
-      <span class="chip">🔥 fokus area</span>
-    </div>
-    <div style="height:320px"><canvas id="chartDist"></canvas></div>
-  </div>
-
-  {{-- Enrollments --}}
-  <div class="glass p-4 hover-lift">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="font-semibold">Enrollments</h3>
-      <button class="btn secondary" data-dl="chartEnroll">PNG</button>
-    </div>
-    <div style="height:320px"><canvas id="chartEnroll"></canvas></div>
-  </div>
-
-  {{-- Riwayat Skor Quiz --}}
-  <div class="glass p-4 hover-lift">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="font-semibold">Riwayat Skor Quiz</h3>
-      <button class="btn secondary" data-dl="chartQuiz">PNG</button>
-    </div>
-    <div style="height:320px"><canvas id="chartQuiz"></canvas></div>
-  </div>
-
-  {{-- Lesson Completion / Bulan --}}
-  <div class="glass p-4 hover-lift">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="font-semibold">Lesson Completion / Bulan</h3>
-      <button class="btn secondary" data-dl="chartCompleteMonthly">PNG</button>
-    </div>
-    <div style="height:320px"><canvas id="chartCompleteMonthly"></canvas></div>
-  </div>
-
-  {{-- Quiz Attempts / Bulan --}}
-  <div class="glass p-4 hover-lift">
-    <div class="flex items-center justify-between mb-3">
-      <h3 class="font-semibold">Quiz Attempts / Bulan</h3>
-      <button class="btn secondary" data-dl="chartAttemptsMonthly">PNG</button>
-    </div>
-    <div style="height:320px"><canvas id="chartAttemptsMonthly"></canvas></div>
-  </div>
-</div>
-
-{{-- === My Courses (Grafik) === --}}
-<div class="mt-10 glass p-4 hover-lift">
-  <div class="flex items-center justify-between mb-3">
-    <h2 class="text-lg md:text-xl font-bold">Courses Saya 🎒 (Grafik)</h2>
-    <a href="{{ route('app.courses.index') }}" class="subtle hover:underline">Lihat semua →</a>
-  </div>
-  <div style="height:360px"><canvas id="chartMyCourses"></canvas></div>
-</div>
-
-{{-- === Active Coupons (Grafik) === --}}
-<div class="mt-10 glass p-4 hover-lift">
-  <div class="flex items-center justify-between mb-3">
-    <h2 class="text-lg md:text-xl font-bold">Kupon Aktif 🎁 (Grafik)</h2>
-  </div>
-  <div style="height:360px"><canvas id="chartCoupons"></canvas></div>
-</div>
-
-{{-- === Psy & IQ Tests (Grafik) === --}}
-<div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-  <div class="glass p-4 hover-lift">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="font-semibold">Tes Psikologi 🧠 — Jumlah Pertanyaan</h2>
-    </div>
-    <div style="height:320px"><canvas id="chartPsyTests"></canvas></div>
-  </div>
-  <div class="glass p-4 hover-lift">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="font-semibold">Tes IQ ⚡️ — Durasi (menit)</h2>
-    </div>
-    <div style="height:320px"><canvas id="chartIqTests"></canvas></div>
-  </div>
-</div>
-
-{{-- === Threads (Grafik) === --}}
-<div class="mt-10 grid grid-cols-1 md:grid-cols-2 gap-6">
-  <div class="glass p-4 hover-lift">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="font-semibold">Thread Terbaru 💬 — Jumlah Balasan</h2>
-    </div>
-    <div style="height:320px"><canvas id="chartThreadsLatest"></canvas></div>
-  </div>
-  <div class="glass p-4 hover-lift">
-    <div class="flex items-center justify-between mb-3">
-      <h2 class="font-semibold">Thread Saya ✍️ — Jumlah Balasan</h2>
-    </div>
-    <div style="height:320px"><canvas id="chartThreadsMine"></canvas></div>
-  </div>
-</div>
-@endsection
-
 @push('scripts')
-{{-- CDN Chart.js (tanpa SRI kosong). Untuk security maksimal, pertimbangkan self-host via Vite. --}}
-<script src="https://cdn.jsdelivr.net/npm/chart.js" referrerpolicy="no-referrer"></script>
-
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
-const CHARTS = @json($CH, JSON_UNESCAPED_UNICODE);
+    const CHARTS = @json($CH);
+    
+    // Tosca Enterprise Colors
+    const TOSCA = '#0F9D8A';
+    const TOSCA_LIGHT = 'rgba(15, 157, 138, 0.15)';
+    const GRAY = '#F3F4F6';
+    const GRAY_DARK = '#9CA3AF';
 
-// utils
-function has(arr){ return Array.isArray(arr) && arr.length>0; }
-function dl(id){
-  const cvs = document.getElementById(id);
-  if(!cvs) return;
-  const link=document.createElement('a');
-  link.download = id+'.png';
-  link.href = cvs.toDataURL('image/png');
-  link.click();
-}
-document.querySelectorAll('[data-dl]').forEach(btn=>{
-  btn.addEventListener('click', ()=>{
-    const key=btn.getAttribute('data-dl');
-    const all = ['chartProgress','chartDist','chartEnroll','chartQuiz','chartCompleteMonthly','chartAttemptsMonthly','chartMyCourses','chartRecommended','chartCoupons','chartPsyTests','chartIqTests','chartThreadsLatest','chartThreadsMine'];
-    if(key==='all'){ all.forEach(id=>dl(id)); }
-    else dl(key);
-  });
-});
+    Chart.defaults.font.family = 'Inter, sans-serif';
+    Chart.defaults.plugins.legend.display = false;
+    Chart.defaults.responsive = true;
+    Chart.defaults.maintainAspectRatio = false;
 
-const ctxGrad = (ctx) => {
-  const g = ctx.createLinearGradient(0,0,0,300);
-  g.addColorStop(0,'rgba(99,102,241,.35)');
-  g.addColorStop(1,'rgba(34,211,238,.05)');
-  return g;
-};
+    // Progress Chart (Bar)
+    if(CHARTS.progress && CHARTS.progress.percent.length > 0) {
+        new Chart(document.getElementById('chartProgress').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: CHARTS.progress.labels,
+                datasets: [{
+                    data: CHARTS.progress.percent,
+                    backgroundColor: TOSCA,
+                    borderRadius: 4,
+                    barPercentage: 0.5
+                }]
+            },
+            options: {
+                indexAxis: 'y',
+                scales: {
+                    x: { beginAtZero: true, max: 100, grid: { borderDash: [4, 4], color: GRAY }, ticks: { callback: v => v + '%' } },
+                    y: { grid: { display: false } }
+                }
+            }
+        });
+    }
 
-// global chart style
-Chart.defaults.elements.bar.borderRadius = 8;
-Chart.defaults.plugins.legend.labels.usePointStyle = true;
+    // Enrollments Chart
+    if(CHARTS.enroll && CHARTS.enroll.counts.length > 0) {
+        new Chart(document.getElementById('chartEnroll').getContext('2d'), {
+            type: 'bar',
+            data: {
+                labels: CHARTS.enroll.labels,
+                datasets: [{
+                    data: CHARTS.enroll.counts,
+                    backgroundColor: TOSCA_LIGHT,
+                    borderColor: TOSCA,
+                    borderWidth: 1,
+                    borderRadius: 4
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [4, 4], color: GRAY } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
 
-/* === Progress per Course === */
-if(document.getElementById('chartProgress') && CHARTS.progress && has(CHARTS.progress.percent)){
-  const c = document.getElementById('chartProgress').getContext('2d');
-  new Chart(c,{
-    type:'bar',
-    data:{ labels: CHARTS.progress.labels, datasets:[{label:'Progress (%)', data: CHARTS.progress.percent, backgroundColor: ctxGrad(c)}]},
-    options:{responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true,max:100,ticks:{stepSize:20}}}, plugins:{tooltip:{callbacks:{label:ctx=>(ctx.parsed.y||0)+'%'}}}}
-  });
-}
+    // Quiz Chart (Line)
+    if(Array.isArray(CHARTS.quiz) && CHARTS.quiz.length > 0) {
+        new Chart(document.getElementById('chartQuiz').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: CHARTS.quiz.map(p => p.t),
+                datasets: [{
+                    data: CHARTS.quiz.map(p => p.y),
+                    borderColor: TOSCA,
+                    backgroundColor: TOSCA_LIGHT,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, max: 100, grid: { borderDash: [4, 4], color: GRAY } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
 
-/* === Distribusi === */
-if(document.getElementById('chartDist') && CHARTS.distribution && has(CHARTS.distribution.counts)){
-  new Chart(document.getElementById('chartDist'),{
-    type:'doughnut',
-    data:{ labels:CHARTS.distribution.labels, datasets:[{data:CHARTS.distribution.counts}]},
-    options:{responsive:true, maintainAspectRatio:false, plugins:{legend:{position:'bottom'}}}
-  });
-}
-
-/* === Enrollments === */
-if(document.getElementById('chartEnroll') && CHARTS.enroll && has(CHARTS.enroll.counts)){
-  const c=document.getElementById('chartEnroll').getContext('2d');
-  new Chart(c,{
-    type:'bar',
-    data:{ labels:CHARTS.enroll.labels, datasets:[{label:'Enrollments', data:CHARTS.enroll.counts, backgroundColor: ctxGrad(c)}]},
-    options:{responsive:true, maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}}
-  });
-}
-
-/* === Quiz === */
-if(document.getElementById('chartQuiz') && Array.isArray(CHARTS.quiz) && CHARTS.quiz.length){
-  const c=document.getElementById('chartQuiz').getContext('2d');
-  new Chart(c,{
-    type:'line',
-    data:{ labels: CHARTS.quiz.map(function(p){return p.t;}), datasets:[{label:'Score %', data:CHARTS.quiz.map(function(p){return p.y;}), backgroundColor: ctxGrad(c), borderColor:'#6366f1', fill:true, tension:.3, pointRadius:3}]},
-    options:{responsive:true, maintainAspectRatio:false, scales:{y:{beginAtZero:true,max:100}}}
-  });
-}
-
-/* === Completion / month === */
-if(document.getElementById('chartCompleteMonthly') && CHARTS.completion_monthly && has(CHARTS.completion_monthly.labels)){
-  const c=document.getElementById('chartCompleteMonthly').getContext('2d');
-  new Chart(c,{
-    type:'line',
-    data:{labels:CHARTS.completion_monthly.labels, datasets:[{label:'Lessons selesai',data:CHARTS.completion_monthly.counts, backgroundColor:ctxGrad(c), borderColor:'#22d3ee', fill:true, tension:.3, pointRadius:3}]},
-    options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}}}
-  });
-}
-
-/* === Attempts / month === */
-if(document.getElementById('chartAttemptsMonthly') && CHARTS.attempts_monthly && has(CHARTS.attempts_monthly.labels)){
-  const c=document.getElementById('chartAttemptsMonthly').getContext('2d');
-  new Chart(c,{
-    type:'bar',
-    data:{labels:CHARTS.attempts_monthly.labels, datasets:[{label:'Quiz attempts',data:CHARTS.attempts_monthly.counts, backgroundColor:ctxGrad(c)}]},
-    options:{responsive:true,maintainAspectRatio:false,scales:{y:{beginAtZero:true}}}
-  });
-}
-
-/* === My Courses (progress per course %) === */
-if(document.getElementById('chartMyCourses') && CHARTS.my_courses && has(CHARTS.my_courses.percent)){
-  const c=document.getElementById('chartMyCourses').getContext('2d');
-  new Chart(c,{
-    type:'bar',
-    data:{labels:CHARTS.my_courses.labels, datasets:[{label:'Progress (%)', data:CHARTS.my_courses.percent, backgroundColor:ctxGrad(c)}]},
-    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true,max:100}}}
-  });
-}
-
-/* === Recommended Courses (jumlah siswa) === */
-if(document.getElementById('chartRecommended') && CHARTS.recommended && has(CHARTS.recommended.counts)){
-  const c=document.getElementById('chartRecommended').getContext('2d');
-  new Chart(c,{
-    type:'bar',
-    data:{labels:CHARTS.recommended.labels, datasets:[{label:'Siswa', data:CHARTS.recommended.counts, backgroundColor:ctxGrad(c)}]},
-    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}}
-  });
-}
-
-/* === Coupons timeline === */
-if(document.getElementById('chartCoupons') && CHARTS.coupons && has(CHARTS.coupons.counts)){
-  const c=document.getElementById('chartCoupons').getContext('2d');
-  new Chart(c,{
-    type:'line',
-    data:{labels:CHARTS.coupons.labels, datasets:[{label:'Kupon aktif', data:CHARTS.coupons.counts, backgroundColor:ctxGrad(c), borderColor:'#10b981', fill:true, tension:.3}]},
-    options:{responsive:true,maintainAspectRatio:false, scales:{y:{beginAtZero:true}}}
-  });
-}
-
-/* === Psy Tests: jumlah pertanyaan === */
-if(document.getElementById('chartPsyTests') && CHARTS.psy_tests && has(CHARTS.psy_tests.questions)){
-  const c=document.getElementById('chartPsyTests').getContext('2d');
-  new Chart(c,{
-    type:'bar',
-    data:{labels:CHARTS.psy_tests.labels, datasets:[{label:'Pertanyaan', data:CHARTS.psy_tests.questions, backgroundColor:ctxGrad(c)}]},
-    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}}
-  });
-}
-
-/* === IQ Tests: durasi menit === */
-if(document.getElementById('chartIqTests') && CHARTS.iq_tests && has(CHARTS.iq_tests.duration)){
-  const c=document.getElementById('chartIqTests').getContext('2d');
-  new Chart(c,{
-    type:'bar',
-    data:{labels:CHARTS.iq_tests.labels, datasets:[{label:'Durasi (menit)', data:CHARTS.iq_tests.duration, backgroundColor:ctxGrad(c)}]},
-    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}}
-  });
-}
-
-/* === Threads: latest & mine (jumlah balasan) === */
-if(document.getElementById('chartThreadsLatest') && CHARTS.threads_latest && has(CHARTS.threads_latest.replies)){
-  const c=document.getElementById('chartThreadsLatest').getContext('2d');
-  new Chart(c,{
-    type:'bar',
-    data:{labels:CHARTS.threads_latest.labels, datasets:[{label:'Balasan', data:CHARTS.threads_latest.replies, backgroundColor:ctxGrad(c)}]},
-    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}}
-  });
-}
-if(document.getElementById('chartThreadsMine') && CHARTS.threads_mine && has(CHARTS.threads_mine.replies)){
-  const c=document.getElementById('chartThreadsMine').getContext('2d');
-  new Chart(c,{
-    type:'bar',
-    data:{labels:CHARTS.threads_mine.labels, datasets:[{label:'Balasan', data:CHARTS.threads_mine.replies, backgroundColor:ctxGrad(c)}]},
-    options:{responsive:true,maintainAspectRatio:false, indexAxis:'y', scales:{x:{beginAtZero:true}}}
-  });
-}
+    // Completion Monthly Chart (Line)
+    if(CHARTS.completion_monthly && CHARTS.completion_monthly.counts.length > 0) {
+        new Chart(document.getElementById('chartCompleteMonthly').getContext('2d'), {
+            type: 'line',
+            data: {
+                labels: CHARTS.completion_monthly.labels,
+                datasets: [{
+                    data: CHARTS.completion_monthly.counts,
+                    borderColor: TOSCA,
+                    backgroundColor: TOSCA_LIGHT,
+                    fill: true,
+                    tension: 0.4
+                }]
+            },
+            options: {
+                scales: {
+                    y: { beginAtZero: true, grid: { borderDash: [4, 4], color: GRAY } },
+                    x: { grid: { display: false } }
+                }
+            }
+        });
+    }
 </script>
 @endpush
+@endsection

@@ -1,76 +1,112 @@
 @extends('layouts.admin')
 
-@section('title','Edit Module — BERKEMAH')
+@section('title', 'Edit Modul — Admin')
 
 @section('content')
-<div class="max-w-3xl mx-auto space-y-6">
-
+<div class="max-w-4xl mx-auto space-y-8 pb-12">
+  
   {{-- Header --}}
-  <div class="flex items-center justify-between">
+  <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
     <div>
-      <h1 class="text-3xl font-bold tracking-tight text-blue-900">Edit Module</h1>
-      <p class="text-sm text-blue-700/70">Perbarui judul, urutan, atau pindahkan ke course lain.</p>
+      <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-tosca-light text-tosca-dark text-xs font-bold uppercase tracking-wider mb-2">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+        Perbarui Data
+      </div>
+      <h1 class="text-3xl font-extrabold text-text-main tracking-tight">Edit Modul</h1>
+      <p class="text-sm text-text-soft mt-1">Ubah judul, urutan tampil, atau pindahkan modul ke kursus lain.</p>
     </div>
-    <a href="{{ route('admin.modules.index') }}"
-       class="px-3 py-2 rounded-xl border border-blue-200 text-blue-700 hover:bg-blue-50 transition">
-      ← Back
-    </a>
+    <div class="shrink-0 flex gap-3">
+      <a href="{{ route('admin.modules.index') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+        Kembali
+      </a>
+    </div>
   </div>
 
-  {{-- Card --}}
-  <div class="rounded-2xl border border-blue-100 bg-white/90 shadow-lg backdrop-blur p-6">
-    <form method="POST" action="{{ route('admin.modules.update', $module) }}" class="space-y-6">
-      @csrf
-      @method('PUT')
-
-      {{-- Course --}}
+  @if ($errors->any())
+    <div class="bg-red-50 border border-red-200 rounded-2xl p-4 flex gap-3 text-sm text-red-800 shadow-sm">
+      <svg class="w-5 h-5 shrink-0 mt-0.5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
       <div>
-        <label class="block text-sm font-semibold mb-1 text-blue-900">
-          Course <span class="text-red-500">*</span>
-        </label>
-        <select name="course_id"
-                class="w-full border border-blue-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500"
-                required>
-          <option value="">— pilih course —</option>
-          @foreach($courses as $c)
-            <option value="{{ $c->id }}" @selected(old('course_id',$module->course_id)==$c->id)>{{ $c->title }}</option>
+        <p class="font-bold">Gagal menyimpan perubahan! Silakan periksa isian Anda:</p>
+        <ul class="mt-2 list-disc pl-4 text-red-700 font-medium space-y-1">
+          @foreach ($errors->all() as $error)
+            <li>{{ $error }}</li>
           @endforeach
-        </select>
-        @error('course_id') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        </ul>
       </div>
+    </div>
+  @endif
 
-      {{-- Title --}}
+  <form method="POST" action="{{ route('admin.modules.update', $module) }}" class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
+    @csrf
+    @method('PUT')
+
+    <div class="p-8 space-y-8">
+      
+      {{-- Pengaturan Kursus --}}
       <div>
-        <label class="block text-sm font-semibold mb-1 text-blue-900">
-          Title <span class="text-red-500">*</span>
-        </label>
-        <input type="text" name="title" value="{{ old('title',$module->title) }}"
-               class="w-full border border-blue-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
-        @error('title') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+        <h3 class="text-lg font-bold text-text-main mb-6 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-tosca-light text-tosca-dark flex items-center justify-center">1</span>
+          Penempatan Kursus
+        </h3>
+        
+        <div>
+          <label class="block text-sm font-bold text-text-main mb-2">Pilih Kursus <span class="text-red-500">*</span></label>
+          <div class="relative">
+            <select name="course_id" class="w-full pl-4 pr-10 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-bold text-text-main appearance-none cursor-pointer" required>
+              <option value="">— Pilih kursus yang tersedia —</option>
+              @foreach($courses as $c)
+                <option value="{{ $c->id }}" @selected(old('course_id', $module->course_id) == $c->id)>{{ Str::limit($c->title, 70) }}</option>
+              @endforeach
+            </select>
+            <div class="absolute inset-y-0 right-0 pr-4 flex items-center pointer-events-none">
+              <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+            </div>
+          </div>
+          <p class="text-xs text-text-soft font-medium mt-2">Anda dapat memindahkan modul ini ke kursus lain jika diperlukan.</p>
+          @error('course_id') <p class="text-sm font-medium text-red-600 mt-1">{{ $message }}</p> @enderror
+        </div>
       </div>
 
-      {{-- Ordering --}}
-      <div class="max-w-xs">
-        <label class="block text-sm font-semibold mb-1 text-blue-900">Ordering</label>
-        <input type="number" name="ordering" min="0"
-               value="{{ old('ordering',$module->ordering) }}"
-               class="w-full border border-blue-200 rounded-xl px-3 py-2 focus:ring-2 focus:ring-blue-500">
-        <p class="text-xs text-blue-600/70 mt-1">Angka urutan tampil (kecil → muncul duluan).</p>
-        @error('ordering') <p class="text-sm text-red-600 mt-1">{{ $message }}</p> @enderror
+      <hr class="border-gray-100">
+
+      {{-- Detail Modul --}}
+      <div>
+        <h3 class="text-lg font-bold text-text-main mb-6 flex items-center gap-2">
+          <span class="w-8 h-8 rounded-lg bg-tosca-light text-tosca-dark flex items-center justify-center">2</span>
+          Detail Modul
+        </h3>
+        
+        <div class="space-y-6">
+          <div>
+            <label class="block text-sm font-bold text-text-main mb-2">Judul Modul <span class="text-red-500">*</span></label>
+            <input type="text" name="title" value="{{ old('title', $module->title) }}" 
+                   class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-bold text-text-main placeholder-gray-400" 
+                   required>
+            @error('title') <p class="text-sm font-medium text-red-600 mt-1">{{ $message }}</p> @enderror
+          </div>
+
+          <div class="max-w-xs">
+            <label class="block text-sm font-bold text-text-main mb-2">Nomor Urut Tampil (Ordering)</label>
+            <input type="number" name="ordering" min="0" value="{{ old('ordering', $module->ordering) }}" 
+                   class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 focus:bg-white focus:border-tosca focus:ring-4 focus:ring-tosca/10 outline-none transition-all font-bold text-text-main text-center">
+            <p class="text-xs text-text-soft font-medium mt-2">Angka yang lebih kecil akan ditampilkan lebih dulu (contoh: 0, 1, 2).</p>
+            @error('ordering') <p class="text-sm font-medium text-red-600 mt-1">{{ $message }}</p> @enderror
+          </div>
+        </div>
       </div>
 
-      {{-- Actions --}}
-      <div class="pt-2 flex items-center gap-2">
-        <button
-          class="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-gradient-to-r from-blue-700 to-blue-600 text-white font-semibold hover:from-blue-800 hover:to-blue-700 shadow-md transition">
-          Update Module
-        </button>
-        <a href="{{ route('admin.modules.index') }}"
-           class="px-5 py-2 rounded-xl border border-blue-200 text-blue-700 hover:bg-blue-50 transition">
-          Cancel
-        </a>
-      </div>
-    </form>
-  </div>
+    </div>
+
+    <div class="p-6 border-t border-gray-50 bg-gray-50/30 flex flex-col-reverse sm:flex-row items-center justify-end gap-3">
+      <a href="{{ route('admin.modules.index') }}" class="w-full sm:w-auto px-6 py-3 rounded-xl bg-white border border-gray-200 text-gray-700 font-bold hover:bg-gray-50 transition-colors text-center">
+        Batal
+      </a>
+      <button type="submit" class="w-full sm:w-auto px-8 py-3 rounded-xl bg-tosca text-white font-bold hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/30 flex items-center justify-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+        Simpan Perubahan
+      </button>
+    </div>
+  </form>
 </div>
 @endsection

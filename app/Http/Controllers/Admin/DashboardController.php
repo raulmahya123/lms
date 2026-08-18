@@ -11,6 +11,15 @@ use Carbon\CarbonPeriod;
 
 class DashboardController extends Controller
 {
+    private function monthExpression(string $column): string
+    {
+        abort_unless(in_array($column, ['paid_at'], true), 500, 'Invalid date grouping column');
+
+        return DB::connection()->getDriverName() === 'sqlite'
+            ? "strftime('%Y-%m', {$column})"
+            : "DATE_FORMAT({$column}, '%Y-%m')";
+    }
+
     public function index()
     {
         // Stats ringkas
@@ -31,10 +40,12 @@ class DashboardController extends Controller
 
         // Recent lists
         $recentPayments = Payment::with(['user:id,name,email','plan:id,name','course:id,title'])
+            ->select(['id', 'user_id', 'plan_id', 'course_id', 'amount', 'status', 'paid_at', 'created_at'])
             ->orderByDesc(DB::raw('COALESCE(paid_at, created_at)'))
             ->take(5)->get();
 
         $recentEnrolls = Enrollment::with(['user:id,name,email','course:id,title'])
+            ->select(['id', 'user_id', 'course_id', 'status', 'activated_at', 'created_at'])
             ->latest('id')->take(5)->get();
 
         // ========= CHART DATA =========
@@ -46,7 +57,7 @@ class DashboardController extends Controller
 
         $revenueRaw = Payment::where('status','paid')
             ->whereBetween('paid_at', [$monthStart, now()])
-            ->selectRaw('DATE_FORMAT(paid_at, "%Y-%m") as ym, SUM(amount) as total')
+            ->selectRaw($this->monthExpression('paid_at') . ' as ym, SUM(amount) as total')
             ->groupBy('ym')
             ->pluck('total','ym'); // ['2025-01' => 1000000, ...]
 
@@ -188,7 +199,7 @@ class DashboardController extends Controller
 
         $raw = Payment::where('status','paid')
             ->whereBetween('paid_at', [$start, $end])
-            ->selectRaw('DATE_FORMAT(paid_at, "%Y-%m") as ym, SUM(amount) as total')
+            ->selectRaw($this->monthExpression('paid_at') . ' as ym, SUM(amount) as total')
             ->groupBy('ym')
             ->pluck('total','ym');
 

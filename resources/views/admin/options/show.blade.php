@@ -1,139 +1,172 @@
 @extends('layouts.admin')
-
-@section('title','View Option — BERKEMAH')
+@section('title', 'Detail Opsi Jawaban — Admin')
 
 @section('content')
-<div class="max-w-4xl mx-auto space-y-6">
-
-  {{-- HEADER --}}
-  <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-    <div>
-      <h1 class="text-2xl font-extrabold tracking-wide flex items-center gap-2">
-        {{-- eye icon --}}
-        <svg class="w-7 h-7" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M12 4.5c-7 0-10 7.5-10 7.5s3 7.5 10 7.5 10-7.5 10-7.5-3-7.5-10-7.5Zm0 12a4.5 4.5 0 1 1 0-9 4.5 4.5 0 0 1 0 9Z"/>
-        </svg>
-        Option Detail
-      </h1>
-      <p class="text-sm opacity-70">Detail opsi jawaban dan keterkaitannya dengan question.</p>
-    </div>
-
-    <div class="flex items-center gap-2">
-      <a href="{{ route('admin.options.edit',$option) }}"
-         class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border hover:bg-gray-50 transition"
-         title="Edit option">
-        {{-- pencil icon --}}
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M16.862 3.487a2.25 2.25 0 0 1 3.182 3.182l-9.57 9.569a4.5 4.5 0 0 1-1.78 1.11l-3.27 1.09a.75.75 0 0 1-.947-.948l1.09-3.269a4.5 4.5 0 0 1 1.11-1.78l9.57-9.57Z"/>
-        </svg>
-        Edit
-      </a>
-
-      <form action="{{ route('admin.options.destroy',$option) }}" method="POST"
-            onsubmit="return confirm('Yakin hapus opsi ini?')">
-        @csrf @method('DELETE')
-        <button type="submit"
-                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-red-200 text-red-700 hover:bg-red-50 transition"
-                title="Delete option">
-          {{-- trash icon --}}
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor">
-            <path d="M9.75 3a1 1 0 0 0-.94.66L8.5 4.5H6a.75.75 0 0 0 0 1.5h12a.75.75 0 0 0 0-1.5h-2.5l-.31-.84a1 1 0 0 0-.94-.66h-4.5ZM6.75 8a.75.75 0 0 1 .75.75v8a1.75 1.75 0 0 0 1.75 1.75h4.5A1.75 1.75 0 0 0 15.5 16.75v-8a.75.75 0 0 1 1.5 0v8a3.25 3.25 0 0 1-3.25 3.25h-4.5A3.25 3.25 0 0 1 6 16.75v-8A.75.75 0 0 1 6.75 8Z"/>
-          </svg>
-          Delete
-        </button>
-      </form>
-
-      <a href="{{ route('admin.options.index') }}"
-         class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border hover:bg-gray-50 transition"
-         title="Back to list">
-        {{-- back icon --}}
-        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M10.28 6.22a.75.75 0 0 1 0 1.06L6.56 11h11.19a.75.75 0 0 1 0 1.5H6.56l3.72 3.72a.75.75 0 1 1-1.06 1.06l-5-5a.75.75 0 0 1 0-1.06l5-5a.75.75 0 0 1 1.06 0Z"/></svg>
-        Back
-      </a>
-    </div>
-  </div>
-
-  {{-- CARD DETAIL --}}
-  <div class="rounded-2xl border bg-white p-6 space-y-6">
-    <div class="grid md:grid-cols-2 gap-6">
-      {{-- ID --}}
-      <div>
-        <div class="text-sm font-medium text-gray-600 flex items-center gap-2">
-          {{-- tag icon --}}
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M9.21 3.42A2.25 2.25 0 0 1 10.8 3h5.95A2.25 2.25 0 0 1 19 5.25V11.2c0 .6-.24 1.17-.66 1.6l-5.54 5.54a2.25 2.25 0 0 1-3.18 0l-5.9-5.9a2.25 2.25 0 0 1 0-3.18L9.21 3.42Z"/></svg>
-          ID
+<div class="max-w-4xl mx-auto space-y-8 pb-12">
+    
+    {{-- Header --}}
+    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+            <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-tosca-light text-tosca-dark text-xs font-bold uppercase tracking-wider mb-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Opsi #{{ $option->id }}
+            </div>
+            <h1 class="text-3xl font-extrabold text-text-main tracking-tight">Detail Opsi Jawaban</h1>
+            <p class="text-sm text-text-soft mt-1">Lihat teks opsi dan hubungannya dengan pertanyaan terkait.</p>
         </div>
-        <div class="mt-1 text-lg font-semibold">#{{ $option->id }}</div>
-      </div>
-
-      {{-- CORRECT --}}
-      <div>
-        <div class="text-sm font-medium text-gray-600 flex items-center gap-2">
-          {{-- status icon --}}
-          <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M7 7.5h10a4.5 4.5 0 1 1 0 9H7a4.5 4.5 0 1 1 0-9Z"/></svg>
-          Correct?
+        
+        <div class="shrink-0 flex items-center gap-3">
+            <a href="{{ route('admin.options.index') }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-gray-200 text-gray-700 font-bold rounded-xl hover:bg-gray-50 transition-colors">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+                Kembali
+            </a>
+            @if(Route::has('admin.options.edit'))
+            <a href="{{ route('admin.options.edit', $option) }}" class="inline-flex items-center gap-2 px-6 py-2.5 bg-tosca text-white font-bold rounded-xl hover:bg-tosca-dark transition-colors shadow-sm shadow-tosca/30">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                Edit Opsi
+            </a>
+            @endif
         </div>
-        <div class="mt-1">
-          @if($option->is_correct)
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-green-100 text-green-800">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 2.25a9.75 9.75 0 1 1 0 19.5 9.75 9.75 0 0 1 0-19.5Zm-1.03 12.03 4.47-4.47a.75.75 0 1 0-1.06-1.06l-3.94 3.94-1.41-1.41a.75.75 0 1 0-1.06 1.06l1.94 1.94a.75.75 0 0 0 1.06 0Z"/>
-              </svg>
-              True
-            </span>
-          @else
-            <span class="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-gray-200 text-gray-700">
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M6.225 4.811a.75.75 0 0 1 1.06 0L12 9.525l4.715-4.714a.75.75 0 1 1 1.06 1.06L13.06 10.59l4.715 4.715a.75.75 0 1 1-1.06 1.06L12 11.65l-4.715 4.715a.75.75 0 1 1-1.06-1.06l4.715-4.715-4.715-4.715a.75.75 0 0 1 0-1.06Z"/>
-              </svg>
-              False
-            </span>
-          @endif
+    </div>
+
+    @if (session('ok') || session('success'))
+        <div class="bg-green-50 border border-green-200 rounded-2xl p-4 flex gap-3 text-sm text-green-800 shadow-sm">
+            <svg class="w-5 h-5 shrink-0 mt-0.5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <div>
+                <p class="font-bold">{{ session('ok') ?? session('success') }}</p>
+            </div>
         </div>
-      </div>
+    @endif
+
+    <div class="bg-white rounded-3xl border border-gray-50 shadow-[0_4px_24px_rgba(0,0,0,0.02)] overflow-hidden">
+        <div class="px-8 py-5 border-b border-gray-50 bg-gray-50/50 flex items-center justify-between">
+            <h2 class="text-lg font-extrabold text-text-main flex items-center gap-2">
+                <svg class="w-5 h-5 text-tosca" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                Konten Opsi
+            </h2>
+            
+            @if($option->is_correct)
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border bg-green-50 text-green-700 border-green-200 shadow-sm shadow-green-100/50">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                    Jawaban Benar
+                </span>
+            @else
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider border bg-gray-50 text-gray-500 border-gray-200">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+                    Jawaban Salah
+                </span>
+            @endif
+        </div>
+        
+        <div class="p-8 space-y-8">
+            {{-- Pertanyaan Terkait --}}
+            <div>
+                <div class="text-sm font-bold text-text-soft uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    Konteks Pertanyaan (Question)
+                </div>
+                <div class="bg-blue-50/50 border border-blue-100 rounded-2xl p-5">
+                    <div class="font-medium text-blue-900 text-lg leading-relaxed">
+                        {!! nl2br(e($option->question->prompt ?? 'Pertanyaan tidak ditemukan atau telah dihapus.')) !!}
+                    </div>
+                    @if($option->question)
+                        <div class="mt-3 flex items-center gap-2">
+                            <a href="{{ route('admin.questions.show', $option->question) }}" class="inline-flex items-center gap-1 text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors">
+                                Lihat Detail Pertanyaan
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                            </a>
+                        </div>
+                    @endif
+                </div>
+            </div>
+
+            <hr class="border-gray-50">
+
+            {{-- Teks Opsi --}}
+            <div>
+                <div class="text-sm font-bold text-text-soft uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7"></path></svg>
+                    Teks Opsi (Option Text)
+                </div>
+                <div class="bg-gray-50 border border-gray-100 rounded-2xl p-6">
+                    <div class="font-medium text-text-main text-xl leading-relaxed whitespace-pre-line">
+                        {{ $option->text }}
+                    </div>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
+                <div class="bg-softbg rounded-2xl p-4 flex items-center justify-between border border-gray-50">
+                    <span class="text-sm font-bold text-text-soft uppercase tracking-wider">Dibuat Pada</span>
+                    <span class="text-sm font-bold text-gray-700">{{ optional($option->created_at)->format('d M Y, H:i') ?: '—' }}</span>
+                </div>
+                <div class="bg-softbg rounded-2xl p-4 flex items-center justify-between border border-gray-50">
+                    <span class="text-sm font-bold text-text-soft uppercase tracking-wider">Terakhir Diperbarui</span>
+                    <span class="text-sm font-bold text-gray-700">{{ optional($option->updated_at)->format('d M Y, H:i') ?: '—' }}</span>
+                </div>
+            </div>
+        </div>
     </div>
-
-    {{-- QUESTION --}}
-    <div>
-      <div class="text-sm font-medium text-gray-600 flex items-center gap-2">
-        {{-- question icon --}}
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2.25a9.75 9.75 0 1 1 0 19.5 9.75 9.75 0 0 1 0-19.5ZM12 17a1 1 0 1 0 0 2 1 1 0 0 0 0-2Zm0-9a3.5 3.5 0 0 0-3.5 3.5.75.75 0 0 0 1.5 0 2 2 0 1 1 2.86 1.8c-.87.38-1.36 1.2-1.36 2.2v.25a.75.75 0 0 0 1.5 0v-.25c0-.42.17-.67.56-.84A3.5 3.5 0 0 0 12 8Z"/></svg>
-        Question
-      </div>
-      <div class="mt-1 text-base">
-        {{ \Illuminate\Support\Str::limit($option->question->prompt ?? '-', 200) }}
-      </div>
+    
+    <div class="flex justify-end">
+        <form action="{{ route('admin.options.destroy', $option) }}" method="POST" class="inline js-delete-form" data-title="opsi jawaban ini">
+            @csrf @method('DELETE')
+            <button type="button" class="js-delete-btn inline-flex items-center gap-2 px-6 py-2.5 bg-white border border-red-200 text-red-600 font-bold rounded-xl hover:bg-red-50 transition-colors shadow-sm">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                Hapus Opsi
+            </button>
+        </form>
     </div>
-
-    {{-- OPTION TEXT --}}
-    <div>
-      <div class="text-sm font-medium text-gray-600 flex items-center gap-2">
-        {{-- text icon --}}
-        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="currentColor">
-          <path d="M4.5 6.75A.75.75 0 0 1 5.25 6h13.5a.75.75 0 0 1 0 1.5H5.25A.75.75 0 0 1 4.5 6.75ZM5.25 10.5a.75.75 0 0 0 0 1.5h9.5a.75.75 0 0 0 0-1.5h-9.5Zm0 4.5a.75.75 0 0 0 0 1.5h6.5a.75.75 0 0 0 0-1.5h-6.5Z"/>
-        </svg>
-        Option Text
-      </div>
-      <div class="mt-1 whitespace-pre-line text-base">
-        {{ $option->text }}
-      </div>
-    </div>
-
-    {{-- TIMESTAMPS (opsional) --}}
-    <div class="grid md:grid-cols-2 gap-6 text-xs text-gray-600">
-      <div>Created: <span class="font-medium">{{ optional($option->created_at)->format('Y-m-d H:i') }}</span></div>
-      <div>Updated: <span class="font-medium">{{ optional($option->updated_at)->format('Y-m-d H:i') }}</span></div>
-    </div>
-  </div>
-
-  {{-- BACK ONLY (mobile duplicate) --}}
-  <div class="md:hidden">
-    <a href="{{ route('admin.options.index') }}"
-       class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border hover:bg-gray-50 transition w-full justify-center">
-      <svg class="w-5 h-5" viewBox="0 0 24 24" fill="currentColor"><path d="M10.28 6.22a.75.75 0 0 1 0 1.06L6.56 11h11.19a.75.75 0 0 1 0 1.5H6.56l3.72 3.72a.75.75 0 1 1-1.06 1.06l-5-5a.75.75 0 0 1 0-1.06l5-5a.75.75 0 0 1 1.06 0Z"/></svg>
-      Back
-    </a>
-  </div>
-
 </div>
+
+@push('scripts')
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    (function() {
+        function bindDeleteButtons() {
+            document.querySelectorAll('.js-delete-btn').forEach(btn => {
+                if (btn.dataset.bound) return;
+                btn.dataset.bound = '1';
+
+                btn.addEventListener('click', (e) => {
+                    const form = e.currentTarget.closest('form.js-delete-form');
+                    const title = form?.dataset.title || 'opsi ini';
+
+                    Swal.fire({
+                        title: 'Hapus Opsi Jawaban?',
+                        html: `<b>${title}</b> akan dihapus permanen.`,
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonText: 'Ya, Hapus',
+                        cancelButtonText: 'Batal',
+                        reverseButtons: true,
+                        focusCancel: true,
+                        customClass: {
+                            popup: 'rounded-3xl',
+                            confirmButton: 'rounded-xl font-bold px-6 py-2.5 bg-red-600 hover:bg-red-700 text-white border-0',
+                            cancelButton: 'rounded-xl font-bold px-6 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 border-0'
+                        }
+                    }).then((res) => {
+                        if (res.isConfirmed) {
+                            if (!form.dataset.submitting) {
+                                form.dataset.submitting = '1';
+                                const b = form.querySelector('.js-delete-btn');
+                                if (b) {
+                                    b.disabled = true;
+                                    b.innerHTML = '<span class="animate-spin mr-2">⏳</span>';
+                                }
+                                form.submit();
+                            }
+                        }
+                    });
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', bindDeleteButtons);
+        document.addEventListener('turbo:load', bindDeleteButtons);
+        document.addEventListener('livewire:navigated', bindDeleteButtons);
+    })();
+</script>
+@endpush
 @endsection

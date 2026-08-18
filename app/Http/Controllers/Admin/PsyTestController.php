@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\PsyTest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
 
 class PsyTestController extends Controller
 {
@@ -15,16 +16,23 @@ class PsyTestController extends Controller
 
     public function index(Request $r)
     {
+        $filters = $r->validate([
+            'q'     => ['nullable', 'string', 'max:100'],
+            'track' => ['nullable', Rule::in(self::TRACKS)],
+            'type'  => ['nullable', Rule::in(self::TYPES)],
+        ]);
+        $term = trim((string) ($filters['q'] ?? ''));
+
         $tests = PsyTest::query()
-            ->when($r->filled('q'), function ($q) use ($r) {
-                $term = trim($r->q);
+            ->select(['id', 'name', 'slug', 'track', 'type', 'time_limit_min', 'is_active', 'created_at'])
+            ->when($term !== '', function ($q) use ($term) {
                 $q->where(function ($qq) use ($term) {
                     $qq->where('name', 'like', "%{$term}%")
                         ->orWhere('slug', 'like', "%{$term}%");
                 });
             })
-            ->when($r->filled('track'), fn($q) => $q->where('track', $r->track))
-            ->when($r->filled('type'),  fn($q) => $q->where('type',  $r->type))
+            ->when($filters['track'] ?? null, fn($q, $track) => $q->where('track', $track))
+            ->when($filters['type'] ?? null,  fn($q, $type) => $q->where('type',  $type))
             ->latest('id')
             ->paginate(20)
             ->withQueryString();

@@ -65,6 +65,7 @@ class CertificateController extends Controller
         $user = Auth::user();
 
         $issues = CertificateIssue::with(['course', 'template'])
+            ->select(['id', 'template_id', 'user_id', 'course_id', 'assessment_type', 'assessment_id', 'serial', 'score', 'issued_at'])
             ->where('user_id', $user->id)
             ->orderByDesc('issued_at')
             ->paginate(12);
@@ -77,7 +78,7 @@ class CertificateController extends Controller
     {
         $this->authorizeIssue($issue);
 
-        $issue->load(['course', 'template']);
+        $issue->load(['course:id,title', 'template:id,name']);
         return view('app.certificates.show', compact('issue'));
     }
 
@@ -108,7 +109,7 @@ class CertificateController extends Controller
     private function renderPdfForIssue(CertificateIssue $issue, bool $download = false)
     {
         $user   = Auth::user();
-        $course = $issue->course ?? Course::find($issue->course_id);
+        $course = $issue->course ?? Course::select(['id', 'title'])->find($issue->course_id);
 
         // hitung percent/correct/total jika bisa, fallback ke score yang tersimpan
         $percent = is_numeric($issue->score) ? floatval($issue->score) : 0.0;
@@ -126,7 +127,14 @@ class CertificateController extends Controller
                 $total   = $tot;
             }
         } elseif ($issue->assessment_type === 'quiz' && $issue->assessment_id) {
-            $bestAttempt = QuizAttempt::with(['answers.question', 'quiz.lesson.module.course'])
+            $bestAttempt = QuizAttempt::with([
+                    'answers:id,attempt_id,question_id,is_correct',
+                    'answers.question:id,type',
+                    'quiz:id,lesson_id',
+                    'quiz.lesson:id,module_id',
+                    'quiz.lesson.module:id,course_id',
+                    'quiz.lesson.module.course:id,title',
+                ])
                 ->where('id', $issue->assessment_id)->first();
             if ($bestAttempt) {
                 $mcq     = $bestAttempt->answers->filter(fn($a) => $a->question && $a->question->type === 'mcq');
@@ -164,7 +172,16 @@ class CertificateController extends Controller
      */
     private function bestAttemptEligibilityForCourse(string $userId, string $courseId): array
     {
-        $attempts = QuizAttempt::with(['answers.question', 'quiz.lesson.module.course'])
+        $attempts = QuizAttempt::with([
+                'answers:id,attempt_id,question_id,is_correct',
+                'answers.question:id,quiz_id,type,points',
+                'quiz:id,lesson_id',
+                'quiz.questions:id,quiz_id,type,points',
+                'quiz.lesson:id,module_id',
+                'quiz.lesson.module:id,course_id',
+                'quiz.lesson.module.course:id,title',
+            ])
+            ->select(['id', 'quiz_id', 'user_id', 'score', 'submitted_at'])
             ->where('user_id', $userId) // UUID string
             ->whereNotNull('submitted_at')
             ->whereHas('quiz.lesson.module.course', fn($q) => $q->where('id', $courseId))

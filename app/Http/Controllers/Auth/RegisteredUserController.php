@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Models\Role;
 use App\Models\TestIq;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
@@ -48,10 +49,13 @@ class RegisteredUserController extends Controller
             'email.unique'   => 'Email ini sudah terdaftar. Silakan gunakan email lain atau login.',
         ]);
 
+        $userRoleId = Role::query()->firstOrCreate(['name' => User::ROLE_USER])->id;
+
         $user = User::create([
             'name'     => $request->string('name'),
             'email'    => $request->string('email')->lower(),
             'password' => Hash::make($request->string('password')),
+            'role_id'  => $userRoleId,
         ]);
 
         event(new Registered($user));

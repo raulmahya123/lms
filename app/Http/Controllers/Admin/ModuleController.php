@@ -13,10 +13,15 @@ class ModuleController extends Controller
     {
         $user = $r->user();
         if (!$user) abort(403); // NEW
+        $filters = $r->validate([
+            'course_id' => ['nullable', 'uuid', 'exists:courses,id'],
+        ]);
 
-        $modules = Module::with('course:id,title,created_by')
-            ->when(!$this->isAdminOrMentor(), function ($q) use ($user) {
-                $q->whereHas('course', fn($qc) => $qc->where('created_by', $user->id));
+        $modules = Module::query()
+            ->select(['id', 'course_id', 'title', 'ordering', 'created_at'])
+            ->with('course:id,title,created_by')
+            ->when(!$this->isAdmin(), function ($q) use ($user) {
+                $q->whereHas('course', fn($qc) => $qc->manageableBy($user));
             })
             // === Jika ingin mentor hanya lihat course yang ditugaskan, aktifkan ini:
             // ->when($this->isMentorOnly(), function ($q) use ($user) {
@@ -25,7 +30,7 @@ class ModuleController extends Controller
             //            ->orWhereHas('course', fn($qc) => $qc->where('created_by', $user->id));
             //     });
             // })
-            ->when($r->filled('course_id'), fn($q) => $q->where('course_id', $r->integer('course_id')))
+            ->when($filters['course_id'] ?? null, fn($q, $courseId) => $q->where('course_id', $courseId))
             ->orderBy('course_id')->orderBy('ordering')
             ->paginate(20)
             ->withQueryString();
@@ -39,8 +44,8 @@ class ModuleController extends Controller
         if (!$user) abort(403); // NEW
 
         $courses = Course::select('id','title','created_by')
-            ->when(!$this->isAdminOrMentor(), function ($q) use ($user) {
-                $q->where('created_by', $user->id);
+            ->when(!$this->isAdmin(), function ($q) use ($user) {
+                $q->manageableBy($user);
             })
             // ->when($this->isMentorOnly(), function ($q) use ($user) {
             //     $q->where(function ($qq) use ($user) {
@@ -69,7 +74,7 @@ class ModuleController extends Controller
 
         $course = Course::select('id','created_by')->findOrFail($data['course_id']);
 
-        if (!$this->isAdminOrMentor() && $course->created_by !== $user->id) {
+        if (!$course->manageableBy($user)) {
             abort(403, 'Anda tidak berhak menambah module di course ini.');
         }
 
@@ -92,8 +97,8 @@ class ModuleController extends Controller
         $this->authorizeModule($module, $user);
 
         $courses = Course::select('id','title','created_by')
-            ->when(!$this->isAdminOrMentor(), function ($q) use ($user) {
-                $q->where('created_by', $user->id);
+            ->when(!$this->isAdmin(), function ($q) use ($user) {
+                $q->manageableBy($user);
             })
             // ->when($this->isMentorOnly(), function ($q) use ($user) {
             //     $q->where(function ($qq) use ($user) {
@@ -120,9 +125,9 @@ class ModuleController extends Controller
             'ordering'  => 'nullable|integer|min:1',
         ]);
 
-        if (!$this->isAdminOrMentor()) {
+        if (!$this->isAdmin()) {
             $target = Course::select('id','created_by')->findOrFail($data['course_id']);
-            if ($target->created_by !== $user->id) {
+            if (!$target->manageableBy($user)) {
                 abort(403, 'Anda tidak berhak memindahkan module ke course ini.');
             }
         }
@@ -169,19 +174,19 @@ class ModuleController extends Controller
      * ========================= */
     protected function authorizeModule(Module $module, User $user): void
     {
-        if ($this->isAdminOrMentor()) {
+        if ($this->isAdmin()) {
             return;
         }
 
         $module->loadMissing('course:id,created_by');
-        if ($module->course->created_by !== $user->id) {
+        if (!$module->course->manageableBy($user)) {
             abort(403, 'Anda tidak berhak mengelola module ini.');
         }
     }
 
-    protected function isAdminOrMentor(): bool
+    protected function isAdmin(): bool
     {
-        return Gate::allows('admin') || Gate::allows('mentor'); // NEW
+        return Gate::allows('admin');
     }
 
     protected function isMentorOnly(): bool
